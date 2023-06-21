@@ -7,12 +7,17 @@
 //! used as input for another program or workflow.
 //!
 //! Supported command line arguments:
-//! -
-//! -
-//! -
-//!
+//! --config
 
-use std::env;
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Regression configuration file
+    #[arg(short, long)]
+    config: String,
+}
 
 pub mod regression {
     use std::collections::{HashSet, HashMap};
@@ -298,9 +303,8 @@ pub mod regression {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    let args: Vec<String> = env::args().collect();
-    let config_file = String::from(&args[1]);
-    let e = regression::new(config_file);
+    let cli = Cli::parse();
+    let e = regression::new(cli.config);
     // println!("{:#?}", e);
     // println!("{}", e.to_json());
     // println!("{}", e.render());
