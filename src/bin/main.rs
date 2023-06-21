@@ -7,7 +7,7 @@
 //! used as input for another program or workflow.
 //!
 //! Supported command line arguments:
-//! --config
+//! --config <provide regression environment configuration file>
 
 use clap::Parser;
 
