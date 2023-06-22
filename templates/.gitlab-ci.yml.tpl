@@ -259,7 +259,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-destroy:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_{{ provider | upper }}_CLIENT_SERVER_ROOT_DIR
+        cd $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
         terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
