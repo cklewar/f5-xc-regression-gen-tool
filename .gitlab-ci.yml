@@ -133,7 +133,7 @@ rte-aws-client-server-artifacts:
       - |
         #!/usr/bin/env bash
         cd $RTE_ROOT_DIR/client_server
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/rte/client_server/aws"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -161,8 +161,8 @@ rte-aws-client-server-apply:
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
         pwd
         ls -la
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/rte/client_server/aws"
-        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
+        terraform apply -var-file=$RTE_client_server_aws_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER_COMMON_ARTIFACTS_FILE
   artifacts:
@@ -192,7 +192,7 @@ rte-aws-client-server1-artifacts:
       - |
         #!/usr/bin/env bash
         cd $RTE_ROOT_DIR/client_server1
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/rte/client_server1/aws"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -220,8 +220,8 @@ rte-aws-client-server1-apply:
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
         pwd
         ls -la
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/rte/client_server1/aws"
-        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
+        terraform apply -var-file=$RTE_client_server1_aws_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE
   artifacts:
@@ -250,7 +250,7 @@ rte-azure-client-server1-artifacts:
       - |
         #!/usr/bin/env bash
         cd $RTE_ROOT_DIR/client_server1
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/rte/client_server1/azure"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -278,8 +278,8 @@ rte-azure-client-server1-apply:
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
         pwd
         ls -la
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/rte/client_server1/azure"
-        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
+        terraform apply -var-file=$RTE_client_server1_azure_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
         echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_AZURE_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE
   artifacts:
@@ -321,7 +321,7 @@ eut-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - aws - fortio - client-server - apply
+# test - fortio - client-server - aws - apply
 regression-test-east-west-traffic-aws-fortio:
   <<: *base
   rules:
@@ -332,7 +332,7 @@ regression-test-east-west-traffic-aws-fortio:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-fortio
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-aws-fortio"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-fortio/client_server/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -342,7 +342,7 @@ regression-test-east-west-traffic-aws-fortio:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - aws - iperf - client-server1 - apply
+# test - iperf - client-server1 - aws - apply
 regression-test-east-west-traffic-aws-iperf:
   <<: *base
   rules:
@@ -353,7 +353,7 @@ regression-test-east-west-traffic-aws-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-aws-iperf"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-iperf/client_server1/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -363,7 +363,7 @@ regression-test-east-west-traffic-aws-iperf:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - azure - iperf - client-server1 - apply
+# test - iperf - client-server1 - azure - apply
 regression-test-east-west-traffic-azure-iperf:
   <<: *base
   rules:
@@ -374,7 +374,7 @@ regression-test-east-west-traffic-azure-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-azure-iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-azure-iperf"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-azure-iperf/client_server1/azure"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -384,7 +384,7 @@ regression-test-east-west-traffic-azure-iperf:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verify - aws - fortio - client-server - bandwidth - apply
+# verify fortio - client-server - bandwidth - aws - apply
 regression-test-verify-east-west-traffic-aws-fortio-bandwidth:
   <<: *base
   rules:
@@ -395,7 +395,7 @@ regression-test-verify-east-west-traffic-aws-fortio-bandwidth:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-aws-fortio
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/aws/client_server/regression/verification/east-west-traffic-aws-fortio"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcnregression/verification/client_server/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -405,7 +405,7 @@ regression-test-verify-east-west-traffic-aws-fortio-bandwidth:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verify - aws - iperf - client-server1 - bandwidth - apply
+# verify iperf - client-server1 - bandwidth - aws - apply
 regression-test-verify-east-west-traffic-aws-iperf-bandwidth:
   <<: *base
   rules:
@@ -416,7 +416,7 @@ regression-test-verify-east-west-traffic-aws-iperf-bandwidth:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-aws-iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/aws/client_server1/regression/verification/east-west-traffic-aws-iperf"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcnregression/verification/client_server1/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -426,7 +426,7 @@ regression-test-verify-east-west-traffic-aws-iperf-bandwidth:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verify - azure - iperf - client-server1 - bandwidth - apply
+# verify iperf - client-server1 - bandwidth - azure - apply
 regression-test-verify-east-west-traffic-azure-iperf-bandwidth:
   <<: *base
   rules:
@@ -437,7 +437,7 @@ regression-test-verify-east-west-traffic-azure-iperf-bandwidth:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-azure-iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/azure/client_server1/regression/verification/east-west-traffic-azure-iperf"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcnregression/verification/client_server1/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:

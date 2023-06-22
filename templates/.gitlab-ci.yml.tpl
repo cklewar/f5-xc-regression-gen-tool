@@ -104,7 +104,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
       - |
         #!/usr/bin/env bash
         cd $RTE_ROOT_DIR/{{ rte.name }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.rte.path  }}/{{ rte.name }}/{{ provider }}"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -136,8 +136,8 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
         pwd
         ls -la
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
-        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
+        terraform apply -var-file=$RTE_{{ rte.name }}_{{ provider }}_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE
   artifacts:
@@ -163,12 +163,12 @@ eut-apply:
         #!/usr/bin/env bash
         {% for provider, values in providers -%}
         cd $EUT_ROOT_DIR/{{ provider }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/{{ rc.eut.name }}/provider/{{ provider }}" 
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}" 
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
         cd $EUT_ROOT_DIR/common
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/{{ rc.eut.name }}/common"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/common"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %} {% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE {% endfor %}{% endfor %}-auto-approve
   timeout: 1h 30m
   retry:
@@ -179,7 +179,7 @@ eut-apply:
       - runner_system_failure
 {% for provider, values in providers -%}
 {% for test in values.tmvc %}
-# test - {{ provider }} - {{ test.module | replace(from="_", to="-")}} - {{ test.rte.name  | replace(from="_", to="-") }} - apply
+# test - {{ test.module | replace(from="_", to="-")}} - {{ test.rte.name  | replace(from="_", to="-") }} - {{ provider }} - apply
 regression-test-{{ test.name }}:
   <<: *base
   rules:
@@ -190,7 +190,7 @@ regression-test-{{ test.name }}:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.name }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.tests.path }}/{{ test.name }}"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.tests.path }}/{{ test.name }}/{{ test.rte.name }}/{{ provider }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -204,7 +204,7 @@ regression-test-{{ test.name }}:
 {% for provider, values in providers -%}
 {% for test in values.tmvc -%}
 {% for verification in test.verifications %}
-# verify - {{ provider }} - {{ test.module | replace(from="_", to="-")}} - {{ test.rte.name  | replace(from="_", to="-") }} - {{ verification.name | replace(from="_", to="-") }} - apply
+# verify {{ test.module | replace(from="_", to="-")}} - {{ test.rte.name  | replace(from="_", to="-") }} - {{ verification.name | replace(from="_", to="-") }} - {{ provider }} - apply
 regression-test-verify-{{ test.name }}-{{ verification.name }}:
   <<: *base
   rules:
@@ -215,7 +215,7 @@ regression-test-verify-{{ test.name }}-{{ verification.name }}:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.name }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ provider }}/{{ test.rte.name }}/{{ rc.verifications.path }}/{{ test.name }}"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}{{ rc.verifications.path }}/{{ test.rte.name }}/{{ verification.name }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
