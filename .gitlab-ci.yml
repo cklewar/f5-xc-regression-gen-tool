@@ -74,20 +74,20 @@ variables:
 
 .regression_test_verify_east_west_traffic_aws_fortio_bandwidth:
   rules:
-    - if: $ACTION == "test_.regression_test_verify_east_west_traffic_aws_fortio_bandwidth" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test_.regression_test_verify_east_west_traffic_aws_fortio_bandwidth" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_east_west_traffic_aws_fortio_bandwidth" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_east_west_traffic_aws_fortio_bandwidth" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_verify_east_west_traffic_aws_iperf_bandwidth:
   rules:
-    - if: $ACTION == "test_.regression_test_verify_east_west_traffic_aws_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test_.regression_test_verify_east_west_traffic_aws_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_east_west_traffic_aws_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_east_west_traffic_aws_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_verify_east_west_traffic_azure_iperf_bandwidth:
   rules:
-    - if: $ACTION == "test_.regression_test_verify_east_west_traffic_azure_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test_.regression_test_verify_east_west_traffic_azure_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_east_west_traffic_azure_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_east_west_traffic_azure_iperf_bandwidth" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-base: &base
+.base: &base
   tags:
     - kubernetes
   cache:
@@ -126,14 +126,14 @@ rte-aws-client-server-artifacts:
     - !reference [ .regression_test_east_west_traffic_aws_iperf, rules ]
   stage: rte-artifacts
   script:
-    - |
-      #!/usr/bin/env bash
-      echo "CUSTOM SCRIPT"
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/aws
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-      terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
+      - |
+        #!/usr/bin/env bash
+        echo "CUSTOM SCRIPT"
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_ROOT_DIR/aws
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
+        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
@@ -152,17 +152,16 @@ rte-aws-client-server-apply:
   rules:
     - !reference [ .deploy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      echo "CUSTOM SCRIPT"
-    
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-      terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
-      echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER_COMMON_TF_VAR_FILE
+      - |
+        #!/usr/bin/env bash
+        echo "CUSTOM SCRIPT"
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
+        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER_COMMON_TF_VAR_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -184,14 +183,14 @@ rte-aws-client-server1-artifacts:
     - !reference [ .regression_test_east_west_traffic_aws_iperf, rules ]
   stage: rte-artifacts
   script:
-    - |
-      #!/usr/bin/env bash
-      echo "CUSTOM SCRIPT"
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/aws
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-      terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
+      - |
+        #!/usr/bin/env bash
+        echo "CUSTOM SCRIPT"
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_ROOT_DIR/aws
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
+        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
@@ -210,17 +209,16 @@ rte-aws-client-server1-apply:
   rules:
     - !reference [ .deploy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      echo "CUSTOM SCRIPT"
-    
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-      terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
-      echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER1_COMMON_TF_VAR_FILE
+      - |
+        #!/usr/bin/env bash
+        echo "CUSTOM SCRIPT"
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
+        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER1_COMMON_TF_VAR_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -241,14 +239,14 @@ rte-azure-client-server1-artifacts:
     - !reference [ .regression_test_east_west_traffic_azure_iperf, rules ]
   stage: rte-artifacts
   script:
-    - |
-      #!/usr/bin/env bash
-      echo "CUSTOM SCRIPT"
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/azure
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
-      terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
+      - |
+        #!/usr/bin/env bash
+        echo "CUSTOM SCRIPT"
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_ROOT_DIR/azure
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
+        terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
@@ -267,17 +265,16 @@ rte-azure-client-server1-apply:
   rules:
     - !reference [ .deploy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      echo "CUSTOM SCRIPT"
-    
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_AZURE_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
-      terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
-      echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_AZURE_CLIENT_SERVER1_COMMON_TF_VAR_FILE
+      - |
+        #!/usr/bin/env bash
+        echo "CUSTOM SCRIPT"
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_AZURE_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
+        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
+        echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_AZURE_CLIENT_SERVER1_COMMON_TF_VAR_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -296,19 +293,19 @@ eut-apply:
   rules:
     - !reference [ .deploy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $EUT_ROOT_DIR/aws
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/aws" 
-      terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_AWS_CLIENT_SERVER_ARTIFACTS_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
-      terraform output > $EUT_ROOT_DIR/aws/site.tfvars
-      cd $EUT_ROOT_DIR/azure
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/azure" 
-      terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_AZURE_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
-      terraform output > $EUT_ROOT_DIR/azure/site.tfvars
-      cd $EUT_ROOT_DIR/common
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/common"
-      terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_AWS_CLIENT_SERVER_COMMON_TF_VAR_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_COMMON_TF_VAR_FILE -var-file=$RTE_AZURE_CLIENT_SERVER1_COMMON_TF_VAR_FILE -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $EUT_ROOT_DIR/aws
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/aws" 
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_AWS_CLIENT_SERVER_ARTIFACTS_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
+        terraform output > $EUT_ROOT_DIR/aws/site.tfvars
+        cd $EUT_ROOT_DIR/azure
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/azure" 
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_AZURE_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
+        terraform output > $EUT_ROOT_DIR/azure/site.tfvars
+        cd $EUT_ROOT_DIR/common
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/common"
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_AWS_CLIENT_SERVER_COMMON_TF_VAR_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_COMMON_TF_VAR_FILE -var-file=$RTE_AZURE_CLIENT_SERVER1_COMMON_TF_VAR_FILE -auto-approve
   timeout: 1h 30m
   retry:
     max: 1
@@ -323,13 +320,13 @@ regression-test-east-west-traffic-aws-fortio:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .regression_test_east_west_traffic_aws_fortio, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-fortio
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-aws-fortio"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-fortio
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-aws-fortio"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -344,13 +341,13 @@ regression-test-east-west-traffic-aws-iperf:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .regression_test_east_west_traffic_aws_iperf, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-iperf
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-aws-iperf"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-iperf
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-aws-iperf"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -365,13 +362,13 @@ regression-test-east-west-traffic-azure-iperf:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .regression_test_east_west_traffic_azure_iperf, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-azure-iperf
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-azure-iperf"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-azure-iperf
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/tests/east-west-traffic-azure-iperf"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -386,13 +383,13 @@ regression-test-verify-east-west-traffic-aws-fortio-bandwidth:
   rules:
     - !reference [ .regression_test_verify_rules, rules ]
     - !reference [ .regression_test_verify_east_west_traffic_aws_fortio_bandwidth, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-aws-fortio
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/aws/client_server/regression/verification/east-west-traffic-aws-fortio"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-aws-fortio
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/aws/client_server/regression/verification/east-west-traffic-aws-fortio"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -407,13 +404,13 @@ regression-test-verify-east-west-traffic-aws-iperf-bandwidth:
   rules:
     - !reference [ .regression_test_verify_rules, rules ]
     - !reference [ .regression_test_verify_east_west_traffic_aws_iperf_bandwidth, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-aws-iperf
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/aws/client_server1/regression/verification/east-west-traffic-aws-iperf"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-aws-iperf
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/aws/client_server1/regression/verification/east-west-traffic-aws-iperf"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -428,13 +425,13 @@ regression-test-verify-east-west-traffic-azure-iperf-bandwidth:
   rules:
     - !reference [ .regression_test_verify_rules, rules ]
     - !reference [ .regression_test_verify_east_west_traffic_azure_iperf_bandwidth, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-azure-iperf
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/azure/client_server1/regression/verification/east-west-traffic-azure-iperf"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/verification/east-west-traffic-azure-iperf
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/azure/client_server1/regression/verification/east-west-traffic-azure-iperf"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -479,11 +476,11 @@ rte-aws-client-server-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-      terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
+        terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -499,11 +496,11 @@ rte-aws-client-server1-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-      terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
+        terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -519,11 +516,11 @@ rte-azure-client-server1-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_AZURE_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
-      terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_AZURE_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
+        terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
     max: 1

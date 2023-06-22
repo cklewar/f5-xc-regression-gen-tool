@@ -46,12 +46,12 @@ variables:
 {% for verification in tm.verifications %}
 .regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
   rules:
-    - if: $ACTION == "test_.regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test_.regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
 {% endfor %}
-base: &base
+.base: &base
   tags:
     - kubernetes
   cache:
@@ -92,18 +92,18 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
     {%- endfor %}
   stage: rte-artifacts
   script:
-    {% for script in rte.scripts -%}
-    {% if script.name == 'artifacts' -%}
-    {% for line in script.value -%}
-    {{ line }}
-    {% endfor -%}
-    {% endif -%}
-    {% endfor -%}
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/{{ provider }}
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
-      terraform output > $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
+      {% for script in rte.scripts -%}
+      {% if script.name == 'artifacts' -%}
+      {% for line in script.value -%}
+      {{ line }}
+      {% endfor -%}
+      {% endif -%}
+      {% endfor -%}
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_ROOT_DIR/{{ provider }}
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
+        terraform output > $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
@@ -122,20 +122,20 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
   rules:
     - !reference [ .deploy_rules, rules ]
   script:
-    {% for script in rte.scripts -%}
-    {% if script.name == 'apply' -%}
-    {% for line in script.value -%}
-    {{ line }}
-    {% endfor -%}
-    {% endif -%}
-    {% endfor %}
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_{{ provider | upper }}_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
-      terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
-      echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE
+      {% for script in rte.scripts -%}
+      {% if script.name == 'apply' -%}
+      {% for line in script.value -%}
+      {{ line }}
+      {% endfor -%}
+      {% endif -%}
+      {% endfor -%}
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_{{ provider | upper }}_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
+        terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
+        echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -155,17 +155,17 @@ eut-apply:
   rules:
     - !reference [ .deploy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      {% for provider, values in providers -%}
-      cd $EUT_ROOT_DIR/{{ provider }}
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/{{ provider }}" 
-      terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
-      terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
-      {% endfor -%}
-      cd $EUT_ROOT_DIR/common
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/common"
-      terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %} {% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE {% endfor %}{% endfor %}-auto-approve
+      - |
+        #!/usr/bin/env bash
+        {% for provider, values in providers -%}
+        cd $EUT_ROOT_DIR/{{ provider }}
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/{{ provider }}" 
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
+        terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
+        {% endfor -%}
+        cd $EUT_ROOT_DIR/common
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/common"
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %} {% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE {% endfor %}{% endfor %}-auto-approve
   timeout: 1h 30m
   retry:
     max: 1
@@ -181,13 +181,13 @@ regression-test-{{ test.name }}:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .regression_test_{{ test.name | replace(from="-", to="_") }}, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.name }}
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.tests.path }}/{{ test.name }}"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.name }}
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.tests.path }}/{{ test.name }}"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -206,13 +206,13 @@ regression-test-verify-{{ test.name }}-{{ verification.name }}:
   rules:
     - !reference [ .regression_test_verify_rules, rules ]
     - !reference [ .regression_test_verify_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
-  stage: regression-test-run
+  stage: regression-test
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.name }}
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ provider }}/{{ test.rte.name }}/{{ rc.verifications.path }}/{{ test.name }}"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.name }}
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ provider }}/{{ test.rte.name }}/{{ rc.verifications.path }}/{{ test.name }}"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -257,11 +257,11 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
   script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_{{ provider | upper }}_CLIENT_SERVER_ROOT_DIR
-      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
-      terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_{{ provider | upper }}_CLIENT_SERVER_ROOT_DIR
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
+        terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
     max: 1
