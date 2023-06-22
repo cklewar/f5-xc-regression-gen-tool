@@ -8,10 +8,10 @@ variables:
   {% endfor -%}
   {% for provider, tmvc in providers -%}
   {% for rte in tmvc.rtes -%}
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR: "{$RTE_ROOT_DIR}/{{ rte.name }}"
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_TF_VAR_FILE:  "{$RTE_ROOT_DIR}/{{ rte.name }}/terraform.tfvars.json"
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/rte_{{ rte.name }}_common.tfvars.json"
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/{{ provider }}/{{ rte.name }}/artifacts.tfvars"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR: "$RTE_ROOT_DIR/{{ rte.name }}"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/{{ rte.name }}/terraform.tfvars.json"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_{{ rte.name }}_common.tfvars.json"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars"
   {% endfor -%}
   {% endfor %}
 .deploy_rules:
