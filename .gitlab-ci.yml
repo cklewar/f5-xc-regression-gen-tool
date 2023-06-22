@@ -89,7 +89,7 @@ variables:
 
 .base: &base
   tags:
-    - default
+    - gke
   cache:
     policy: pull
     key: "${CI_COMMIT_SHA}"
