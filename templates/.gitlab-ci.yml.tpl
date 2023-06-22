@@ -41,6 +41,16 @@ variables:
     - if: $ACTION == "test_{{ tm.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor %}
+{% for provider, values in providers -%}
+{% for tm in values.tmvc -%}
+{% for verification in tm.verifications -%}
+.regression_test_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
+  rules:
+    - if: $ACTION == "test_.regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test_.regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% endfor -%}
+{% endfor %}
 base: &base
   tags:
     - kubernetes
@@ -155,7 +165,7 @@ eut-apply:
       {% endfor -%}
       cd $EUT_ROOT_DIR/common
       terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/common"
-      terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers -%}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor -%} {% for provider, values in providers -%}{% for rte in values.rtes -%}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE {% endfor -%} {% endfor -%} -auto-approve
+      terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %} {% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE {% endfor %}{% endfor %}-auto-approve
   timeout: 1h 30m
   retry:
     max: 1
@@ -165,7 +175,7 @@ eut-apply:
       - runner_system_failure
 {% for provider, values in providers -%}
 {% for test in values.tmvc %}
-# test - {{ provider }} - {{ test.module | replace(from="_", to="-")}} - {{ test.rte.name  | replace(from="_", to="-") }} - run
+# test - {{ provider }} - {{ test.module | replace(from="_", to="-")}} - {{ test.rte.name  | replace(from="_", to="-") }} - apply
 regression-test-{{ test.name }}:
   <<: *base
   rules:
@@ -177,13 +187,40 @@ regression-test-{{ test.name }}:
       #!/usr/bin/env bash
       cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.name }}
       terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.tests.path }}/{{ test.name }}"
-      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.rte.name }}.tfvars -auto-approve
+      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
+  timeout: 30m
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+{% endfor -%}
+{% endfor -%}
+{% for provider, values in providers -%}
+{% for test in values.tmvc -%}
+{% for verification in test.verifications %}
+# verify - {{ provider }} - {{ test.module | replace(from="_", to="-")}} - {{ test.rte.name  | replace(from="_", to="-") }} - {{ verification.name | replace(from="_", to="-") }} - apply
+regression-test-verify-{{ test.name }}-{{ verification.name }}:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_verify_rules, rules ]
+    - !reference [ .regression_test_verify_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
+  stage: regression-test-run
+  script:
+    - |
+      #!/usr/bin/env bash
+      cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.name }}
+      terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ provider }}/{{ test.rte.name }}/{{ rc.verifications.path }}/{{ test.name }}"
+      terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
+  timeout: 30m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
 {% endfor -%}
 {% endfor %}
 # eut - destroy
@@ -203,7 +240,7 @@ eut-destroy:
          terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/{{ provider }}" 
          terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
          terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
-         {% endfor -%}
+         {% endfor %}
   timeout: 1h 30m
   retry:
     max: 1
