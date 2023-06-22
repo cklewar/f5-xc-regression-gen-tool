@@ -131,7 +131,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       {% endfor -%}
       - |
         #!/usr/bin/env bash
-        cd $RTE_{{ provider | upper }}_CLIENT_SERVER_ROOT_DIR
+        cd $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
