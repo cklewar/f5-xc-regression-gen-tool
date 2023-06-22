@@ -17,6 +17,18 @@ struct Cli {
     /// Regression configuration file
     #[arg(short, long)]
     config: String,
+    /// Write CI pipeline file
+    #[arg(short, long)]
+    write: bool,
+    /// Write CI pipeline file
+    #[arg(short, long)]
+    json: bool,
+    /// Render CI pipline file
+    #[arg(short, long)]
+    render: bool,
+    /// Debug internal data structure
+    #[arg(short, long)]
+    debug: bool,
 }
 
 pub mod regression {
@@ -288,7 +300,7 @@ pub mod regression {
             ci_stages.push(stage.clone())
         }
         for (_k, v) in &mut eps.iter() {
-            for tm in v.tmvc.iter(){
+            for tm in v.tmvc.iter() {
                 ci_stages.push(format!("regression-test-{}", tm.name.clone()));
             }
         }
@@ -305,9 +317,21 @@ pub mod regression {
 fn main() -> Result<(), std::io::Error> {
     let cli = Cli::parse();
     let e = regression::new(cli.config);
-    // println!("{:#?}", e);
-    // println!("{}", e.to_json());
-    // println!("{}", e.render());
-    e.to_file(String::from(".gitlab-ci.yml"));
+
+    if cli.write {
+        e.to_file(String::from(".gitlab-ci.yml"));
+    }
+    if cli.json {
+        e.to_json();
+        println!("{}", e.to_json());
+    }
+    if cli.render {
+        println!("{}", e.render());
+    }
+
+    if cli.debug {
+        println!("{:#?}", e);
+    }
+
     Ok(())
 }
