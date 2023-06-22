@@ -14,7 +14,7 @@ variables:
   RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/{{ provider }}/{{ rte.name }}/artifacts.tfvars"
   {% endfor -%}
   {% endfor %}
-deploy_rules:
+.deploy_rules:
   rules:
     - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
