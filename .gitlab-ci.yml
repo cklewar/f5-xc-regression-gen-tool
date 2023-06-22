@@ -216,7 +216,7 @@ rte-aws-client-server1-apply:
       - |
         #!/usr/bin/env bash
         echo "CUSTOM SCRIPT"
-        echo $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
+        echo $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
         echo pwd
         ls -la
       - |
@@ -278,7 +278,7 @@ rte-azure-client-server1-apply:
       - |
         #!/usr/bin/env bash
         echo "CUSTOM SCRIPT"
-        echo $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
+        echo $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
         echo pwd
         ls -la
       - |
