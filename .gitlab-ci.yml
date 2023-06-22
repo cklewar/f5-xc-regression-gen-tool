@@ -24,18 +24,18 @@ variables:
   P12_FILE: "acmecorp.console.ves.volterra.io.api-creds.p12"
   P12_FILE_PATH: "s3://acmecorp-model/production/volterra"
   GIT_SUBMODULE_STRATEGY: "recursive"
-  RTE_AWS_CLIENT_SERVER_ROOT_DIR: "$RTE_ROOT_DIR/client_server"
-  RTE_AWS_CLIENT_SERVER_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server/terraform.tfvars.json"
-  RTE_AWS_CLIENT_SERVER_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server_common.tfvars.json"
-  RTE_AWS_CLIENT_SERVER_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars"
-  RTE_AWS_CLIENT_SERVER1_ROOT_DIR: "$RTE_ROOT_DIR/client_server1"
-  RTE_AWS_CLIENT_SERVER1_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
-  RTE_AWS_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_common.tfvars.json"
-  RTE_AWS_CLIENT_SERVER1_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars"
-  RTE_AZURE_CLIENT_SERVER1_ROOT_DIR: "$RTE_ROOT_DIR/client_server1"
-  RTE_AZURE_CLIENT_SERVER1_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
-  RTE_AZURE_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_common.tfvars.json"
-  RTE_AZURE_CLIENT_SERVER1_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars"
+  RTE_CLIENT_SERVER_AWS_ROOT_DIR: "$RTE_ROOT_DIR/client_server/aws"
+  RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server/terraform.tfvars.json"
+  RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server_common.tfvars.json"
+  RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/client_server/aws/artifacts.tfvars"
+  RTE_CLIENT_SERVER1_AWS_ROOT_DIR: "$RTE_ROOT_DIR/client_server1/aws"
+  RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
+  RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_common.tfvars.json"
+  RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/client_server1/aws/artifacts.tfvars"
+  RTE_CLIENT_SERVER1_AZURE_ROOT_DIR: "$RTE_ROOT_DIR/client_server1/azure"
+  RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
+  RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_common.tfvars.json"
+  RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/client_server1/azure/artifacts.tfvars"
   
 .deploy_rules:
   rules:
@@ -134,7 +134,7 @@ rte-aws-client-server-artifacts:
         #!/usr/bin/env bash
         cd $RTE_ROOT_DIR/client_server
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
+        terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
@@ -161,10 +161,10 @@ rte-aws-client-server-apply:
         echo $RTE_AWS_CLIENT_SERVER_ROOT_DIR
         pwd
         ls -la
-        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR/
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
+        terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER_COMMON_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -194,7 +194,7 @@ rte-aws-client-server1-artifacts:
         #!/usr/bin/env bash
         cd $RTE_ROOT_DIR/client_server1
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
+        terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
@@ -221,10 +221,10 @@ rte-aws-client-server1-apply:
         echo $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
         pwd
         ls -la
-        cd $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
+        cd $RTE_AWS_CLIENT_SERVER1_ROOT_DIR/
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
+        terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -253,7 +253,7 @@ rte-azure-client-server1-artifacts:
         #!/usr/bin/env bash
         cd $RTE_ROOT_DIR/client_server1
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
-        terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
+        terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
@@ -280,10 +280,10 @@ rte-azure-client-server1-apply:
         echo $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
         pwd
         ls -la
-        cd $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
+        cd $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR/
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
+        terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
         echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_AZURE_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -307,15 +307,15 @@ eut-apply:
         #!/usr/bin/env bash
         cd $EUT_ROOT_DIR/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/aws" 
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_AWS_CLIENT_SERVER_ARTIFACTS_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/aws/site.tfvars
         cd $EUT_ROOT_DIR/azure
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/azure" 
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_AZURE_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/azure/site.tfvars
         cd $EUT_ROOT_DIR/common
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/common"
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_AWS_CLIENT_SERVER_COMMON_ARTIFACTS_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE -var-file=$RTE_AZURE_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE -auto-approve
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE -auto-approve
   timeout: 1h 30m
   retry:
     max: 1
