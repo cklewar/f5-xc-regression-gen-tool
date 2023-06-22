@@ -161,7 +161,6 @@ rte-aws-client-server-apply:
         echo $RTE_AWS_CLIENT_SERVER_ROOT_DIR
         echo pwd
         ls -la
-        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
@@ -217,12 +216,14 @@ rte-aws-client-server1-apply:
       - |
         #!/usr/bin/env bash
         echo "CUSTOM SCRIPT"
+        echo $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
+        echo pwd
+        ls -la
       - |
         #!/usr/bin/env bash
         echo $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
         echo pwd
         ls -la
-        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
@@ -277,12 +278,14 @@ rte-azure-client-server1-apply:
       - |
         #!/usr/bin/env bash
         echo "CUSTOM SCRIPT"
+        echo $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
+        echo pwd
+        ls -la
       - |
         #!/usr/bin/env bash
         echo $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
         echo pwd
         ls -la
-        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve

@@ -136,7 +136,6 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         echo $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
         echo pwd
         ls -la
-        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
