@@ -134,7 +134,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - |
         #!/usr/bin/env bash
         echo $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
-        echo pwd
+        pwd
         ls -la
         cd $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
