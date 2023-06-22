@@ -137,6 +137,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         pwd
         ls -la
         echo $RTE_{{ rte.name }}_{{ provider }}_ROOT_TF_VAR_FILE
+        ls -la $RTE_{{ rte.name }}_{{ provider }}_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name }}_{{ provider }}_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
