@@ -24,16 +24,16 @@ variables:
   P12_FILE: "acmecorp.console.ves.volterra.io.api-creds.p12"
   P12_FILE_PATH: "s3://acmecorp-model/production/volterra"
   GIT_SUBMODULE_STRATEGY: "recursive"
-  RTE_AWS_CLIENT_SERVER_ROOT_DIR: "$RTE_ROOT_DIR/client_server"
-  RTE_AWS_CLIENT_SERVER_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server/terraform.tfvars.json"
+  RTE_AWS_CLIENT_SERVER_ROOT_DIR: "{$RTE_ROOT_DIR}/client_server"
+  RTE_AWS_CLIENT_SERVER_ROOT_TF_VAR_FILE:  "{$RTE_ROOT_DIR}/client_server/terraform.tfvars.json"
   RTE_AWS_CLIENT_SERVER_COMMON_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/rte_client_server_common.tfvars.json"
   RTE_AWS_CLIENT_SERVER_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/aws/client_server/artifacts.tfvars"
-  RTE_AWS_CLIENT_SERVER1_ROOT_DIR: "$RTE_ROOT_DIR/client_server1"
-  RTE_AWS_CLIENT_SERVER1_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
+  RTE_AWS_CLIENT_SERVER1_ROOT_DIR: "{$RTE_ROOT_DIR}/client_server1"
+  RTE_AWS_CLIENT_SERVER1_ROOT_TF_VAR_FILE:  "{$RTE_ROOT_DIR}/client_server1/terraform.tfvars.json"
   RTE_AWS_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/rte_client_server1_common.tfvars.json"
   RTE_AWS_CLIENT_SERVER1_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/aws/client_server1/artifacts.tfvars"
-  RTE_AZURE_CLIENT_SERVER1_ROOT_DIR: "$RTE_ROOT_DIR/client_server1"
-  RTE_AZURE_CLIENT_SERVER1_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
+  RTE_AZURE_CLIENT_SERVER1_ROOT_DIR: "{$RTE_ROOT_DIR}/client_server1"
+  RTE_AZURE_CLIENT_SERVER1_ROOT_TF_VAR_FILE:  "{$RTE_ROOT_DIR}/client_server1/terraform.tfvars.json"
   RTE_AZURE_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/rte_client_server1_common.tfvars.json"
   RTE_AZURE_CLIENT_SERVER1_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/azure/client_server1/artifacts.tfvars"
   
@@ -158,6 +158,10 @@ rte-aws-client-server-apply:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
+        echo $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        echo pwd
+        ls -la
+        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
@@ -215,6 +219,10 @@ rte-aws-client-server1-apply:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
+        echo $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
+        echo pwd
+        ls -la
+        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
@@ -271,6 +279,10 @@ rte-azure-client-server1-apply:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
+        echo $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
+        echo pwd
+        ls -la
+        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve

@@ -8,8 +8,8 @@ variables:
   {% endfor -%}
   {% for provider, tmvc in providers -%}
   {% for rte in tmvc.rtes -%}
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR: "$RTE_ROOT_DIR/{{ rte.name }}"
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/{{ rte.name }}/terraform.tfvars.json"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR: "{$RTE_ROOT_DIR}/{{ rte.name }}"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_TF_VAR_FILE:  "{$RTE_ROOT_DIR}/{{ rte.name }}/terraform.tfvars.json"
   RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/rte_{{ rte.name }}_common.tfvars.json"
   RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/{{ provider }}/{{ rte.name }}/artifacts.tfvars"
   {% endfor -%}
@@ -133,6 +133,10 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       {% endfor -%}
       - |
         #!/usr/bin/env bash
+        echo $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
+        echo pwd
+        ls -la
+        RTE_AWS_CLIENT_SERVER_ROOT_DIR
         cd $RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
