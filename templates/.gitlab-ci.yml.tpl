@@ -55,7 +55,7 @@ variables:
   tags:
     {% for tag in rc.ci.tags -%}
     - {{ tag }}
-    {%- endfor %}
+    {% endfor %}
   cache:
     policy: pull
     key: "${CI_COMMIT_SHA}"
