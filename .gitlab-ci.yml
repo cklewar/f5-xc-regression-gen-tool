@@ -159,10 +159,8 @@ rte-aws-client-server-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
-        pwd
-        ls -la
-        echo $RTE_client_server_aws_ROOT_TF_VAR_FILE
-        ls -la $RTE_client_server_aws_ROOT_TF_VAR_FILE
+        echo $RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE
+        ls -la $RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
         terraform apply -var-file=$RTE_client_server_aws_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
@@ -220,10 +218,8 @@ rte-aws-client-server1-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        pwd
-        ls -la
-        echo $RTE_client_server1_aws_ROOT_TF_VAR_FILE
-        ls -la $RTE_client_server1_aws_ROOT_TF_VAR_FILE
+        echo $RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE
+        ls -la $RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
         terraform apply -var-file=$RTE_client_server1_aws_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
@@ -280,10 +276,8 @@ rte-azure-client-server1-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
-        pwd
-        ls -la
-        echo $RTE_client_server1_azure_ROOT_TF_VAR_FILE
-        ls -la $RTE_client_server1_azure_ROOT_TF_VAR_FILE
+        echo $RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE
+        ls -la $RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
         terraform apply -var-file=$RTE_client_server1_azure_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
