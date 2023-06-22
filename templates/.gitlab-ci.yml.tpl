@@ -40,11 +40,11 @@ variables:
     - if: $ACTION == "test_{{ tm.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test_{{ tm.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
-{% endfor %}
+{% endfor -%}
 {% for provider, values in providers -%}
 {% for tm in values.tmvc -%}
-{% for verification in tm.verifications -%}
-.regression_test_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
+{% for verification in tm.verifications %}
+.regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
   rules:
     - if: $ACTION == "test_.regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test_.regression_test_verify_{{ tm.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
