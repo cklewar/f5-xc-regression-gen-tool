@@ -9,9 +9,9 @@ stages:
   - eut-apply
   - eut-destroy
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -26,14 +26,17 @@ variables:
   GIT_SUBMODULE_STRATEGY: "recursive"
   RTE_CLIENT_SERVER_AWS_ROOT_DIR: "$RTE_ROOT_DIR/client_server/aws"
   RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server/terraform.tfvars.json"
+  RTE_CLIENT_SERVER_AWS_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server/aws/terraform.tfvars.json"
   RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server_common.tfvars.json"
   RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/client_server/aws/artifacts.tfvars"
   RTE_CLIENT_SERVER1_AWS_ROOT_DIR: "$RTE_ROOT_DIR/client_server1/aws"
   RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
+  RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/aws/terraform.tfvars.json"
   RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_common.tfvars.json"
   RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/client_server1/aws/artifacts.tfvars"
   RTE_CLIENT_SERVER1_AZURE_ROOT_DIR: "$RTE_ROOT_DIR/client_server1/azure"
   RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/terraform.tfvars.json"
+  RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/azure/terraform.tfvars.json"
   RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_common.tfvars.json"
   RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/client_server1/azure/artifacts.tfvars"
   
@@ -132,7 +135,7 @@ rte-aws-client-server-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/client_server
+        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
   artifacts:
@@ -159,10 +162,8 @@ rte-aws-client-server-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
-        echo $RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE
-        ls -la $RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
-        terraform apply -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -auto-approve
+        terraform apply -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER_COMMON_ARTIFACTS_FILE
   artifacts:
@@ -191,7 +192,7 @@ rte-aws-client-server1-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/client_server1
+        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
   artifacts:
@@ -218,10 +219,8 @@ rte-aws-client-server1-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        echo $RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE
-        ls -la $RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
-        terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -auto-approve
+        terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_AWS_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE
   artifacts:
@@ -249,7 +248,7 @@ rte-azure-client-server1-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/client_server1
+        cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
   artifacts:
@@ -276,10 +275,8 @@ rte-azure-client-server1-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
-        echo $RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE
-        ls -la $RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
-        terraform apply -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -auto-approve
+        terraform apply -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE -auto-approve
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
         echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_AZURE_CLIENT_SERVER1_COMMON_ARTIFACTS_FILE
   artifacts:

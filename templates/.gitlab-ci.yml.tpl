@@ -10,6 +10,7 @@ variables:
   {% for rte in tmvc.rtes -%}
   RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR: "$RTE_ROOT_DIR/{{ rte.name }}/{{ provider }}"
   RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/{{ rte.name }}/terraform.tfvars.json"
+  RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE:  "$RTE_ROOT_DIR/{{ rte.name }}/{{ provider }}/terraform.tfvars.json"
   RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_{{ rte.name }}_common.tfvars.json"
   RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}/artifacts.tfvars"
   {% endfor -%}
@@ -103,7 +104,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
       {% endfor -%}
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/{{ rte.name }}
+        cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
   artifacts:
@@ -134,10 +135,8 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        echo $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE
-        ls -la $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
-        terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -auto-approve
+        terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE
   artifacts:
