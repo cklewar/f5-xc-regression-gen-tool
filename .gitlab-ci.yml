@@ -9,9 +9,9 @@ stages:
   - eut-apply
   - eut-destroy
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -89,7 +89,7 @@ variables:
 
 .base: &base
   tags:
-    - kubernetes
+    - default
   cache:
     policy: pull
     key: "${CI_COMMIT_SHA}"
@@ -214,7 +214,7 @@ rte-aws-client-server1-apply:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        cd $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
@@ -270,7 +270,7 @@ rte-azure-client-server1-apply:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_AZURE_CLIENT_SERVER_ROOT_DIR
+        cd $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars

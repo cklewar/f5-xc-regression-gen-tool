@@ -53,7 +53,9 @@ variables:
 {% endfor %}
 .base: &base
   tags:
-    - kubernetes
+    {% for tag in rc.ci.tags -%}
+    - {{ tag }}
+    {%- endfor %}
   cache:
     policy: pull
     key: "${CI_COMMIT_SHA}"
