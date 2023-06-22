@@ -9,9 +9,9 @@ stages:
   - eut-apply
   - eut-destroy
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -131,7 +131,7 @@ rte-aws-client-server-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/aws
+        cd $RTE_ROOT_DIR/client_server
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
   artifacts:
@@ -188,7 +188,7 @@ rte-aws-client-server1-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/aws
+        cd $RTE_ROOT_DIR/client_server1
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform output > $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
   artifacts:
@@ -244,7 +244,7 @@ rte-azure-client-server1-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/azure
+        cd $RTE_ROOT_DIR/client_server1
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
         terraform output > $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
   artifacts:

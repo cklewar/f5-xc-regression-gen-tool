@@ -101,7 +101,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
       {% endfor -%}
       - |
         #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/{{ provider }}
+        cd $RTE_ROOT_DIR/{{ rte.name }}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
         terraform output > $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
   artifacts:
