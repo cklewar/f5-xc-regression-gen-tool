@@ -8,9 +8,9 @@ variables:
   {% endfor -%}
   {% for provider, tmvc in providers -%}
   {% for rte in tmvc.rtes -%}
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR: "${CI_PROJECT_DIR}/{{ rc.rte.path }}/{{ rte.name }}"
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_TF_VAR_FILE: "${RTE_{{ rte.name | upper }}_ROOT_DIR}/terraform.tfvars.json"
-  RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE: "${ARTIFACTS_ROOT_DIR}/rte_{{ rte.name }}_common.tfvars.json"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_DIR: "$RTE_ROOT_DIR/{{ rte.name }}"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/{{ rte.name }}/terraform.tfvars.json"
+  RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/rte_{{ rte.name }}_common.tfvars.json"
   RTE_{{ provider | upper }}_{{ rte.name | upper }}_ARTIFACTS_FILE: "${ARTIFACTS_ROOT_DIR}/{{ provider }}/{{ rte.name }}/artifacts.tfvars"
   {% endfor -%}
   {% endfor %}
@@ -137,7 +137,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
         terraform apply -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
-        echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE
+        echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -167,7 +167,7 @@ eut-apply:
         {% endfor -%}
         cd $EUT_ROOT_DIR/common
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/sites/common"
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %} {% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_TF_VAR_FILE {% endfor %}{% endfor %}-auto-approve
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %} {% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ provider | upper }}_{{ rte.name | upper }}_COMMON_ARTIFACTS_FILE {% endfor %}{% endfor %}-auto-approve
   timeout: 1h 30m
   retry:
     max: 1
