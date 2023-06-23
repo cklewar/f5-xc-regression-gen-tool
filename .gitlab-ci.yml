@@ -318,19 +318,29 @@ eut-apply:
         #!/usr/bin/env bash
         cd $EUT_ROOT_DIR/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/aws"
-        ls -laR &ARTIFACTS_ROOT_DIR
+        echo $ARTIFACTS_ROOT_DIR
+        ls -laR $ARTIFACTS_ROOT_DIR
+        echo $EUT_ROOT_TF_VAR_FILE
         ls -la $EUT_ROOT_TF_VAR_FILE
+        echo $EUT_ROOT_DIR/aws/terraform.tfvars.json
         ls -la $EUT_ROOT_DIR/aws/terraform.tfvars.json
+        echo $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         ls -la $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
+        echo $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         ls -la $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/aws/site.tfvars
         cd $EUT_ROOT_DIR/azure
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/azure"
-        ls -laR &ARTIFACTS_ROOT_DIR
+        echo $ARTIFACTS_ROOT_DIR
+        ls -laR $ARTIFACTS_ROOT_DIR
+        echo $EUT_ROOT_TF_VAR_FILE
         ls -la $EUT_ROOT_TF_VAR_FILE
+        echo $EUT_ROOT_DIR/aws/terraform.tfvars.json
         ls -la $EUT_ROOT_DIR/aws/terraform.tfvars.json
+        echo $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         ls -la $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
+        echo $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         ls -la $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/azure/site.tfvars
