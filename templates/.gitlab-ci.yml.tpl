@@ -73,8 +73,6 @@ variables:
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
       aws s3 cp $P12_FILE_PATH/$P12_FILE $KEYS_DIR
-      ls -la $KEYS_DIR
-      
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/${P12_FILE}"
       if [ "$ENVIRONMENT" == "production" ]; then
         export TF_VAR_f5xc_api_token=$PRODUCTION_API_TOKEN  
@@ -141,12 +139,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        echo $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
-        ls -laR $ARTIFACTS_ROOT_DIR
-        echo "Hello World" > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
-        ls -la $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
-        ls -la $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -172,17 +165,10 @@ eut-apply:
         #!/usr/bin/env bash
         {% for provider, values in providers -%}
         cd $EUT_ROOT_DIR/{{ provider }}
+        {% if provider == "azure" -%}
+        az vm image accept-terms --urn volterraedgeservices:volterra-node:volterra-node:latest
+        {% endif -%}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}"
-        echo $ARTIFACTS_ROOT_DIR
-        ls -laR $ARTIFACTS_ROOT_DIR
-        echo $EUT_ROOT_TF_VAR_FILE
-        ls -la $EUT_ROOT_TF_VAR_FILE
-        echo $EUT_ROOT_DIR/aws/terraform.tfvars.json
-        ls -la $EUT_ROOT_DIR/aws/terraform.tfvars.json
-        echo $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
-        ls -la $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
-        echo $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
-        ls -la $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
