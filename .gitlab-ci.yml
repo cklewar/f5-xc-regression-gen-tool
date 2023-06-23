@@ -9,9 +9,9 @@ stages:
   - eut-apply
   - eut-destroy
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -171,7 +171,7 @@ rte-aws-client-server-apply:
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
         terraform apply -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
-        ls -la $ARTIFACTS_ROOT_DIR/client_server/aws
+        echo $$RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/client_server/aws
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE
@@ -233,7 +233,7 @@ rte-aws-client-server1-apply:
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
         terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
-        ls -la $ARTIFACTS_ROOT_DIR/client_server1/aws
+        echo $$RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/client_server1/aws
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE
@@ -294,7 +294,7 @@ rte-azure-client-server1-apply:
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
         terraform apply -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
-        ls -la $ARTIFACTS_ROOT_DIR/client_server1/azure
+        echo $$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/client_server1/azure
         echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE

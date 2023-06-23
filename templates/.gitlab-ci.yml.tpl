@@ -141,7 +141,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        ls -la $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
+        echo $$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE
