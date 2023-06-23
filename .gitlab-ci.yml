@@ -173,6 +173,8 @@ rte-aws-client-server-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
         echo $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         ls -laR $ARTIFACTS_ROOT_DIR
+        echo "Hello World" > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
+        ls -la $ARTIFACTS_ROOT_DIR/client_server/aws
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/client_server/aws
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE
@@ -236,6 +238,8 @@ rte-aws-client-server1-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
         echo $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         ls -laR $ARTIFACTS_ROOT_DIR
+        echo "Hello World" > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
+        ls -la $ARTIFACTS_ROOT_DIR/client_server1/aws
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/client_server1/aws
         echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE
@@ -298,6 +302,8 @@ rte-azure-client-server1-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
         echo $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
         ls -laR $ARTIFACTS_ROOT_DIR
+        echo "Hello World" > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
+        ls -la $ARTIFACTS_ROOT_DIR/client_server1/azure
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/client_server1/azure
         echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE

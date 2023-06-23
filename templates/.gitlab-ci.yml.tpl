@@ -143,6 +143,8 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         echo $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         ls -laR $ARTIFACTS_ROOT_DIR
+        echo "Hello World" > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
+        ls -la $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE
