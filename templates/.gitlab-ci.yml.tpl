@@ -65,13 +65,13 @@ variables:
     TF_VAR_feature: $FEATURE
     TF_VAR_environment: $ENVIRONMENT
     TF_VAR_gcp_project_id: $GCP_PROJECT_ID
-    TF_VAR_ssh_private_key_file: $RTE_SSH_PRIVATE_KEY_FILE
-    TF_VAR_ssh_public_key_file: $RTE_SSH_PUBLIC_KEY_FILE
+    TF_VAR_ssh_private_key_file: ${CI_PROJECT_DIR}/$SSH_PRIVATE_KEY_FILE
+    TF_VAR_ssh_public_key_file: ${CI_PROJECT_DIR}/$SSH_PUBLIC_KEY_FILE
   before_script:
     - |
       #!/usr/bin/env bash
-      aws s3 cp ${SSH_PUBLIC_KEY_FILE} /
-      aws s3 cp ${SSH_PRIVATE_KEY_FILE} /
+      aws s3 cp ${SSH_PUBLIC_KEY_FILE_PATH}/${SSH_PUBLIC_KEY_FILE} /
+      aws s3 cp ${SSH_PRIVATE_KEY_FILE_PATH}/${SSH_PRIVATE_KEY_FILE} /
       export TF_VAR_f5xc_api_p12_file="/${P12_FILE}"
       aws s3 cp "${P12_FILE_PATH}/${P12_FILE}" /
       if [ "$ENVIRONMENT" == "production" ]; then
