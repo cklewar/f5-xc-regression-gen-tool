@@ -74,6 +74,7 @@ variables:
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE /
       pwd
       ls -la
+      ls -la /
       export TF_VAR_f5xc_api_p12_file="/${P12_FILE}"
       aws s3 cp "${P12_FILE_PATH}/${P12_FILE}" /
       if [ "$ENVIRONMENT" == "production" ]; then
