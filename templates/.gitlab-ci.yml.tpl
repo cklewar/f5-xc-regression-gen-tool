@@ -72,11 +72,10 @@ variables:
       #!/usr/bin/env bash
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
-      
+      aws s3 cp $P12_FILE_PATH}/$P12_FILE $KEYS_DIR
       ls -la $KEYS_DIR
       
-      export TF_VAR_f5xc_api_p12_file="/${P12_FILE}"
-      aws s3 cp "${P12_FILE_PATH}/${P12_FILE}" /
+      export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/${P12_FILE}"
       if [ "$ENVIRONMENT" == "production" ]; then
         export TF_VAR_f5xc_api_token=$PRODUCTION_API_TOKEN  
       elif [ "$ENVIRONMENT" == "staging" ]; then
