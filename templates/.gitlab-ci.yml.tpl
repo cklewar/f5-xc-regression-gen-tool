@@ -142,6 +142,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         echo $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
+        ls -laR $ARTIFACTS_ROOT_DIR
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         ls -la $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE
