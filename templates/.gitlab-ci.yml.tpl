@@ -12,7 +12,7 @@ variables:
   RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE:  "$RTE_ROOT_DIR/{{ rte.name }}/terraform.tfvars.json"
   RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE:  "$RTE_ROOT_DIR/{{ rte.name }}/{{ provider }}/terraform.tfvars.json"
   RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_{{ rte.name }}_common.tfvars.json"
-  RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE: "/artifacts.tfvars"
+  RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_{{ rte.name }}/{{ provider }}/artifacts.tfvars"
   {% endfor -%}
   {% endfor %}
 .deploy_rules:
