@@ -70,8 +70,8 @@ variables:
   before_script:
     - |
       #!/usr/bin/env bash
-      aws s3 cp ${SSH_PUBLIC_KEY_FILE_PATH}/${SSH_PUBLIC_KEY_FILE} /
-      aws s3 cp ${SSH_PRIVATE_KEY_FILE_PATH}/${SSH_PRIVATE_KEY_FILE} /
+      aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE /
+      aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE /
       pwd
       ls -la
       export TF_VAR_f5xc_api_p12_file="/${P12_FILE}"
