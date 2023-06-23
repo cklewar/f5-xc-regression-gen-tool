@@ -9,9 +9,9 @@ stages:
   - eut-apply
   - eut-destroy
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -146,6 +146,7 @@ rte-aws-client-server-artifacts:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
+    expire_in: 3h
   timeout: 5m
   retry:
     max: 1
@@ -176,6 +177,7 @@ rte-aws-client-server-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
   timeout: 30m
   retry:
     max: 1
@@ -205,6 +207,7 @@ rte-aws-client-server1-artifacts:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
+    expire_in: 3h
   timeout: 5m
   retry:
     max: 1
@@ -235,6 +238,7 @@ rte-aws-client-server1-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
   timeout: 30m
   retry:
     max: 1
@@ -263,6 +267,7 @@ rte-azure-client-server1-artifacts:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
+    expire_in: 3h
   timeout: 5m
   retry:
     max: 1
@@ -293,6 +298,7 @@ rte-azure-client-server1-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
   timeout: 30m
   retry:
     max: 1

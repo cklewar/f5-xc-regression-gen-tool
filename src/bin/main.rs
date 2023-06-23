@@ -54,8 +54,15 @@ pub mod regression {
     }
 
     #[derive(Deserialize, Serialize, Debug)]
+    struct RegressionCiArtifactsConfig {
+        path: String,
+        expire_in: String,
+    }
+
+    #[derive(Deserialize, Serialize, Debug)]
     struct RegressionCiConfig {
         tags: Vec<String>,
+        artifacts: RegressionCiArtifactsConfig,
         variables: Vec<RegressionCiVariablesConfig>,
     }
 
