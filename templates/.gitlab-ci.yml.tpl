@@ -139,6 +139,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
+        mkdir -p $RTE_{{ rte.name | upper }}_{{ provider | upper }}
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
         ls -la $RTE_{{ rte.name | upper }}_{{ provider | upper }}
         ls -la RTE_CL_AWS_ARTIFACTS_FILE
