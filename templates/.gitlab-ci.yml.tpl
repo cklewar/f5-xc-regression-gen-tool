@@ -166,7 +166,12 @@ eut-apply:
         #!/usr/bin/env bash
         {% for provider, values in providers -%}
         cd $EUT_ROOT_DIR/{{ provider }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}" 
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}"
+        ls -laR &ARTIFACTS_ROOT_DIR
+        ls -la $EUT_ROOT_TF_VAR_FILE
+        ls -la $EUT_ROOT_DIR/aws/terraform.tfvars.json
+        ls -la $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
+        ls -la $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
