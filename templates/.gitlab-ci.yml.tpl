@@ -112,6 +112,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
+      - expire_in: 3h
   timeout: 5m
   retry:
     max: 1
@@ -146,6 +147,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
+      - expire_in: 3h
   timeout: 30m
   retry:
     max: 1
