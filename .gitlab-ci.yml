@@ -9,9 +9,9 @@ stages:
   - eut-apply
   - eut-destroy
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -342,6 +342,8 @@ regression-test-east-west-traffic-aws-fortio:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-fortio
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-fortio/client_server/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars -auto-approve
   timeout: 30m
@@ -363,6 +365,8 @@ regression-test-east-west-traffic-aws-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-iperf
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-iperf/client_server1/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
@@ -384,6 +388,8 @@ regression-test-east-west-traffic-azure-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-azure-iperf
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-azure-iperf/client_server1/azure"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars -auto-approve
   timeout: 30m
