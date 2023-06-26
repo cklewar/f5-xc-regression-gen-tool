@@ -198,7 +198,7 @@ regression-test-{{ test.name }}:
         ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
         ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.tests.path }}/{{ test.name }}/{{ test.rte.name }}/{{ provider }}"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.rte.name }}/{{ provider }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -223,7 +223,7 @@ regression-test-verify-{{ test.name }}-{{ verification.name }}:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.name }}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}{{ rc.verifications.path }}/{{ test.rte.name }}/{{ verification.name }}"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.rte.name }}/{{ provider }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
     max: 1
