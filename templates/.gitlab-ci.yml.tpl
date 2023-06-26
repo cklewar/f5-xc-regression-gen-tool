@@ -166,7 +166,7 @@ eut-apply:
         {% for provider, values in providers -%}
         cd $EUT_ROOT_DIR/{{ provider }}
         {% if provider == "azure" -%}
-        az vm image accept-terms --urn volterraedgeservices:volterra-node:volterra-node:latest
+        az vm image terms accept --urn volterraedgeservices:volterra-node:volterra-node:latest
         {% endif -%}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
