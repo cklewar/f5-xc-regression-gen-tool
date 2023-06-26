@@ -105,7 +105,6 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/{{ rte.name }}/{{ provider }}
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
