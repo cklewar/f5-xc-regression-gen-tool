@@ -9,9 +9,9 @@ stages:
   - eut-apply
   - eut-destroy
   - regression-test
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -139,7 +139,6 @@ rte-aws-client-server-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
@@ -201,7 +200,6 @@ rte-aws-client-server1-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
@@ -262,7 +260,6 @@ rte-azure-client-server1-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/azure
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
@@ -326,9 +323,9 @@ eut-apply:
         # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/azure/site.tfvars
-        # cd $EUT_ROOT_DIR/common
-        # terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/common"
-        # terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE -auto-approve
+        cd $EUT_ROOT_DIR/common
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/common"
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE -auto-approve
   timeout: 1h 30m
   retry:
     max: 1
@@ -501,7 +498,7 @@ rte-aws-client-server-destroy:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_AWS_CLIENT_SERVER_ROOT_DIR
+        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
@@ -521,7 +518,7 @@ rte-aws-client-server1-destroy:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_AWS_CLIENT_SERVER1_ROOT_DIR
+        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
         terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
@@ -541,7 +538,7 @@ rte-azure-client-server1-destroy:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_AZURE_CLIENT_SERVER1_ROOT_DIR
+        cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
         terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
   timeout: 30m
