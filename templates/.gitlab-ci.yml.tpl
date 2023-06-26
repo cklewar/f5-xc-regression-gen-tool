@@ -169,10 +169,6 @@ eut-apply:
         {% if provider == "azure" -%}
         # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         {% endif -%}
-        pwd
-        ls -la
-        ls -la $RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE
-        ls -la $ARTIFACTS_ROOT_DIR
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
