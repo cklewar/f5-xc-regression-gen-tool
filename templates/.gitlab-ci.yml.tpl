@@ -195,6 +195,8 @@ regression-test-{{ test.name }}:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.name }}
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.tests.path }}/{{ test.name }}/{{ test.rte.name }}/{{ provider }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ provider }}/{{ test.rte.name }}/artifacts.tfvars -auto-approve
   timeout: 30m
