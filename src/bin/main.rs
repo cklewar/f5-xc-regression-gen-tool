@@ -62,6 +62,7 @@ pub mod regression {
     #[derive(Deserialize, Serialize, Debug)]
     struct RegressionCiConfig {
         tags: Vec<String>,
+        image: String,
         artifacts: RegressionCiArtifactsConfig,
         variables: Vec<RegressionCiVariablesConfig>,
     }

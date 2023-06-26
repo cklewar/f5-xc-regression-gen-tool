@@ -60,7 +60,7 @@ variables:
   cache:
     policy: pull
     key: "${CI_COMMIT_SHA}"
-  image: volterra.azurecr.io/ves.io/acmecorp-features:1.3.3
+  image: {{ rc.ci.image }}
   variables:
     TF_VAR_feature: $FEATURE
     TF_VAR_environment: $ENVIRONMENT
