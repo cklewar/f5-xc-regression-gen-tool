@@ -166,6 +166,7 @@ eut-apply:
         {% for provider, values in providers -%}
         cd $EUT_ROOT_DIR/{{ provider }}
         {% if provider == "azure" -%}
+        az login
         az vm image terms accept --urn volterraedgeservices:volterra-node:volterra-node:latest
         {% endif -%}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}"
