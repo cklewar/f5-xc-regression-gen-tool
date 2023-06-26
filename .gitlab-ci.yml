@@ -145,7 +145,7 @@ rte-aws-client-server-artifacts:
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
-      - $ARTIFACTS_ROOT_DIR/aws/client_server/artifacts.tfvars
+      - $ARTIFACTS_ROOT_DIR/client_server/aws/artifacts.tfvars
     expire_in: 3h
   timeout: 5m
   retry:
@@ -207,7 +207,7 @@ rte-aws-client-server1-artifacts:
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
-      - $ARTIFACTS_ROOT_DIR/aws/client_server1/artifacts.tfvars
+      - $ARTIFACTS_ROOT_DIR/client_server1/aws/artifacts.tfvars
     expire_in: 3h
   timeout: 5m
   retry:
@@ -268,7 +268,7 @@ rte-azure-client-server1-artifacts:
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
   artifacts:
     paths:
-      - $ARTIFACTS_ROOT_DIR/azure/client_server1/artifacts.tfvars
+      - $ARTIFACTS_ROOT_DIR/client_server1/azure/artifacts.tfvars
     expire_in: 3h
   timeout: 5m
   retry:

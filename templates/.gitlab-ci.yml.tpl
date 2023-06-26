@@ -111,7 +111,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
   artifacts:
     paths:
-      - $ARTIFACTS_ROOT_DIR/{{ provider }}/{{ rte.name }}/artifacts.tfvars
+      - $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}/artifacts.tfvars
     expire_in: {{ rc.ci.artifacts.expire_in }}
   timeout: 5m
   retry:
