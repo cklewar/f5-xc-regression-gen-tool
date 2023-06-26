@@ -167,7 +167,7 @@ eut-apply:
         cd $EUT_ROOT_DIR/{{ provider }}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}"
         {% if provider == "azure" -%}
-        terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/volterra-node/plans/volterra-node
+        terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         {% endif -%}
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
