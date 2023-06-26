@@ -196,7 +196,7 @@ regression-test-{{ test.name }}:
   script:
       - |
         #!/usr/bin/env bash
-        cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.name }}
+        cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.module }}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.tests.path }}/{{ test.name }}/{{ test.rte.name }}/{{ provider }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.rte.name }}/{{ provider }}/artifacts.tfvars -auto-approve
   timeout: 30m
@@ -221,7 +221,7 @@ regression-test-verify-{{ test.name }}-{{ verification.name }}:
   script:
       - |
         #!/usr/bin/env bash
-        cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.name }}
+        cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.module }}
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}{{ rc.verifications.path }}/{{ test.rte.name }}/{{ verification.name }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.rte.name }}/{{ provider }}/artifacts.tfvars -auto-approve
   timeout: 30m
