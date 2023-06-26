@@ -138,6 +138,8 @@ rte-aws-client-server-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
@@ -198,6 +200,8 @@ rte-aws-client-server1-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
@@ -257,6 +261,8 @@ rte-azure-client-server1-artifacts:
         echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
+        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/azure
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
@@ -342,8 +348,6 @@ regression-test-east-west-traffic-aws-fortio:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-fortio
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-fortio/client_server/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server/aws/artifacts.tfvars -auto-approve
   timeout: 30m
@@ -365,8 +369,6 @@ regression-test-east-west-traffic-aws-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-aws-iperf
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-iperf/client_server1/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server1/aws/artifacts.tfvars -auto-approve
   timeout: 30m
@@ -388,8 +390,6 @@ regression-test-east-west-traffic-azure-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/east-west-traffic-azure-iperf
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server1/aws
-        ls -la /builds/volterra/solution/regression/sense8/artifacts/client_server/aws
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-azure-iperf/client_server1/azure"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server1/azure/artifacts.tfvars -auto-approve
   timeout: 30m
