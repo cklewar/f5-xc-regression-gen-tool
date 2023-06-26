@@ -500,7 +500,7 @@ rte-aws-client-server-destroy:
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-        terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform destroy -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -520,7 +520,7 @@ rte-aws-client-server1-destroy:
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/aws"
-        terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform destroy -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
     max: 1
@@ -540,7 +540,7 @@ rte-azure-client-server1-destroy:
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/azure"
-        terraform destroy -var-file=$RTE_ROOT_TF_VAR_FILE -auto-approve
+        terraform destroy -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
     max: 1
