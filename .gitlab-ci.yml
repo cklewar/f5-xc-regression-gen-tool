@@ -316,6 +316,7 @@ eut-apply:
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/aws/site.tfvars
         cd $EUT_ROOT_DIR/azure
+        terraform import azurerm_marketplace_agreement.xc /subscriptions/e9cbbd48-704d-4dfa-bf62-60edda755a66/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/volterra-node/plans/volterra-node        
         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/azure"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/azure/site.tfvars
