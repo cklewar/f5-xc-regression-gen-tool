@@ -106,7 +106,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
+        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -137,7 +137,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
+        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         terraform output > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
@@ -166,7 +166,7 @@ eut-apply:
         #!/usr/bin/env bash
         {% for provider, values in providers -%}
         cd $EUT_ROOT_DIR/{{ provider }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}"
+        terraform init --backend-config="key=$S3_EUT_ROOT/provider/{{ provider }}"
         {% if provider == "azure" -%}
         # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         {% endif -%}
@@ -174,7 +174,7 @@ eut-apply:
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
         cd $EUT_ROOT_DIR/common
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/common"
+        terraform init --backend-config="key=key=$S3_EUT_ROOT/common"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %} {% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE {% endfor %}{% endfor %}-auto-approve
   timeout: 1h 30m
   retry:
@@ -196,7 +196,7 @@ regression-test-{{ test.name }}:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ rc.tests.path }}/{{ test.module }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.tests.path }}/{{ test.name }}/{{ test.rte.name }}/{{ provider }}"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.name }}/{{ test.rte.name }}/{{ provider }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.rte.name }}/{{ provider }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -221,7 +221,7 @@ regression-test-verify-{{ test.name }}-{{ verification.name }}:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ rc.verifications.path }}/{{ test.module }}
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}{{ rc.verifications.path }}/{{ test.rte.name }}/{{ verification.name }}"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/{{ test.rte.name }}/{{ verification.name }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.rte.name }}/{{ provider }}/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -244,12 +244,12 @@ eut-destroy:
          #!/usr/bin/env bash
          {% for provider, values in providers -%}
          cd $EUT_ROOT_DIR/{{ provider }}
-         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}" 
+         terraform init --backend-config="key=key=$S3_EUT_ROOT/provider/{{ provider }}" 
          terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json -auto-approve
          terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
          {% endfor -%}
          cd $EUT_ROOT_DIR/common
-         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/common"
+         terraform init --backend-config="key=$S3_EUT_ROOT/common"
          terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE {% for provider, values in providers -%}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor -%} {% for provider, values in providers -%}{% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_TF_VAR_FILE {% endfor -%} {% endfor -%} -auto-approve
   timeout: 1h 30m
   retry:
@@ -270,7 +270,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-destroy:
       - |
         #!/usr/bin/env bash
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
+        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
         terraform destroy -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:

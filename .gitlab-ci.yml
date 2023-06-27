@@ -9,12 +9,17 @@ stages:
   - eut-plan
   - eut-apply
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
+  S3_ROOT: "features/$FEATURE/$ENVIRONMENT/project-a"
+  S3_EUT_ROOT: "$S3_ROOT/eut/mcn"
+  S3_RTE_ROOT: "$S3_ROOT/eut/mcn/regression/rte"
+  S3_TESTS_ROOT: "$S3_ROOT/eut/mcn/regression/tests"
+  S3_VERIFICATIONS_ROOT: "$S3_ROOT/eut/mcn/regression/verification"
   KEYS_DIR: "${CI_PROJECT_DIR}/keys"
   EUT_ROOT_DIR: "${CI_PROJECT_DIR}/eut/mcn"
   EUT_ROOT_TF_VAR_FILE: "${EUT_ROOT_DIR}/terraform.tfvars.json"
@@ -140,7 +145,7 @@ rte-aws-client-server-artifacts:
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -167,7 +172,7 @@ rte-aws-client-server-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
         terraform apply -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
         terraform output > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
@@ -201,7 +206,7 @@ rte-aws-client-server1-artifacts:
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -228,7 +233,7 @@ rte-aws-client-server1-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
         terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
         terraform output > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
@@ -261,7 +266,7 @@ rte-azure-client-server1-artifacts:
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure"
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -288,7 +293,7 @@ rte-azure-client-server1-apply:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure"
         terraform apply -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
         terraform output > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
@@ -315,16 +320,16 @@ eut-apply:
       - |
         #!/usr/bin/env bash
         cd $EUT_ROOT_DIR/aws
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/aws"
+        terraform init --backend-config="key=$S3_EUT_ROOT/provider/aws"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/aws/site.tfvars
         cd $EUT_ROOT_DIR/azure
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/azure"
+        terraform init --backend-config="key=$S3_EUT_ROOT/provider/azure"
         # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/azure/site.tfvars
         cd $EUT_ROOT_DIR/common
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/common"
+        terraform init --backend-config="key=key=$S3_EUT_ROOT/common"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE -auto-approve
   timeout: 1h 30m
   retry:
@@ -345,7 +350,7 @@ regression-test-east-west-traffic-aws-fortio:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/fortio
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-fortio/client_server/aws"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/east-west-traffic-aws-fortio/client_server/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server/aws/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -366,7 +371,7 @@ regression-test-east-west-traffic-aws-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-aws-iperf/client_server1/aws"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/east-west-traffic-aws-iperf/client_server1/aws"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server1/aws/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -387,7 +392,7 @@ regression-test-east-west-traffic-azure-iperf:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/tests/east-west-traffic-azure-iperf/client_server1/azure"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/east-west-traffic-azure-iperf/client_server1/azure"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server1/azure/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -408,7 +413,7 @@ regression-test-verify-east-west-traffic-aws-fortio-bandwidth:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/fortio
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcnregression/verification/client_server/bandwidth"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/client_server/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server/aws/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -429,7 +434,7 @@ regression-test-verify-east-west-traffic-aws-iperf-bandwidth:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcnregression/verification/client_server1/bandwidth"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/client_server1/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server1/aws/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -450,7 +455,7 @@ regression-test-verify-east-west-traffic-azure-iperf-bandwidth:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/iperf
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcnregression/verification/client_server1/bandwidth"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/client_server1/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/client_server1/azure/artifacts.tfvars -auto-approve
   timeout: 30m
   retry:
@@ -470,15 +475,15 @@ eut-destroy:
       - |
          #!/usr/bin/env bash
          cd $EUT_ROOT_DIR/aws
-         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/aws" 
+         terraform init --backend-config="key=key=$S3_EUT_ROOT/provider/aws" 
          terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -auto-approve
          terraform output > $EUT_ROOT_DIR/aws/site.tfvars
          cd $EUT_ROOT_DIR/azure
-         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/azure" 
+         terraform init --backend-config="key=key=$S3_EUT_ROOT/provider/azure" 
          terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -auto-approve
          terraform output > $EUT_ROOT_DIR/azure/site.tfvars
          cd $EUT_ROOT_DIR/common
-         terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/common"
+         terraform init --backend-config="key=$S3_EUT_ROOT/common"
          terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars -var-file=$RTE_CLIENT_SERVER_AWS_COMMON_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_COMMON_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_COMMON_TF_VAR_FILE -auto-approve
   timeout: 1h 30m
   retry:
@@ -498,7 +503,7 @@ rte-aws-client-server-destroy:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server/aws"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
         terraform destroy -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
@@ -518,7 +523,7 @@ rte-aws-client-server1-destroy:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/aws"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
         terraform destroy -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
@@ -538,7 +543,7 @@ rte-azure-client-server1-destroy:
       - |
         #!/usr/bin/env bash
         cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/regression/rte/client_server1/azure"
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure"
         terraform destroy -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:

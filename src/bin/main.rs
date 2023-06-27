@@ -43,7 +43,7 @@ pub mod regression {
 
     #[derive(Deserialize, Serialize, Debug)]
     struct RegressionCommonConfig {
-        name: String,
+        project: String,
         templates: String,
         root_path: String,
     }
@@ -223,6 +223,9 @@ pub mod regression {
             let mut context = tera::Context::new();
             context.insert("eut", &cfg.eut);
             context.insert("rte", &cfg.rte);
+            context.insert("common", &cfg.common);
+            context.insert("tests", &cfg.tests);
+            context.insert("verifications", &cfg.verifications);
             let eutc = _tera.render("regression.json", &context).unwrap();
             println!("Render regression configuration file -> Done.");
 
