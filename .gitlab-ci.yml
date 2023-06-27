@@ -9,9 +9,9 @@ stages:
   - eut-plan
   - eut-apply
   - regression-test
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -471,15 +471,15 @@ eut-destroy:
          #!/usr/bin/env bash
          cd $EUT_ROOT_DIR/aws
          terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/aws" 
-         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_AWS_CLIENT_SERVER_ARTIFACTS_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
+         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE -auto-approve
          terraform output > $EUT_ROOT_DIR/aws/site.tfvars
          cd $EUT_ROOT_DIR/azure
          terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/provider/azure" 
-         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_AZURE_CLIENT_SERVER1_ARTIFACTS_FILE -auto-approve
+         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE -auto-approve
          terraform output > $EUT_ROOT_DIR/azure/site.tfvars
          cd $EUT_ROOT_DIR/common
          terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/eut/mcn/common"
-         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars -var-file=$RTE_AWS_CLIENT_SERVER_COMMON_TF_VAR_FILE -var-file=$RTE_AWS_CLIENT_SERVER1_COMMON_TF_VAR_FILE -var-file=$RTE_AZURE_CLIENT_SERVER1_COMMON_TF_VAR_FILE -auto-approve
+         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars -var-file=$RTE_CLIENT_SERVER_AWS_COMMON_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_COMMON_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_COMMON_TF_VAR_FILE -auto-approve
   timeout: 1h 30m
   retry:
     max: 1
