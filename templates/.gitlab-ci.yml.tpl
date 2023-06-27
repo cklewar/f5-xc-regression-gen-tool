@@ -245,7 +245,7 @@ eut-destroy:
          {% for provider, values in providers -%}
          cd $EUT_ROOT_DIR/{{ provider }}
          terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/provider/{{ provider }}" 
-         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
+         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json -auto-approve
          terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
          {% endfor -%}
          cd $EUT_ROOT_DIR/common
@@ -270,7 +270,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-destroy:
       - |
         #!/usr/bin/env bash
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/regression/environment/{{ provider }}"
+        terraform init --backend-config="key=features/$FEATURE/$ENVIRONMENT/{{ rc.eut.path }}/{{ rc.rte.path }}/{{ rte.name }}/{{ provider }}"
         terraform destroy -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
   timeout: 30m
   retry:
