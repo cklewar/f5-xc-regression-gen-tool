@@ -361,6 +361,7 @@ eut-apply:
         ls -la $RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE
         ls -la $RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE
         ls -la $RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE
+        ls -la /builds/volterra/solution/regression/sense8/artifacts
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars  -var-file=$RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE -auto-approve
   timeout: 1h 30m
   retry:
