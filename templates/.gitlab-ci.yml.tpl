@@ -197,13 +197,6 @@ eut-apply:
         {% endfor -%}
         cd $EUT_ROOT_DIR/common
         terraform init --backend-config="key=key=$S3_EUT_ROOT/common"
-        pwd
-        ls -la
-        ls -la $EUT_ROOT_DIR/aws
-        ls -la $EUT_ROOT_DIR/azure
-        ls -la $RTE_CLIENT_SERVER_AWS_COMMON_ARTIFACTS_FILE
-        ls -la $RTE_CLIENT_SERVER1_AWS_COMMON_ARTIFACTS_FILE
-        ls -la $RTE_CLIENT_SERVER1_AZURE_COMMON_ARTIFACTS_FILE
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %}{% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE {% endfor %}{% endfor %}-auto-approve
   timeout: 1h 30m
   retry:
