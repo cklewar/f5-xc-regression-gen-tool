@@ -25,6 +25,26 @@ variables:
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
+.deploy_eut_rules:
+  rules:
+    - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_rules:
+  rules:
+    - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true
+
+.deploy_rte_rules:
+  rules:
+    - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_rules:
+  rules:
+    - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true
+
 .regression_test_rules:
   rules:
     - if: $ACTION == "test" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -126,6 +146,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
   stage: rte-apply
   rules:
     - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
   script:
       {% for script in rte.scripts -%}
       {% if script.name == 'apply' -%}
@@ -161,6 +182,7 @@ eut-apply:
   stage: eut-apply
   rules:
     - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_eut_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -239,6 +261,7 @@ eut-destroy:
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_eut_rules, rules ]
   script:
       - |
          #!/usr/bin/env bash
@@ -266,6 +289,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-destroy:
   stage: rte-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
