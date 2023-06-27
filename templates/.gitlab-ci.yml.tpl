@@ -196,7 +196,7 @@ eut-apply:
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
         cd $EUT_ROOT_DIR/common
-        terraform init --backend-config="key=key=$S3_EUT_ROOT/common"
+        terraform init --backend-config="key=$S3_EUT_ROOT/common"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE {% for provider, values in providers %}-var-file=$EUT_ROOT_DIR/{{ provider }}/site.tfvars {% endfor %}{% for provider, values in providers %}{% for rte in values.rtes %}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_COMMON_ARTIFACTS_FILE {% endfor %}{% endfor %}-auto-approve
   timeout: 1h 30m
   retry:
