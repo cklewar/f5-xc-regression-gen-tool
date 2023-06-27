@@ -3,11 +3,11 @@ stages:
   - rte-plan
   - rte-artifacts
   - rte-apply
+  - eut-destroy
   - rte-destroy
   - eut-validate
   - eut-plan
   - eut-apply
-  - eut-destroy
   - regression-test
   - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio

@@ -43,6 +43,7 @@ pub mod regression {
 
     #[derive(Deserialize, Serialize, Debug)]
     struct RegressionCommonConfig {
+        name: String,
         templates: String,
         root_path: String,
     }
