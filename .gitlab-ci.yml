@@ -6,16 +6,16 @@ stages:
   - rte-plan
   - rte-artifacts
   - rte-apply
+  - rte-collect
   - eut-destroy
   - rte-destroy
-  - rte-collect
   - eut-validate
   - eut-plan
   - eut-apply
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -47,8 +47,10 @@ variables:
   RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE:  "$RTE_ROOT_DIR/client_server1/azure/terraform.tfvars.json"
   RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server_vpc_ids.tfvars.json"
   RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server_connetion.tfvars"
+  RTE_CLIENT_SERVER_AWS_DESTINATION_IPS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server_destination_ips.tfvars"
   RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_vpc_ids.tfvars.json"
   RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_connetion.tfvars"
+  RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_destination_ips.tfvars"
   
 .deploy_rules:
   rules:
@@ -199,6 +201,7 @@ rte-aws-client-server-apply:
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
         terraform output -json aws_workload_vpc_ids > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -260,8 +263,8 @@ rte-aws-client-server1-apply:
         terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        terraform output -json aws_workload_vpc_ids >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json aws_workload_vpc_ids > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
   artifacts:
     paths:
@@ -322,8 +325,8 @@ rte-azure-client-server1-apply:
         terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        terraform output -json aws_workload_vpc_ids >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json aws_workload_vpc_ids > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
   artifacts:
     paths:
