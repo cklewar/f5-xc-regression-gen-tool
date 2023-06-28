@@ -180,6 +180,36 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+
+# rte - {{ provider }} - {{ rte.name | replace(from="_", to="-")}} - collect - vpc -ids
+rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-vpc-ids:
+  <<: *base
+  stage: rte-collect
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
+  script:
+      {% for script in rte.scripts -%}
+      {% if script.name == 'apply' -%}
+      {% for line in script.value -%}
+      {{ line }}
+      {% endfor -%}
+      {% endif -%}
+      {% endfor -%}
+      - |
+        #!/usr/bin/env bash
+        jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' {% for rte in values.rtes -%}$RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ rc.ci.artifacts.expire_in }}
+  timeout: 30m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
 {% endfor -%}
 {% endfor %}
 # eut - apply
@@ -197,8 +227,7 @@ eut-apply:
         terraform init --backend-config="key=$S3_EUT_ROOT/provider/{{ provider }}"
         {% if provider == "azure" -%}
         # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
-        {% endif -%}
-        ( echo $vpc_b_ids ; echo $vpc_a_ids ) | jq -s add | jq -r '{"vpc_attachment_ids": .}'  
+        {% endif -%}  
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
