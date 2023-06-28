@@ -13,9 +13,9 @@ stages:
   - eut-plan
   - eut-apply
   - regression-test
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -164,9 +164,6 @@ rte-aws-client-server-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
-      - |
-        #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
         cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
@@ -191,9 +188,6 @@ rte-aws-client-server-apply:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      - |
-        #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
@@ -225,9 +219,6 @@ rte-aws-client-server-vpc-ids:
   script:
       - |
         #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
-      - |
-        #!/usr/bin/env bash
         jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE 
   artifacts:
     paths:
@@ -251,9 +242,6 @@ rte-aws-client-server1-artifacts:
     - !reference [ .regression_test_east_west_traffic_aws_iperf, rules ]
   stage: rte-artifacts
   script:
-      - |
-        #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
@@ -280,9 +268,6 @@ rte-aws-client-server1-apply:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      - |
-        #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
@@ -314,9 +299,6 @@ rte-aws-client-server1-vpc-ids:
   script:
       - |
         #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
-      - |
-        #!/usr/bin/env bash
         jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE 
   artifacts:
     paths:
@@ -339,9 +321,6 @@ rte-azure-client-server1-artifacts:
     - !reference [ .regression_test_east_west_traffic_azure_iperf, rules ]
   stage: rte-artifacts
   script:
-      - |
-        #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
@@ -368,9 +347,6 @@ rte-azure-client-server1-apply:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      - |
-        #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
         cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
@@ -400,9 +376,6 @@ rte-azure-client-server1-vpc-ids:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      - |
-        #!/usr/bin/env bash
-        echo "CUSTOM SCRIPT"
       - |
         #!/usr/bin/env bash
         jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' $RTE_CLIENT_SERVER1_AZURE_VPC_IDS_ARTIFACTS_FILE 

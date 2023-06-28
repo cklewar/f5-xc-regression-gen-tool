@@ -127,13 +127,6 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
     {%- endfor %}
   stage: rte-artifacts
   script:
-      {% for apply.apply.script in rte.scripts -%}
-      {% if apply.apply.script.name == 'artifacts' -%}
-      {% for line in apply.apply.script.value -%}
-      {{ line }}
-      {% endfor -%}
-      {% endif -%}
-      {% endfor -%}
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
@@ -160,15 +153,12 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      {% for apply.apply.script in rte.scripts -%}
-      {% if apply.apply.script.name == 'apply' -%}
-      {% for line in apply.apply.script.value -%}
-      {{ line }}
-      {% endfor -%}
-      {% endif -%}
-      {% endfor -%}
       - |
-        {{ rte.script }}
+        {% for script in rte.scripts -%}
+        {% if script.name == "apply" -%}
+        {{ script.value }}
+        {%- endif -%}
+        {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -189,13 +179,6 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-vpc-ids:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      {% for apply.apply.script in rte.scripts -%}
-      {% if apply.apply.script.name == 'apply' -%}
-      {% for line in apply.apply.script.value -%}
-      {{ line }}
-      {% endfor -%}
-      {% endif -%}
-      {% endfor -%}
       - |
         #!/usr/bin/env bash
         jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' {% for rte in values.rtes -%}$RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE {% endfor %}

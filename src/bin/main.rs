@@ -35,7 +35,7 @@ pub mod regression {
     use std::collections::{HashSet, HashMap};
     use std::io::{Write};
     use serde_derive::{Deserialize, Serialize};
-    use serde_json::json;
+    use serde_json::{json};
     use tera::Tera;
 
     const CONFIG_FILE_NAME: &str = "config.json";
@@ -126,9 +126,9 @@ pub mod regression {
     }
 
     #[derive(Deserialize, Serialize, Debug)]
-    struct RteConfigScripts {
+    struct RteConfigScript {
         name: String,
-        value: Vec<String>,
+        value: String,
     }
 
     #[derive(Deserialize, Serialize, Debug)]
@@ -147,7 +147,7 @@ pub mod regression {
         name: String,
         stages: Vec<String>,
         provider: HashMap<String, RteConfigProvider>,
-        scripts: Vec<RteConfigScripts>,
+        scripts: Vec<RteConfigScript>,
         scripts_path: String,
     }
 
@@ -288,19 +288,27 @@ pub mod regression {
             let rte_cfg = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, CONFIG_FILE_NAME);
             let raw = std::fs::read_to_string(rte_cfg).expect("panic while opening rte config file");
             let mut cfg = serde_json::from_str::<RteConfig>(&raw).unwrap();
-
+            let mut scripts: Vec<RteConfigScript> = Vec::new();
             for script in cfg.scripts.iter() {
-                match &script.name {
+                match script.name.as_ref() {
                     SCRIPT_TYPE_APPLY => {
-                        let rte_apply_script_file = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, script.name);
-                        let script = std::fs::read_to_string(rte_script_file).expect("panic while opening rte apply.apply.script file");
-                        cfg.script = script;
+                        let file = format!("{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, script.value);
+                        let contents = std::fs::read_to_string(file).expect("panic while opening rte apply.apply.script file");
+                        let rcs = RteConfigScript {
+                            name: script.name.clone(),
+                            value: contents,
+                        };
+                        scripts.push(rcs);
                     }
-                    _ => {}
+                    SCRIPT_TYPE_DESTROY => {}
+                    SCRIPT_TYPE_COLLECT => {}
+                    SCRIPT_TYPE_ARTIFACTS => {}
+                    _ => {
+                        println!("Given script type does not match any know types")
+                    }
                 }
             }
-
-
+            cfg.scripts = scripts;
             println!("Loading test module <{}> specific regression test environment configuration -> Done.", tm_name);
             cfg
         }
