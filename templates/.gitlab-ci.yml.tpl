@@ -128,11 +128,11 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
-        terraform output -json > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE
+        {% for script in rte.scripts -%}
+        {% if script.name == "artifacts" -%}
+        {{ script.value }}
+        {%- endif -%}
+        {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}/artifacts.tfvars
@@ -180,8 +180,11 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-collect:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' {% for rte in values.rtes -%}$RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE {% endfor %}
+        {% for script in rte.scripts -%}
+        {% if script.name == "collect" -%}
+        {{ script.value }}
+        {%- endif -%}
+        {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/

@@ -289,17 +289,18 @@ pub mod regression {
             modules
         }
 
-        fn load_rte_config(&self, tm_name: &String, rte_name: &String) -> RteConfig {
+        fn load_rte_config(&self, tm_name: &String, rte_name: &String, provider: &String) -> RteConfig {
             println!("Loading test module <{}> specific regression test environment configuration...", tm_name);
             let rte_cfg = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, CONFIG_FILE_NAME);
             let raw = std::fs::read_to_string(rte_cfg).expect("panic while opening rte config file");
             let mut cfg = serde_json::from_str::<RteConfig>(&raw).unwrap();
             let mut scripts: Vec<RteConfigScript> = Vec::new();
+
             for script in cfg.scripts.iter() {
                 match script.name.as_ref() {
                     SCRIPT_TYPE_APPLY => {
-                        let file = format!("{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, script.value);
-                        let contents = std::fs::read_to_string(file).expect("panic while opening rte apply.apply.script file");
+                        let file = format!("{}/{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, provider, script.value);
+                        let contents = std::fs::read_to_string(file).expect("panic while opening rte apply.script file");
                         let rcs = RteConfigScript {
                             name: script.name.clone(),
                             value: contents,
@@ -308,7 +309,17 @@ pub mod regression {
                     }
                     SCRIPT_TYPE_DESTROY => {}
                     SCRIPT_TYPE_COLLECT => {}
-                    SCRIPT_TYPE_ARTIFACTS => {}
+                    SCRIPT_TYPE_ARTIFACTS => {
+                        let file = format!("{}/{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, provider, script.value);
+                        println!("{:?}", file);
+                        let contents = std::fs::read_to_string(file).expect("panic while opening rte artifacts.script file");
+                        println!("{:?}", contents);
+                        let rcs = RteConfigScript {
+                            name: script.name.clone(),
+                            value: contents,
+                        };
+                        scripts.push(rcs);
+                    }
                     _ => {
                         println!("Given script type does not match any know types")
                     }
@@ -346,7 +357,7 @@ pub mod regression {
                 let name = String::from(&tm.rte.name);
                 if !unique_rte.contains(&name) {
                     unique_rte.insert(name.clone());
-                    let mut rte_cfg: RteConfig = rc.load_rte_config(&tm.module, &tm.rte.name);
+                    let mut rte_cfg: RteConfig = rc.load_rte_config(&tm.module, &tm.rte.name, &provider);
                     for script in &mut rte_cfg.scripts {
                         let ctx = RteScriptRenderContext { provider: provider.clone(), rte_name: rte_cfg.name.clone() };
                         script.value = render_rte_script(&ctx, &script.value);

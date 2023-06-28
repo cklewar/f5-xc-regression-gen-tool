@@ -163,11 +163,7 @@ rte-aws-client-server-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
-        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
-        terraform output -json > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/client_server/aws/artifacts.tfvars
@@ -218,8 +214,7 @@ rte-aws-client-server-collect:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE 
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -243,11 +238,7 @@ rte-aws-client-server1-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
-        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
-        terraform output -json > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/client_server1/aws/artifacts.tfvars
@@ -298,8 +289,7 @@ rte-aws-client-server1-collect:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE 
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -322,11 +312,7 @@ rte-azure-client-server1-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
-        cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure"
-        terraform output -json > $RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/client_server1/azure/artifacts.tfvars
@@ -348,14 +334,7 @@ rte-azure-client-server1-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure"
-        terraform apply -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE -auto-approve
-        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
-        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AZURE_VPC_IDS_ARTIFACTS_FILE
-        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AZURE_CONNECTION_ARTIFACTS_FILE
-        echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AZURE_DESTINATION_IPS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -377,8 +356,7 @@ rte-azure-client-server1-collect:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' $RTE_CLIENT_SERVER1_AZURE_VPC_IDS_ARTIFACTS_FILE 
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
