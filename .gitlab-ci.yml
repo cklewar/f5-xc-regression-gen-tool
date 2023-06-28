@@ -13,9 +13,9 @@ stages:
   - eut-plan
   - eut-apply
   - regression-test
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
@@ -209,8 +209,8 @@ rte-aws-client-server-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte - aws - client-server - collect - vpc -ids
-rte-aws-client-server-vpc-ids:
+# rte - aws - client-server - collect
+rte-aws-client-server-collect:
   <<: *base
   stage: rte-collect
   rules:
@@ -289,8 +289,8 @@ rte-aws-client-server1-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte - aws - client-server1 - collect - vpc -ids
-rte-aws-client-server1-vpc-ids:
+# rte - aws - client-server1 - collect
+rte-aws-client-server1-collect:
   <<: *base
   stage: rte-collect
   rules:
@@ -368,8 +368,8 @@ rte-azure-client-server1-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte - azure - client-server1 - collect - vpc -ids
-rte-azure-client-server1-vpc-ids:
+# rte - azure - client-server1 - collect
+rte-azure-client-server1-collect:
   <<: *base
   stage: rte-collect
   rules:

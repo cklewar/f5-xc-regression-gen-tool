@@ -171,8 +171,8 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte - {{ provider }} - {{ rte.name | replace(from="_", to="-")}} - collect - vpc -ids
-rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-vpc-ids:
+# rte - {{ provider }} - {{ rte.name | replace(from="_", to="-")}} - collect
+rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-collect:
   <<: *base
   stage: rte-collect
   rules:
