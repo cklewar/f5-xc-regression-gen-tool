@@ -40,6 +40,10 @@ pub mod regression {
 
     const CONFIG_FILE_NAME: &str = "config.json";
     const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
+    const SCRIPT_TYPE_APPLY: &str = "apply";
+    const SCRIPT_TYPE_DESTROY: &str = "destroy";
+    const SCRIPT_TYPE_COLLECT: &str = "collect";
+    const SCRIPT_TYPE_ARTIFACTS: &str = "artifacts";
 
     #[derive(Deserialize, Serialize, Debug)]
     struct RegressionCommonConfig {
@@ -144,6 +148,7 @@ pub mod regression {
         stages: Vec<String>,
         provider: HashMap<String, RteConfigProvider>,
         scripts: Vec<RteConfigScripts>,
+        scripts_path: String,
     }
 
     #[derive(Deserialize, Serialize, Debug)]
@@ -283,9 +288,18 @@ pub mod regression {
             let rte_cfg = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, CONFIG_FILE_NAME);
             let raw = std::fs::read_to_string(rte_cfg).expect("panic while opening rte config file");
             let mut cfg = serde_json::from_str::<RteConfig>(&raw).unwrap();
-            let rte_script_file = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.script);
-            let script = std::fs::read_to_string(rte_script_file).expect("panic while opening rte apply.script file");
-            cfg.script = script;
+
+            for script in cfg.scripts.iter() {
+                match &script.name {
+                    SCRIPT_TYPE_APPLY => {
+                        let rte_apply_script_file = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, script.name);
+                        let script = std::fs::read_to_string(rte_script_file).expect("panic while opening rte apply.apply.script file");
+                        cfg.script = script;
+                    }
+                    _ => {}
+                }
+            }
+
 
             println!("Loading test module <{}> specific regression test environment configuration -> Done.", tm_name);
             cfg
