@@ -6,9 +6,9 @@ stages:
   - rte-plan
   - rte-artifacts
   - rte-apply
-  - rte-collect
   - eut-destroy
   - rte-destroy
+  - rte-collect
   - eut-validate
   - eut-plan
   - eut-apply
@@ -198,8 +198,7 @@ rte-aws-client-server-apply:
         terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
         terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
         mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        terraform output -json aws_workload_vpc_ids >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json aws_workload_vpc_ids > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
         echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
   artifacts:
     paths:
