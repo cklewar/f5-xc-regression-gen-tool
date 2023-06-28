@@ -33,7 +33,7 @@ struct Cli {
 
 pub mod regression {
     use std::collections::{HashSet, HashMap};
-    use std::io::Write;
+    use std::io::{Write};
     use serde_derive::{Deserialize, Serialize};
     use serde_json::json;
     use tera::Tera;
@@ -128,9 +128,22 @@ pub mod regression {
     }
 
     #[derive(Deserialize, Serialize, Debug)]
+    struct RteConfigVariables {
+        name: String,
+        value: String,
+    }
+
+    #[derive(Deserialize, Serialize, Debug)]
+    struct RteConfigProvider {
+        variables: Vec<RteConfigVariables>,
+    }
+
+    #[derive(Deserialize, Serialize, Debug)]
     struct RteConfig {
         name: String,
+        script: String,
         stages: Vec<String>,
+        provider: HashMap<String, RteConfigProvider>,
         scripts: Vec<RteConfigScripts>,
     }
 
@@ -269,8 +282,12 @@ pub mod regression {
         fn load_rte_config(&self, tm_name: &String, rte_name: &String) -> RteConfig {
             println!("Loading test module <{}> specific regression test environment configuration...", tm_name);
             let rte_cfg = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, CONFIG_FILE_NAME);
-            let raw = std::fs::read_to_string(rte_cfg).unwrap();
-            let cfg = serde_json::from_str::<RteConfig>(&raw).unwrap();
+            let raw = std::fs::read_to_string(rte_cfg).expect("panic while opening rte config file");
+            let mut cfg = serde_json::from_str::<RteConfig>(&raw).unwrap();
+            let rte_script_file = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.script);
+            let script = std::fs::read_to_string(rte_script_file).expect("panic while opening rte script file");
+            cfg.script = script;
+
             println!("Loading test module <{}> specific regression test environment configuration -> Done.", tm_name);
             cfg
         }
