@@ -194,16 +194,21 @@ pub mod regression {
         providers: HashMap<String, EnvironmentProvider>,
     }
 
+    struct RteScriptRenderContext {
+        provider: String,
+        rte_name: String,
+    }
+
     impl Environment {
         pub fn render(&self) -> String {
-            println!("Render regression pipeline file...");
+            println!("Render regression pipeline file first step...");
             let mut _tera = Tera::new(&self.rc.common.templates).unwrap();
             let mut context = tera::Context::new();
             context.insert("rc", &self.rc);
             context.insert("ci", &self.ci);
             context.insert("providers", &self.providers);
             let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
-            println!("Render regression pipeline file -> Done.");
+            println!("Render regression pipeline file first step -> Done.");
             rendered
         }
 
@@ -223,6 +228,7 @@ pub mod regression {
                 .create(true)
                 .open(file)
                 .expect("Couldn't open file");
+
             f.write_all(&self.render().as_bytes()).expect("panic while writing to file");
         }
     }
@@ -314,6 +320,16 @@ pub mod regression {
         }
     }
 
+    fn render_rte_script(context: &RteScriptRenderContext, input: &String) -> String {
+        println!("Render regression pipeline file second step...");
+        let mut ctx = tera::Context::new();
+        ctx.insert("provider", &context.provider);
+        ctx.insert("rte_name", &context.rte_name);
+        let rendered = Tera::one_off(input, &ctx, true).unwrap();
+        println!("Render regression pipeline file second step -> Done.");
+        rendered
+    }
+
     pub fn new(file: String) -> Environment {
         println!("Loading new regression environment...");
         let rc = RegressionConfig::load_regression_config(file);
@@ -330,7 +346,11 @@ pub mod regression {
                 let name = String::from(&tm.rte.name);
                 if !unique_rte.contains(&name) {
                     unique_rte.insert(name.clone());
-                    let rte_cfg: RteConfig = rc.load_rte_config(&tm.module, &tm.rte.name);
+                    let mut rte_cfg: RteConfig = rc.load_rte_config(&tm.module, &tm.rte.name);
+                    for script in &mut rte_cfg.scripts {
+                        let ctx = RteScriptRenderContext { provider: provider.clone(), rte_name: rte_cfg.name.clone() };
+                        script.value = render_rte_script(&ctx, &script.value);
+                    }
                     for stage in rte_cfg.stages.iter() {
                         if !unique_ci_stages.contains(stage) {
                             ci_stages.push(stage.clone());

@@ -186,7 +186,7 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-collect:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ rc.ci.artifacts.expire_in }}
-  timeout: 30m
+  timeout: 5m
   retry:
     max: 1
     when:

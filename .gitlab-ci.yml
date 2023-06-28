@@ -190,13 +190,13 @@ rte-aws-client-server-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
-        terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
-        mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        terraform output -json aws_workload_vpc_ids > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
-        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
-        echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_DESTINATION_IPS_ARTIFACTS_FILE
+        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
+        terraform apply -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
+        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER_AWS_DESTINATION_IPS_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -224,7 +224,7 @@ rte-aws-client-server-collect:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
-  timeout: 30m
+  timeout: 5m
   retry:
     max: 1
     when:
@@ -270,13 +270,13 @@ rte-aws-client-server1-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
-        terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
-        mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        terraform output -json aws_workload_vpc_ids > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
-        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
-        echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_DESTINATION_IPS_ARTIFACTS_FILE
+        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
+        terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
+        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -304,7 +304,7 @@ rte-aws-client-server1-collect:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
-  timeout: 30m
+  timeout: 5m
   retry:
     max: 1
     when:
@@ -349,13 +349,13 @@ rte-azure-client-server1-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
-        terraform apply -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
-        mkdir -p $ARTIFACTS_ROOT_DIR/{{ rte.name }}/{{ provider }}
-        terraform output -json aws_workload_vpc_ids > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_VPC_IDS_ARTIFACTS_FILE
-        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_{{ rte.name | upper }}_{{ provider | upper }}_CONNECTION_ARTIFACTS_FILE
-        echo "{{ provider }}_destination_ip=$(terraform output destination_ip)" >> $RTE_{{ rte.name | upper }}_{{ provider | upper }}_DESTINATION_IPS_ARTIFACTS_FILE
+        cd $RTE_CLIENT_SERVER1_AZURE_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure"
+        terraform apply -var-file=$RTE_CLIENT_SERVER1_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/azure
+        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AZURE_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AZURE_CONNECTION_ARTIFACTS_FILE
+        echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AZURE_DESTINATION_IPS_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -383,7 +383,7 @@ rte-azure-client-server1-collect:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
-  timeout: 30m
+  timeout: 5m
   retry:
     max: 1
     when:
