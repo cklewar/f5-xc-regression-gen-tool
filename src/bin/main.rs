@@ -37,6 +37,7 @@ pub mod regression {
     use serde_derive::{Deserialize, Serialize};
     use serde_json::{json};
     use tera::Tera;
+    use struct_iterable::Iterable;
 
     const CONFIG_FILE_NAME: &str = "config.json";
     const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
@@ -146,6 +147,7 @@ pub mod regression {
     struct RteConfig {
         name: String,
         stages: Vec<String>,
+        timeout: String,
         provider: HashMap<String, RteConfigProvider>,
         scripts: Vec<RteConfigScript>,
         scripts_path: String,
@@ -194,9 +196,21 @@ pub mod regression {
         providers: HashMap<String, EnvironmentProvider>,
     }
 
-    struct RteScriptRenderContext {
+    #[derive(Iterable)]
+    struct ScriptRenderContext {
         provider: String,
-        rte_name: String,
+        rte_name: Option<String>,
+        rte_names: Option<Vec<String>>,
+    }
+
+    impl ScriptRenderContext {
+        pub fn new(provider: String) -> Self {
+            Self {
+                provider,
+                rte_name: None,
+                rte_names: None,
+            }
+        }
     }
 
     impl Environment {
@@ -297,33 +311,13 @@ pub mod regression {
             let mut scripts: Vec<RteConfigScript> = Vec::new();
 
             for script in cfg.scripts.iter() {
-                match script.name.as_ref() {
-                    SCRIPT_TYPE_APPLY => {
-                        let file = format!("{}/{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, provider, script.value);
-                        let contents = std::fs::read_to_string(file).expect("panic while opening rte apply.script file");
-                        let rcs = RteConfigScript {
-                            name: script.name.clone(),
-                            value: contents,
-                        };
-                        scripts.push(rcs);
-                    }
-                    SCRIPT_TYPE_DESTROY => {}
-                    SCRIPT_TYPE_COLLECT => {}
-                    SCRIPT_TYPE_ARTIFACTS => {
-                        let file = format!("{}/{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, provider, script.value);
-                        println!("{:?}", file);
-                        let contents = std::fs::read_to_string(file).expect("panic while opening rte artifacts.script file");
-                        println!("{:?}", contents);
-                        let rcs = RteConfigScript {
-                            name: script.name.clone(),
-                            value: contents,
-                        };
-                        scripts.push(rcs);
-                    }
-                    _ => {
-                        println!("Given script type does not match any know types")
-                    }
-                }
+                let file = format!("{}/{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, provider, script.value);
+                let contents = std::fs::read_to_string(file).expect("panic while opening rte apply.script file");
+                let rcs = RteConfigScript {
+                    name: script.name.clone(),
+                    value: contents,
+                };
+                scripts.push(rcs);
             }
             cfg.scripts = scripts;
             println!("Loading test module <{}> specific regression test environment configuration -> Done.", tm_name);
@@ -331,8 +325,16 @@ pub mod regression {
         }
     }
 
-    fn render_rte_script(context: &RteScriptRenderContext, input: &String) -> String {
+    fn render_script(context: &ScriptRenderContext, input: &String) -> String {
         println!("Render regression pipeline file second step...");
+        for (field_name, field_value) in context.iter() {
+            if let Some(string_opt) = field_value.downcast_ref::<Option<String>>() {
+                if let Some(string) = string_opt.as_deref() {
+                    println!("{} optional String: {:?}", field_name, field_value);
+                }
+            }
+            println!("{}: {:?}", field_name, field_value);
+        }
         let mut ctx = tera::Context::new();
         ctx.insert("provider", &context.provider);
         ctx.insert("rte_name", &context.rte_name);
@@ -357,11 +359,7 @@ pub mod regression {
                 let name = String::from(&tm.rte.name);
                 if !unique_rte.contains(&name) {
                     unique_rte.insert(name.clone());
-                    let mut rte_cfg: RteConfig = rc.load_rte_config(&tm.module, &tm.rte.name, &provider);
-                    for script in &mut rte_cfg.scripts {
-                        let ctx = RteScriptRenderContext { provider: provider.clone(), rte_name: rte_cfg.name.clone() };
-                        script.value = render_rte_script(&ctx, &script.value);
-                    }
+                    let rte_cfg: RteConfig = rc.load_rte_config(&tm.module, &tm.rte.name, &provider);
                     for stage in rte_cfg.stages.iter() {
                         if !unique_ci_stages.contains(stage) {
                             ci_stages.push(stage.clone());
@@ -371,6 +369,27 @@ pub mod regression {
                     rtes.push(rte_cfg);
                 }
             }
+            for rte in &mut rtes {
+                println!("{:?}", rte.provider);
+                /*for script in &mut rte.scripts {
+                    let mut ctx: ScriptRenderContext = ScriptRenderContext::new(provider.clone());
+                    match script.name.as_ref() {
+                        SCRIPT_TYPE_APPLY => {
+                            ctx.rte_name = Option::from(rte_cfg.name.clone());
+                        }
+                        SCRIPT_TYPE_DESTROY => {}
+                        SCRIPT_TYPE_COLLECT => {
+                            ctx.rte_names = Option::from(Vec::new())
+                        }
+                        SCRIPT_TYPE_ARTIFACTS => {}
+                        _ => {
+                            println!("Given script type does not match any know types")
+                        }
+                    }
+                    script.value = render_script(&ctx, &script.value);
+                }*/
+            }
+
             let _ep = EnvironmentProvider { tmvc, rtes };
             eps.insert(provider.clone(), _ep);
         }
