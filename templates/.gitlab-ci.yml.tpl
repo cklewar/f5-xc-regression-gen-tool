@@ -127,9 +127,9 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-artifacts:
     {%- endfor %}
   stage: rte-artifacts
   script:
-      {% for script in rte.scripts -%}
-      {% if script.name == 'artifacts' -%}
-      {% for line in script.value -%}
+      {% for apply.script in rte.scripts -%}
+      {% if apply.script.name == 'artifacts' -%}
+      {% for line in apply.script.value -%}
       {{ line }}
       {% endfor -%}
       {% endif -%}
@@ -160,9 +160,9 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      {% for script in rte.scripts -%}
-      {% if script.name == 'apply' -%}
-      {% for line in script.value -%}
+      {% for apply.script in rte.scripts -%}
+      {% if apply.script.name == 'apply' -%}
+      {% for line in apply.script.value -%}
       {{ line }}
       {% endfor -%}
       {% endif -%}
@@ -189,9 +189,9 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-vpc-ids:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
-      {% for script in rte.scripts -%}
-      {% if script.name == 'apply' -%}
-      {% for line in script.value -%}
+      {% for apply.script in rte.scripts -%}
+      {% if apply.script.name == 'apply' -%}
+      {% for line in apply.script.value -%}
       {{ line }}
       {% endfor -%}
       {% endif -%}

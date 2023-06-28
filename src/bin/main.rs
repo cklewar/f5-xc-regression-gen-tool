@@ -141,7 +141,6 @@ pub mod regression {
     #[derive(Deserialize, Serialize, Debug)]
     struct RteConfig {
         name: String,
-        script: String,
         stages: Vec<String>,
         provider: HashMap<String, RteConfigProvider>,
         scripts: Vec<RteConfigScripts>,
@@ -285,7 +284,7 @@ pub mod regression {
             let raw = std::fs::read_to_string(rte_cfg).expect("panic while opening rte config file");
             let mut cfg = serde_json::from_str::<RteConfig>(&raw).unwrap();
             let rte_script_file = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.script);
-            let script = std::fs::read_to_string(rte_script_file).expect("panic while opening rte script file");
+            let script = std::fs::read_to_string(rte_script_file).expect("panic while opening rte apply.script file");
             cfg.script = script;
 
             println!("Loading test module <{}> specific regression test environment configuration -> Done.", tm_name);
