@@ -14,9 +14,9 @@ stages:
   - eut-plan
   - eut-apply
   - regression-test
+  - regression-test-east-west-traffic-azure-iperf
   - regression-test-east-west-traffic-aws-fortio
   - regression-test-east-west-traffic-aws-iperf
-  - regression-test-east-west-traffic-azure-iperf
   - regression-test-verify
   
 variables:
