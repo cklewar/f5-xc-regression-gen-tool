@@ -87,7 +87,15 @@ pub mod regression {
     }
 
     #[derive(Deserialize, Serialize, Debug)]
+    struct RegressionEutProviderCollector {
+        module: String,
+        path: String,
+        enable: bool,
+    }
+
+    #[derive(Deserialize, Serialize, Debug)]
     struct RegressionEutProviderConfig {
+        collector: RegressionEutProviderCollector,
         tests: Vec<RegressionEutRunTestsConfig>,
     }
 
@@ -180,6 +188,7 @@ pub mod regression {
 
     #[derive(Deserialize, Serialize, Debug)]
     struct EnvironmentProvider {
+        collector: bool,
         tmvc: Vec<TestModuleAndVerificationConfig>,
         rtes: Vec<RteConfig>,
     }
@@ -352,6 +361,7 @@ pub mod regression {
             let tmvc = rc.load_test_modules_config(&config.tests);
             let mut rtes: Vec<RteConfig> = Vec::new();
             let mut rte_names: Vec<String> = Vec::new();
+            let is_collector: bool = config.collector.enable;
 
             for tm in tmvc.iter() {
                 let name = String::from(&tm.rte.name);
@@ -391,7 +401,7 @@ pub mod regression {
                 }
             }
 
-            let _ep = EnvironmentProvider { tmvc, rtes };
+            let _ep = EnvironmentProvider { collector: is_collector, tmvc, rtes };
             eps.insert(provider.clone(), _ep);
         }
 

@@ -173,6 +173,31 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - runner_system_failure
 {% endfor -%}
 {% endfor %}
+{% for provider, values in providers -%}
+  {{ values.collector }}
+{% if values.collector %}
+# rte - {{ provider }} - collector
+rte-{{ provider }}-collector:
+  <<: *base
+  stage: rte-apply
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
+  script:
+      - |
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ rc.ci.artifacts.expire_in }}
+  timeout: {{ rte.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endif -%}
+{% endfor %}
 # eut - apply
 eut-apply:
   <<: *base
