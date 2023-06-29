@@ -339,12 +339,12 @@ eut-apply:
         terraform output > $EUT_ROOT_DIR/aws/site.tfvars
         cd $EUT_ROOT_DIR/azure
         terraform init --backend-config="key=$S3_EUT_ROOT/provider/azure"
-        # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_CLIENT_SERVER1_AZURE_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
+        # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/azure/site.tfvars
         cd $EUT_ROOT_DIR/common
         terraform init --backend-config="key=$S3_EUT_ROOT/common"
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars -var-file=$RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_CONNECTION_ARTIFACTS_FILE -auto-approve
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/aws/site.tfvars -var-file=$EUT_ROOT_DIR/azure/site.tfvars -var-file=$RTE_CLIENT_SERVER_AWS_DESTINATION_IPS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AZURE_DESTINATION_IPS_ARTIFACTS_FILE -auto-approve
   timeout: 1h 30m
   retry:
     max: 1
