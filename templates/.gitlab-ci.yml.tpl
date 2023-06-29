@@ -173,23 +173,23 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - runner_system_failure
 {% endfor -%}
 {% endfor %}
-{% for provider, values in providers -%}
-  {{ values.collector }}
-{% if values.collector %}
-# rte - {{ provider }} - collector
-rte-{{ provider }}-collector:
+{%- for provider, values in providers -%}
+{% if values.collector.enable %}
+# rte - {{ provider }} - {{ values.collector.name | replace(from="_", to="-")}} - collector
+rte-{{ provider }}-{{ values.collector.name | replace(from="_", to="-")}}-collector:
   <<: *base
-  stage: rte-apply
+  stage: rte-collect
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        {{ values.collector.script }}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ rc.ci.artifacts.expire_in }}
-  timeout: {{ rte.timeout }}
+  timeout: {{ values.collector.name }}
   retry:
     max: 1
     when:
