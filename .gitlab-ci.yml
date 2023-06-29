@@ -55,6 +55,8 @@ variables:
   RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_connetion.tfvars"
   RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/rte_client_server1_destination_ips.tfvars"
   
+  
+  
 .deploy_rules:
   rules:
     - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -333,7 +335,7 @@ rte-aws-vpc-ids-collector:
   script:
       - |
         #!/usr/bin/env bash
-        jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' -var-file=$RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE 
+        jq -n '{ aws_workload_vpc_ids: [ inputs.aws_workload_vpc_ids.value ] | add }' -var-file=$RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE  > COLLECTOR_aws_vpc_ids_ARTIFACTS_FILE
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/

@@ -225,11 +225,12 @@ pub mod regression {
         providers: HashMap<String, EnvironmentProvider>,
     }
 
-    #[derive(Debug)]
+    #[derive(Serialize, Debug)]
     struct ScriptRenderContext {
         provider: String,
         rte_name: Option<String>,
         rte_names: Option<Vec<String>>,
+        collector_name: Option<String>,
     }
 
     impl ScriptRenderContext {
@@ -238,6 +239,7 @@ pub mod regression {
                 provider,
                 rte_name: None,
                 rte_names: None,
+                collector_name: None,
             }
         }
     }
@@ -296,6 +298,7 @@ pub mod regression {
                     collector = rc.load_collector_config(&provider, &config.collector);
                     let mut ctx: ScriptRenderContext = ScriptRenderContext::new(provider.clone());
                     ctx.rte_names = Option::from(rte_names.clone());
+                    ctx.collector_name = Option::from(collector.name.clone());
                     collector.script = render_script(&ctx, &collector.script);
                 } else {
                     collector = EnvironmentCollectorConfig {
@@ -463,11 +466,8 @@ pub mod regression {
 
     fn render_script(context: &ScriptRenderContext, input: &String) -> String {
         println!("Render regression pipeline file script section...");
-        let mut ctx = tera::Context::new();
-        ctx.insert("provider", &context.provider);
-        ctx.insert("rte_name", &context.rte_name);
-        ctx.insert("rte_names", &context.rte_names);
-        let rendered = Tera::one_off(input, &ctx, true).unwrap();
+        let ctx = tera::Context::from_serialize(context);
+        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
         println!("Render regression pipeline file script section -> Done.");
         rendered
     }

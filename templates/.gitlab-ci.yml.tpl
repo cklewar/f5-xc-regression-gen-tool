@@ -27,6 +27,9 @@ variables:
   {% endfor -%}
   {% endfor -%}
   {% endfor -%}
+  {% if provider.collector.enable %}
+  COLLECTOR_{{ provider }}_{{ provider.collector.name }}_ARTIFACTS_FILE: ""
+  {% endif %}
   {% endfor %}
 .deploy_rules:
   rules:
