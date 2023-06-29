@@ -89,7 +89,7 @@ variables:
   tags:
     {% for tag in rc.ci.tags -%}
     - {{ tag }}
-    {% endfor %}
+    {%- endfor %}
   cache:
     policy: pull
     key: "${CI_COMMIT_SHA}"
@@ -171,32 +171,6 @@ rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-apply:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# rte - {{ provider }} - {{ rte.name | replace(from="_", to="-")}} - collect
-rte-{{ provider }}-{{ rte.name | replace(from="_", to="-")}}-collect:
-  <<: *base
-  stage: rte-collect
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-  script:
-      - |
-        {% for script in rte.scripts -%}
-        {% if script.name == "collect" -%}
-        {{ script.value }}
-        {%- endif -%}
-        {% endfor %}
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: {{ rc.ci.artifacts.expire_in }}
-  timeout: 5m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
 {% endfor -%}
 {% endfor %}
 # eut - apply
@@ -213,9 +187,9 @@ eut-apply:
         cd $EUT_ROOT_DIR/{{ provider }}
         terraform init --backend-config="key=$S3_EUT_ROOT/provider/{{ provider }}"
         {% if provider == "azure" -%}
-        # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
+        # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         {% endif -%}  
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json {% for rte in values.rtes -%}-var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ARTIFACTS_FILE {% endfor -%} -auto-approve
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$EUT_ROOT_DIR/{{ provider }}/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/{{ provider }}/site.tfvars
         {% endfor -%}
         cd $EUT_ROOT_DIR/common

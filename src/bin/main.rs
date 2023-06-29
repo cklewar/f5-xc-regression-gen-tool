@@ -126,24 +126,24 @@ pub mod regression {
         verifications: RegressionVerifications,
     }
 
-    #[derive(Deserialize, Serialize, Debug)]
+    #[derive(Deserialize, Serialize, Clone, Debug)]
     struct RteConfigScript {
         name: String,
         value: String,
     }
 
-    #[derive(Deserialize, Serialize, Debug)]
+    #[derive(Deserialize, Serialize, Clone, Debug)]
     struct RteConfigVariables {
         name: String,
         value: String,
     }
 
-    #[derive(Deserialize, Serialize, Debug)]
+    #[derive(Deserialize, Serialize, Clone, Debug)]
     struct RteConfigProvider {
         variables: Vec<RteConfigVariables>,
     }
 
-    #[derive(Deserialize, Serialize, Debug)]
+    #[derive(Deserialize, Serialize, Clone, Debug)]
     struct RteConfig {
         name: String,
         stages: Vec<String>,
@@ -326,20 +326,17 @@ pub mod regression {
     }
 
     fn render_script(context: &ScriptRenderContext, input: &String) -> String {
-        println!("Render regression pipeline file second step...");
-        for (field_name, field_value) in context.iter() {
-            if let Some(string_opt) = field_value.downcast_ref::<Option<String>>() {
-                if let Some(string) = string_opt.as_deref() {
-                    println!("{} optional String: {:?}", field_name, field_value);
-                }
-            }
-            println!("{}: {:?}", field_name, field_value);
-        }
+        println!("Render regression pipeline file script section...");
         let mut ctx = tera::Context::new();
+        /*for (field_name, _field_value) in context.iter() {
+            //println!("FIELD_NAME: {}, FIELD_VALUE: {:?}", field_name, field_value);
+            //ctx.insert(field_name, &context.);
+        }*/
         ctx.insert("provider", &context.provider);
         ctx.insert("rte_name", &context.rte_name);
+        ctx.insert("rte_names", &context.rte_names);
         let rendered = Tera::one_off(input, &ctx, true).unwrap();
-        println!("Render regression pipeline file second step -> Done.");
+        println!("Render regression pipeline file script section -> Done.");
         rendered
     }
 
@@ -354,6 +351,7 @@ pub mod regression {
             let mut unique_rte: HashSet<String> = HashSet::new();
             let tmvc = rc.load_test_modules_config(&config.tests);
             let mut rtes: Vec<RteConfig> = Vec::new();
+            let mut rte_names: Vec<String> = Vec::new();
 
             for tm in tmvc.iter() {
                 let name = String::from(&tm.rte.name);
@@ -366,28 +364,31 @@ pub mod regression {
                             unique_ci_stages.insert(stage.clone());
                         }
                     }
+                    rte_names.push(rte_cfg.name.clone());
                     rtes.push(rte_cfg);
                 }
             }
+
             for rte in &mut rtes {
-                println!("{:?}", rte.provider);
-                /*for script in &mut rte.scripts {
+                for script in &mut rte.scripts {
                     let mut ctx: ScriptRenderContext = ScriptRenderContext::new(provider.clone());
                     match script.name.as_ref() {
                         SCRIPT_TYPE_APPLY => {
-                            ctx.rte_name = Option::from(rte_cfg.name.clone());
+                            ctx.rte_name = Option::from(rte.name.clone());
                         }
                         SCRIPT_TYPE_DESTROY => {}
                         SCRIPT_TYPE_COLLECT => {
-                            ctx.rte_names = Option::from(Vec::new())
+                            ctx.rte_names = Option::from(rte_names.clone());
                         }
-                        SCRIPT_TYPE_ARTIFACTS => {}
+                        SCRIPT_TYPE_ARTIFACTS => {
+                            ctx.rte_name = Option::from(rte.name.clone());
+                        }
                         _ => {
                             println!("Given script type does not match any know types")
                         }
                     }
                     script.value = render_script(&ctx, &script.value);
-                }*/
+                }
             }
 
             let _ep = EnvironmentProvider { tmvc, rtes };
@@ -409,7 +410,9 @@ pub mod regression {
             ci_stages.push(stage.clone())
         }
 
-        let eci = EnvironmentCi { stages: ci_stages };
+        let eci = EnvironmentCi {
+            stages: ci_stages
+        };
         let renv = Environment { rc, ci: eci, providers: eps };
         renv
     }
