@@ -9,7 +9,32 @@
 //! Supported command line arguments:
 //! --config <provide regression environment configuration file>
 
+use std::sync::Arc;
+use indradb;
+use indradb::{Datastore, ValidationResult};
+use serde_json::json;
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
+use std::collections::{HashSet, HashMap};
+use std::string::ToString;
 use clap::Parser;
+use tera::Tera;
+use lazy_static::lazy_static;
+
+const CONFIG_FILE_NAME: &str = "config.json";
+
+const VERTEX_TYPE_EUT: &str = "eut";
+const VERTEX_TYPE_RTE: &str = "project";
+const VERTEX_TYPE_PROJECT: &str = "project";
+const VERTEX_TYPE_FEATURE: &str = "feature";
+const VERTEX_TYPE_TEST: &str = "test";
+const VERTEX_TYPE_VALIDATION: &str = "validation";
+
+const EDGE_TYPE_HAS_EUT: &str = "has_eut";
+const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
+const EDGE_TYPE_USES_RTE: &str = "uses_rte";
+const EDGE_TYPE_USES_TEST: &str = "uses_test";
+
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -31,453 +56,205 @@ struct Cli {
     debug: bool,
 }
 
-pub mod regression {
-    use std::collections::{HashSet, HashMap};
-    use std::io::{Write};
-    use serde_derive::{Deserialize, Serialize};
-    use serde_json::{json};
-    use tera::Tera;
+enum VertexTypes {
+    Project,
+    Eut,
+    Feature,
+    Rte,
+    Test,
+    Validation,
+}
 
-    const CONFIG_FILE_NAME: &str = "config.json";
-    const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
-    const SCRIPT_TYPE_APPLY: &str = "apply";
-    const SCRIPT_TYPE_DESTROY: &str = "destroy";
-    const SCRIPT_TYPE_ARTIFACTS: &str = "artifacts";
-    const SCRIPT_TYPE_COLLECTOR_PATH: &str = "scripts";
+enum EdgeTypes {
+    HasEut,
+    HasFeature,
+    UsesRte,
+    USesTest,
+}
 
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionCommonConfig {
-        project: String,
-        templates: String,
-        root_path: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionCiVariablesConfig {
-        name: String,
-        value: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionCiArtifactsConfig {
-        path: String,
-        expire_in: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionCiConfig {
-        tags: Vec<String>,
-        image: String,
-        artifacts: RegressionCiArtifactsConfig,
-        variables: Vec<RegressionCiVariablesConfig>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionEutRunTestVerificationsConfig {
-        name: String,
-        module: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionEutRunTestsConfig {
-        name: String,
-        module: String,
-        verifications: Vec<RegressionEutRunTestVerificationsConfig>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionEutProviderCollector {
-        module: String,
-        path: String,
-        enable: bool,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionEutProviderConfig {
-        collector: RegressionEutProviderCollector,
-        tests: Vec<RegressionEutRunTestsConfig>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionEutConfig {
-        name: String,
-        path: String,
-        stages: Vec<String>,
-        provider: HashMap<String, RegressionEutProviderConfig>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionCollectorConfig {
-        path: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionRteConfig {
-        path: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionTests {
-        path: String,
-        stages: Vec<String>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct RegressionVerifications {
-        path: String,
-        stages: Vec<String>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    pub struct RegressionConfig {
-        ci: RegressionCiConfig,
-        eut: RegressionEutConfig,
-        rte: RegressionRteConfig,
-        collector: RegressionCollectorConfig,
-        tests: RegressionTests,
-        common: RegressionCommonConfig,
-        verifications: RegressionVerifications,
-    }
-
-    #[derive(Deserialize, Serialize, Clone, Debug)]
-    struct EnvironmentRteConfigScript {
-        name: String,
-        value: String,
-    }
-
-    #[derive(Deserialize, Serialize, Clone, Debug)]
-    struct EnvironmentRteConfigVariables {
-        name: String,
-        value: String,
-    }
-
-    #[derive(Deserialize, Serialize, Clone, Debug)]
-    struct EnvironmentRteConfigProvider {
-        variables: Vec<EnvironmentRteConfigVariables>,
-    }
-
-    #[derive(Deserialize, Serialize, Clone, Debug)]
-    struct EnvironmentRteConfig {
-        name: String,
-        stages: Vec<String>,
-        timeout: String,
-        provider: HashMap<String, EnvironmentRteConfigProvider>,
-        scripts: Vec<EnvironmentRteConfigScript>,
-        scripts_path: String,
-    }
-    
-    #[derive(Deserialize, Serialize, Clone, Debug)]
-    struct EnvironmentCollectorConfigRaw {
-        name: String,
-        timeout: String,
-        script: String,
-    }
-    
-    #[derive(Deserialize, Serialize, Clone, Debug)]
-    struct EnvironmentCollectorConfig {
-        enable: bool,
-        name: String,
-        timeout: String,
-        script: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct EnvironmentTestModuleVerificationConfig {
-        name: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct EnvironmentTestModuleRteConfig {
-        name: String,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct TestModuleConfig {
-        name: String,
-        rte: EnvironmentTestModuleRteConfig,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct EnvironmentTestModuleAndVerificationConfig {
-        name: String,
-        module: String,
-        rte: EnvironmentTestModuleRteConfig,
-        stage: String,
-        verifications: Vec<EnvironmentTestModuleVerificationConfig>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct EnvironmentProvider {
-        collector: EnvironmentCollectorConfig,
-        tmvc: Vec<EnvironmentTestModuleAndVerificationConfig>,
-        rtes: Vec<EnvironmentRteConfig>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    struct EnvironmentCi {
-        stages: Vec<String>,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    pub struct Environment {
-        rc: RegressionConfig,
-        ci: EnvironmentCi,
-        providers: HashMap<String, EnvironmentProvider>,
-    }
-
-    #[derive(Serialize, Debug)]
-    struct ScriptRenderContext {
-        provider: String,
-        rte_name: Option<String>,
-        rte_names: Option<Vec<String>>,
-        collector_name: Option<String>,
-    }
-
-    impl ScriptRenderContext {
-        pub fn new(provider: String) -> Self {
-            Self {
-                provider,
-                rte_name: None,
-                rte_names: None,
-                collector_name: None,
-            }
+impl VertexTypes {
+    fn name(&self) -> &'static str {
+        match *self {
+            VertexTypes::Project => VERTEX_TYPE_RTE,
+            VertexTypes::Feature => VERTEX_TYPE_FEATURE,
+            VertexTypes::Eut => VERTEX_TYPE_EUT,
+            VertexTypes::Rte => VERTEX_TYPE_RTE,
+            VertexTypes::Test => VERTEX_TYPE_TEST,
+            VertexTypes::Validation => VERTEX_TYPE_VALIDATION,
         }
-    }
-
-    impl Environment {
-        pub fn new(file: String) -> Self {
-            println!("Loading new regression environment...");
-            let rc = RegressionConfig::load_regression_config(file);
-            let mut eps: HashMap<String, EnvironmentProvider> = HashMap::new();
-            let mut ci_stages: Vec<String> = Vec::new();
-            let mut unique_ci_stages: HashSet<String> = HashSet::new();
-
-            for (provider, config) in rc.eut.provider.iter() {
-                let mut unique_rte: HashSet<String> = HashSet::new();
-                let tmvc = rc.load_test_modules_config(&config.tests);
-                let mut rtes: Vec<EnvironmentRteConfig> = Vec::new();
-                let mut rte_names: Vec<String> = Vec::new();
-                let mut collector: EnvironmentCollectorConfig;
-
-                for tm in tmvc.iter() {
-                    let name = String::from(&tm.rte.name);
-                    if !unique_rte.contains(&name) {
-                        unique_rte.insert(name.clone());
-                        let rte_cfg: EnvironmentRteConfig = rc.load_rte_config(&tm.module, &tm.rte.name, &provider);
-                        for stage in rte_cfg.stages.iter() {
-                            if !unique_ci_stages.contains(stage) {
-                                ci_stages.push(stage.clone());
-                                unique_ci_stages.insert(stage.clone());
-                            }
-                        }
-                        rte_names.push(rte_cfg.name.clone());
-                        rtes.push(rte_cfg);
-                    }
-                }
-
-                for rte in &mut rtes {
-                    for script in &mut rte.scripts {
-                        let mut ctx: ScriptRenderContext = ScriptRenderContext::new(provider.clone());
-                        match script.name.as_ref() {
-                            SCRIPT_TYPE_APPLY => {
-                                ctx.rte_name = Option::from(rte.name.clone());
-                            }
-                            SCRIPT_TYPE_DESTROY => {}
-                            SCRIPT_TYPE_ARTIFACTS => {
-                                ctx.rte_name = Option::from(rte.name.clone());
-                            }
-                            _ => {
-                                println!("Given script type does not match any know types")
-                            }
-                        }
-                        script.value = render_script(&ctx, &script.value);
-                    }
-                }
-
-                if config.collector.enable {
-                    collector = rc.load_collector_config(&provider, &config.collector);
-                    let mut ctx: ScriptRenderContext = ScriptRenderContext::new(provider.clone());
-                    ctx.rte_names = Option::from(rte_names.clone());
-                    ctx.collector_name = Option::from(collector.name.clone());
-                    collector.script = render_script(&ctx, &collector.script);
-                } else {
-                    collector = EnvironmentCollectorConfig {
-                        enable: false,
-                        name: "".to_string(),
-                        timeout: "".to_string(),
-                        script: "".to_string(),
-                    };
-                }
-
-                let _ep = EnvironmentProvider { collector, tmvc, rtes };
-                eps.insert(provider.clone(), _ep);
-            }
-
-            for stage in rc.eut.stages.iter() {
-                ci_stages.push(stage.clone());
-            }
-            for stage in rc.tests.stages.iter() {
-                ci_stages.push(stage.clone())
-            }
-            for (_k, v) in &mut eps.iter() {
-                for tm in v.tmvc.iter() {
-                    ci_stages.push(format!("regression-test-{}", tm.name.clone()));
-                }
-            }
-            for stage in rc.verifications.stages.iter() {
-                ci_stages.push(stage.clone())
-            }
-
-            let eci = EnvironmentCi {
-                stages: ci_stages
-            };
-            let renv = Environment { rc, ci: eci, providers: eps };
-            renv
-        }
-
-        pub fn render(&self) -> String {
-            println!("Render regression pipeline file first step...");
-            let mut _tera = Tera::new(&self.rc.common.templates).unwrap();
-            let mut context = tera::Context::new();
-            context.insert("rc", &self.rc);
-            context.insert("ci", &self.ci);
-            context.insert("providers", &self.providers);
-            let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
-            println!("Render regression pipeline file first step -> Done.");
-            rendered
-        }
-
-        pub fn to_json(&self) -> String {
-            let j = json!({
-                "rc": &self.rc,
-                "ci": &self.ci,
-                "providers": &self.providers,
-            });
-            j.to_string()
-        }
-
-        pub fn to_file(&self, file: String) {
-            let mut f = std::fs::OpenOptions::new()
-                .write(true)
-                .truncate(true)
-                .create(true)
-                .open(file)
-                .expect("Couldn't open file");
-
-            f.write_all(&self.render().as_bytes()).expect("panic while writing to file");
-        }
-    }
-
-    impl RegressionConfig {
-        fn load_regression_config(file: String) -> RegressionConfig {
-            println!("Loading regression configuration data...");
-            let data: String = String::from(file);
-            let raw = std::fs::read_to_string(&data).unwrap();
-            let cfg = serde_json::from_str::<RegressionConfig>(&raw).unwrap();
-            println!("Loading regression configuration data -> Done.");
-
-            println!("Render regression configuration file...");
-            let mut _tera = Tera::new("../../regression/configurations/*").unwrap();
-            let mut context = tera::Context::new();
-            context.insert("eut", &cfg.eut);
-            context.insert("rte", &cfg.rte);
-            context.insert("common", &cfg.common);
-            context.insert("collector", &cfg.collector);
-            context.insert("tests", &cfg.tests);
-            context.insert("verifications", &cfg.verifications);
-            let eutc = _tera.render("regression.json", &context).unwrap();
-            println!("Render regression configuration file -> Done.");
-
-            println!("Loading regression configuration data...");
-            let cfg = serde_json::from_str::<RegressionConfig>(&eutc).unwrap();
-            println!("Loading regression configuration data -> Done.");
-
-            cfg
-        }
-
-        fn load_test_modules_config(&self, tests: &Vec<RegressionEutRunTestsConfig>) -> Vec<EnvironmentTestModuleAndVerificationConfig> {
-            println!("Loading regression test modules configuration...");
-            let mut modules: Vec<EnvironmentTestModuleAndVerificationConfig> = Vec::new();
-
-            for test in tests.iter() {
-                let mut vmc: Vec<EnvironmentTestModuleVerificationConfig> = Vec::new();
-
-                for verification in test.verifications.iter() {
-                    let raw = std::fs::read_to_string(format!("{}/{}/{}/{}", self.common.root_path, self.verifications.path, verification.module, CONFIG_FILE_NAME)).unwrap();
-                    let cfg = serde_json::from_str::<EnvironmentTestModuleVerificationConfig>(&raw).unwrap();
-                    vmc.push(cfg);
-                }
-
-                let raw = std::fs::read_to_string(format!("{}/{}/{}/{}", self.common.root_path, self.tests.path, test.module, CONFIG_FILE_NAME)).unwrap();
-                let cfg = serde_json::from_str::<TestModuleConfig>(&raw).unwrap();
-
-                let tmvc = EnvironmentTestModuleAndVerificationConfig {
-                    rte: cfg.rte,
-                    name: test.name.clone(),
-                    stage: format!("regression-test-{}", test.name),
-                    module: cfg.name,
-                    verifications: vmc,
-                };
-
-                modules.push(tmvc);
-            }
-            println!("Loading regression test modules configuration -> Done.");
-            modules
-        }
-
-        fn load_rte_config(&self, tm_name: &String, rte_name: &String, provider: &String) -> EnvironmentRteConfig {
-            println!("Loading test module <{}> specific regression test environment configuration...", tm_name);
-            let file = format!("{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, CONFIG_FILE_NAME);
-            let raw = std::fs::read_to_string(file).expect("panic while opening rte config file");
-            let mut cfg = serde_json::from_str::<EnvironmentRteConfig>(&raw).unwrap();
-            let mut scripts: Vec<EnvironmentRteConfigScript> = Vec::new();
-
-            for script in cfg.scripts.iter() {
-                let file = format!("{}/{}/{}/{}/{}/{}", self.common.root_path, self.rte.path, rte_name, cfg.scripts_path, provider, script.value);
-                let contents = std::fs::read_to_string(file).expect("panic while opening rte apply.script file");
-                let rcs = EnvironmentRteConfigScript {
-                    name: script.name.clone(),
-                    value: contents,
-                };
-                scripts.push(rcs);
-            }
-            cfg.scripts = scripts;
-            println!("Loading test module <{}> specific regression test environment configuration -> Done.", tm_name);
-            cfg
-        }
-
-        fn load_collector_config(&self, provider: &String, collector: &RegressionEutProviderCollector) -> EnvironmentCollectorConfig {
-            println!("Loading provider <{}> collector module <{}> configuration...", provider, collector.module);
-            let file = format!("{}/{}/{}/{}/{}", self.common.root_path, self.collector.path, collector.path, collector.module, CONFIG_FILE_NAME);
-            let raw = std::fs::read_to_string(file).expect("panic while opening collector config file");
-            let cfg_raw = serde_json::from_str::<EnvironmentCollectorConfigRaw>(&raw).unwrap();
-            let script = format!("{}/{}/{}/{}/{}/{}", self.common.root_path, self.collector.path, collector.path, collector.module, SCRIPT_TYPE_COLLECTOR_PATH, cfg_raw.script);
-            let contents = std::fs::read_to_string(&script).expect("panic while opening collector collector.script file");
-            let cfg=  EnvironmentCollectorConfig {
-                enable: collector.enable,
-                name: cfg_raw.name,
-                timeout: cfg_raw.timeout,
-                script: contents
-            };
-            println!("Loading provider <{}> collector module <{}> configuration -> Done.", provider, collector.module);
-            cfg
-        }
-    }
-
-    fn render_script(context: &ScriptRenderContext, input: &String) -> String {
-        println!("Render regression pipeline file script section...");
-        let ctx = tera::Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
-        println!("Render regression pipeline file script section -> Done.");
-        rendered
     }
 }
 
-fn main() -> Result<(), std::io::Error> {
-    let cli = Cli::parse();
-    let e = regression::Environment::new(cli.config);
+impl EdgeTypes {
+    fn name(&self) -> &'static str {
+        match *self {
+            EdgeTypes::HasEut => EDGE_TYPE_HAS_EUT,
+            EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
+            EdgeTypes::UsesRte => EDGE_TYPE_USES_RTE,
+            EdgeTypes::UsesTest => EDGE_TYPE_USES_TEST,
+        }
+    }
+}
 
-    if cli.write {
+#[derive(Hash, Eq)]
+struct TupleStruct(String, String);
+
+//static EDGES: (String, String, String) = (VertexTypes::Eut.name().to_string(), "B".to_string(), "C".to_string());
+
+lazy_static! {
+    static ref EDGED: HashMap<TupleStruct, &'static str> = {
+        let mut map = HashMap::new();
+        map.insert(TupleStruct(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name().to_string());
+        map
+    };
+}
+//static HM: HashMap<TupleStruct, String> = (TupleStruct(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name().to_string());
+
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigCommon {
+    templates: String,
+    root_path: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigCiVariables {
+    name: String,
+    value: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigCiArtifacts {
+    path: String,
+    expire_in: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigCi {
+    tags: Vec<String>,
+    image: String,
+    artifacts: RegressionConfigCiArtifacts,
+    variables: Vec<RegressionConfigCiVariables>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigEut {
+    name: String,
+    path: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigCollector {
+    path: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigRte {
+    path: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigTests {
+    path: String,
+    stages: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigVerifications {
+    path: String,
+    stages: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigProject {
+    name: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct RegressionConfig {
+    ci: RegressionConfigCi,
+    eut: RegressionConfigEut,
+    rte: RegressionConfigRte,
+    collector: RegressionConfigCollector,
+    tests: RegressionConfigTests,
+    common: RegressionConfigCommon,
+    project: RegressionConfigProject,
+    verifications: RegressionConfigVerifications,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Data {
+    data: serde_json::Map<String, serde_json::Value>,
+}
+
+struct Regression {
+    regression: indradb::Database<indradb::MemoryDatastore>,
+    config: RegressionConfig,
+}
+
+impl Regression {
+    fn new(file: &String) -> Self {
+        Regression { regression: indradb::MemoryDatastore::new_db(), config: Regression::load_regression_config(&file) }
+    }
+
+    fn load_regression_config(file: &String) -> RegressionConfig {
+        println!("Loading regression configuration data...");
+        let data: String = String::from(file);
+        let raw = std::fs::read_to_string(&data).unwrap();
+        let cfg = serde_json::from_str::<RegressionConfig>(&raw).unwrap();
+        println!("Loading regression configuration data -> Done.");
+
+        println!("Render regression configuration file...");
+        let mut _tera = Tera::new("../../regression/config/*").unwrap();
+        let mut context = tera::Context::new();
+        context.insert("eut", &cfg.eut);
+        context.insert("rte", &cfg.rte);
+        context.insert("common", &cfg.common);
+        context.insert("collector", &cfg.collector);
+        context.insert("tests", &cfg.tests);
+        context.insert("verifications", &cfg.verifications);
+        context.insert("project", &cfg.project);
+        let eutc = _tera.render("regression.json", &context).unwrap();
+        println!("Render regression configuration file -> Done.");
+
+        println!("Loading regression configuration data...");
+        let cfg = serde_json::from_str::<RegressionConfig>(&eutc).unwrap();
+        println!("Loading regression configuration data -> Done.");
+
+        cfg
+    }
+
+    fn init(&self) {
+        let v_p = indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Project.name()).unwrap());
+        let v_eut = indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Eut.name()).unwrap());
+        self.regression.create_vertex(&v_p).expect("panic while creating project db entry");
+        self.regression.create_vertex(&v_eut).expect("panic while creating eut db entry");
+
+        // Project
+        let v = serde_json::to_value(&self.config.project).unwrap();
+        let bi = indradb::BulkInsertItem::VertexProperty(v_eut.id, indradb::Identifier::new("data").unwrap(), indradb::Json::new(v.clone()));
+        self.regression.bulk_insert(vec![bi]).unwrap();
+
+        // Eut
+        let file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.eut.path, self.config.eut.name, CONFIG_FILE_NAME);
+        let raw = std::fs::read_to_string(file).expect("panic while opening regression config file");
+        let cfg: Data = serde_json::from_str::<Data>(&raw).unwrap();
+        let v = serde_json::to_value(cfg).unwrap();
+        let bi = indradb::BulkInsertItem::VertexProperty(v_eut.id, indradb::Identifier::new("data").unwrap(), indradb::Json::new(v.get("data").unwrap().get("eut").unwrap().clone()));
+        self.regression.bulk_insert(vec![bi]).unwrap();
+
+        /*indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Feature.name()).unwrap());
+        indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Rte.name()).unwrap());
+        indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Test.name()).unwrap());
+        indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Test.name()).unwrap());*/
+    }
+}
+
+fn main() {
+    let cli = Cli::parse();
+    let r = Regression::new(&cli.config);
+
+    /*if cli.write {
         e.to_file(String::from(".gitlab-ci.yml"));
     }
     if cli.json {
@@ -490,7 +267,60 @@ fn main() -> Result<(), std::io::Error> {
 
     if cli.debug {
         println!("{:#?}", e);
-    }
+    }*/
 
-    Ok(())
+
+    r.init();
+    /*let db: indradb::Database<indradb::MemoryDatastore> = indradb::MemoryDatastore::new_db();
+    let v_project = indradb::Vertex::new(indradb::Identifier::new(VERTEX_TYPE_PROJECT).unwrap());
+    let v_eut = indradb::Vertex::new(indradb::Identifier::new(VertexTypeEut).unwrap());
+    let v_rte = indradb::Vertex::new(indradb::Identifier::new(VERTEX_TYPE_RTE).unwrap());
+    let root_path = String::from("/home/cklewar/Projects/gitlab.com/F5/volterra/solution/sense8");
+    let file = format!("{}/{}/{}/{}", root_path, "eut", "mcn", CONFIG_FILE_NAME);
+    let raw = std::fs::read_to_string(file).expect("panic while opening rte config file");
+    let mut cfg = serde_json::from_str::<Data>(&raw).unwrap();
+    db.create_vertex(&v_project).expect("TODO: panic message");
+    let v = serde_json::to_value(cfg).unwrap();
+    println!("{:?}", &v.get("eut").unwrap());
+    let p = v.get("eut").unwrap();
+    let bi = indradb::BulkInsertItem::VertexProperty(v_project.id, indradb::Identifier::new("data").unwrap(), indradb::Json::new(p.clone()));
+    let mut data = Vec::new();
+    data.push(bi);
+    db.bulk_insert(data).unwrap();
+    let b = Box::new(indradb::Query::SpecificVertex(indradb::SpecificVertexQuery::single(v_project.id)));
+    let q = indradb::PipePropertyQuery::new(b).unwrap();
+    let props: Vec<indradb::QueryOutputValue> = db.get(q).unwrap();
+    let e = indradb::util::extract_vertex_properties(props).unwrap();
+    println!("V_PROP_AFTER_INSERT: {:?}", e[0].props[0]);*/
+
+    /*println!("{:?}", e[0].props[0].value.as_object());
+    println!("{:?}", e[0].props[0].value.get("age"));*/
+
+    //serde_json::from_value(e[0].props[0].value).unwrap();
+    //let p: Person = serde_json::from_str().unwrap();
+    //println!("Please call {} at the number {}", p.name, p.phones[0]);
+
+    //let vp = indradb::VertexProperty::new(v_project.id, indradb::Json::new(john));
+    /*db.create_vertex(&v_eut).expect("TODO: panic message");
+    db.create_vertex(&v_rte).expect("TODO: panic message");
+    let edge = indradb::Edge::new(v_project.id, indradb::Identifier::new(EDGE_TYPE_HAS).unwrap(), v_eut.id);
+    db.create_edge(&edge).expect("TODO: panic message");
+    let output: Vec<indradb::QueryOutputValue> = db.get(indradb::SpecificEdgeQuery::single(edge.clone())).unwrap();
+    println!("{:?}", &output);
+    let e = indradb::util::extract_edges(output).unwrap();
+    println!("{:?}", &e);
+    let edge = indradb::Edge::new(v_eut.id, indradb::Identifier::new(EDGE_TYPE_USES).unwrap(), v_rte.id);
+    db.create_edge(&edge).expect("TODO: panic message");
+    let output: Vec<indradb::QueryOutputValue> = db.get(indradb::SpecificEdgeQuery::single(edge.clone())).unwrap();
+    println!("{:?}", &output);
+    let e = indradb::util::extract_edges(output).unwrap();
+    println!("{:?}", &e);
+    //assert_eq!(e.len(), 1);
+    //assert_eq!(edge, e[0]);
+    println!("{:?}", v_project);
+    let vertex: Vec<indradb::QueryOutputValue> = db.get(indradb::SpecificVertexQuery::single(v_project.id)).unwrap();
+    println!("{:?}", vertex);
+    let b = Box::new(indradb::Query::SpecificVertex(indradb::SpecificVertexQuery::single(v_project.id)));
+    let q = indradb::PipePropertyQuery::new(b).unwrap();
+    println!("{:?}", q.inner);*/
 }

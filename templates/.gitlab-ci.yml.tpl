@@ -27,9 +27,9 @@ variables:
   {% endfor -%}
   {% endfor -%}
   {% endfor -%}
-  {% if provider.collector.enable %}
-  COLLECTOR_{{ provider }}_{{ provider.collector.name }}_ARTIFACTS_FILE: ""
-  {% endif %}
+  {% if values.collector.enable -%}
+  COLLECTOR_{{ provider | upper }}_{{ values.collector.name | upper }}_ARTIFACTS_FILE: "$ARTIFACTS_ROOT_DIR/collector_{{ provider }}_{{ values.collector.name}}.tfvars.json"
+  {% endif -%}
   {% endfor %}
 .deploy_rules:
   rules:
