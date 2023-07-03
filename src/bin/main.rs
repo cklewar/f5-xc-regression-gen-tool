@@ -28,16 +28,16 @@ const CONFIG_FILE_NAME: &str = "config.json";
 const VERTEX_PROP_DATA_IDENTIFIER: &str = "data";
 
 const VERTEX_TYPE_EUT: &str = "eut";
-const VERTEX_TYPE_RTE: &str = "project";
+const VERTEX_TYPE_RTE: &str = "rte";
+const VERTEX_TYPE_TEST: &str = "test";
 const VERTEX_TYPE_PROJECT: &str = "project";
 const VERTEX_TYPE_FEATURE: &str = "feature";
-const VERTEX_TYPE_TEST: &str = "test";
 const VERTEX_TYPE_VALIDATION: &str = "validation";
 
 const EDGE_TYPE_HAS_EUT: &str = "has_eut";
-const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
 const EDGE_TYPE_USES_RTE: &str = "uses_rte";
 const EDGE_TYPE_USES_TEST: &str = "uses_test";
+const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
 
 
 #[derive(Parser, Debug)]
@@ -232,57 +232,66 @@ impl Regression {
         cfg
     }
 
-    fn load_object_config(&self, module: &String) -> Option<Data> {
+    fn load_object_config(&self, _type: &VertexTypes, module: &String) -> Option<Data> {
         println!("Loading module <{module}> configuration data...");
-
-        match module.as_str() {
+        let file: String;
+        match _type.name() {
             "eut" => {
-                let file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.eut.path, self.config.eut.name, CONFIG_FILE_NAME);
-                let data: String = String::from(file);
-                let raw = std::fs::read_to_string(&data).unwrap();
-                let cfg = serde_json::from_str::<Data>(&raw).unwrap();
-                println!("Loading module <{module}> configuration data -> Done.");
-                Some(cfg)
+                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
+            }
+            "rte" => {
+                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
             }
             _ => {
-                None
+                return None;
             }
         }
+
+        let data: String = String::from(&file);
+        let raw = std::fs::read_to_string(&data).unwrap();
+        let cfg = serde_json::from_str::<Data>(&raw).unwrap();
+        println!("Loading module <{module}> configuration data -> Done.");
+        Some(cfg)
     }
 
     fn init(&self) {
         // Project
         let project = self.create_object(VertexTypes::Project);
-        println!("Project: {:?}", project);
+        println!("Project: {:?}", &project);
         self.add_object_properties(&project, &self.config.project);
         let project_p = self.get_object_properties(&project);
-        println!("Project properties: {:?}", project_p);
+        println!("Project properties: {:?}", &project_p);
 
         // Eut
         let eut = self.create_object(VertexTypes::Eut);
-        println!("Eut: {:?}", eut);
-        let cfg = self.load_object_config(&VertexTypes::Eut.name().to_string());
-        /*self.add_object_properties(&eut, &self.config.eut);
-        let eut_p = self.get_object_properties(&eut);*/
-        //println!("Project properties: {:?}", eut_p);
+        println!("Eut: {:?}", &eut);
+        let cfg = self.load_object_config(&VertexTypes::Eut, &self.config.eut.name);
+        self.add_object_properties(&eut, &cfg.unwrap().data);
+        let eut_p = self.get_object_properties(&eut);
+        println!("Eut properties: {:?}", &eut_p);
 
         // Features
         let feature = self.create_object(VertexTypes::Feature);
-        println!("Feature: {:?}", feature);
+        println!("Feature: {:?}", &feature);
         self.add_object_properties(&feature, &self.config.eut);
         let feature_p = self.get_object_properties(&feature);
-        println!("Feature properties: {:?}", feature_p);
+        println!("Feature properties: {:?}", &feature_p);
 
         // Rte
-        let rte = self.create_object(VertexTypes::Rte);
-        println!("Rte: {:?}", rte);
-        let rte_p = self.add_object_properties(&rte, &self.config.rte);
-        println!("Rte properties {:?}", &rte_p);
+        for rte in eut_p.get(0).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("rtes").iter() {
+            let v = self.create_object(VertexTypes::Rte);
+            println!("Rte: {:?}", &v);
+            let cfg = self.load_object_config(&VertexTypes::Rte, &String::from(rte[0]["module"].as_str().unwrap()));
+            println!("{:?}", &cfg);
+            self.add_object_properties(&v, &cfg);
+            let rte_p = self.get_object_properties(&v);
+            println!("Rte properties: {:?}", &rte_p);
+            self.create_relationship(&eut, &v);
+        }
 
         // Relationships
         self.create_relationship(&project, &eut);
         self.create_relationship(&eut, &feature);
-
 
         // println!("{:?}", self.get_relationship(&project, &eut));
         // self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
@@ -338,11 +347,13 @@ impl Regression {
     }
 
     fn get_direct_neighbour_object_by_identifier(&self, object: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
+        println!("Get direct neighbor of <{}>...", object.t.as_str());
         let mut rvq = indradb::RangeVertexQuery::new();
         rvq.t = Option::from(indradb::Identifier::new(VertexTypes::Eut.name()).unwrap());
         rvq.limit = 1;
         rvq.start_id = Option::from(object.id);
         let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
+        println!("Get direct neighbor of <{}> -> Done.", object.t.as_str());
         result
     }
 
