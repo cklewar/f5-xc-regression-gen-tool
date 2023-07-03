@@ -271,22 +271,25 @@ impl Regression {
         println!("Eut properties: {:?}", &eut_p);
 
         // Features
-        let feature = self.create_object(VertexTypes::Feature);
-        println!("Feature: {:?}", &feature);
-        self.add_object_properties(&feature, &self.config.eut);
-        let feature_p = self.get_object_properties(&feature);
-        println!("Feature properties: {:?}", &feature_p);
+        for feature in eut_p.get(0).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").iter() {
+            let o = self.create_object(VertexTypes::Feature);
+            println!("Feature: {:?}", &feature);
+            let cfg = self.load_object_config(&VertexTypes::Feature, &String::from(feature[0]["module"].as_str().unwrap()));
+            self.add_object_properties(&o, &cfg);
+            let feature_p = self.get_object_properties(&o);
+            println!("Feature properties: {:?}", &feature_p);
+            self.create_relationship(&eut, &o);
+        }
 
         // Rte
         for rte in eut_p.get(0).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("rtes").iter() {
-            let v = self.create_object(VertexTypes::Rte);
-            println!("Rte: {:?}", &v);
+            let o = self.create_object(VertexTypes::Rte);
+            println!("Rte: {:?}", &o);
             let cfg = self.load_object_config(&VertexTypes::Rte, &String::from(rte[0]["module"].as_str().unwrap()));
-            println!("{:?}", &cfg);
             self.add_object_properties(&v, &cfg);
-            let rte_p = self.get_object_properties(&v);
+            let rte_p = self.get_object_properties(&o);
             println!("Rte properties: {:?}", &rte_p);
-            self.create_relationship(&eut, &v);
+            self.create_relationship(&eut, &o);
         }
 
         // Relationships
