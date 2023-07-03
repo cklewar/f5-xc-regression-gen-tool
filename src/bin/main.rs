@@ -84,11 +84,11 @@ enum RegressionConfigInterface {
 impl VertexTypes {
     fn name(&self) -> &'static str {
         match *self {
-            VertexTypes::Project => VERTEX_TYPE_RTE,
-            VertexTypes::Feature => VERTEX_TYPE_FEATURE,
             VertexTypes::Eut => VERTEX_TYPE_EUT,
             VertexTypes::Rte => VERTEX_TYPE_RTE,
             VertexTypes::Test => VERTEX_TYPE_TEST,
+            VertexTypes::Project => VERTEX_TYPE_RTE,
+            VertexTypes::Feature => VERTEX_TYPE_FEATURE,
             VertexTypes::Validation => VERTEX_TYPE_VALIDATION,
         }
     }
@@ -98,9 +98,9 @@ impl EdgeTypes {
     fn name(&self) -> &'static str {
         match *self {
             EdgeTypes::HasEut => EDGE_TYPE_HAS_EUT,
-            EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
             EdgeTypes::UsesRte => EDGE_TYPE_USES_RTE,
             EdgeTypes::UsesTest => EDGE_TYPE_USES_TEST,
+            EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
         }
     }
 }
@@ -114,6 +114,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::UsesRte.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::UsesTest.name());
         map
     };
     static ref EDGES_COUNT: usize = EDGES.len();
@@ -157,6 +158,11 @@ struct RegressionConfigCollector {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigFeatures {
+    path: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigRte {
     path: String,
 }
@@ -183,17 +189,31 @@ pub struct RegressionConfig {
     ci: RegressionConfigCi,
     eut: RegressionConfigEut,
     rte: RegressionConfigRte,
-    collector: RegressionConfigCollector,
     tests: RegressionConfigTests,
     common: RegressionConfigCommon,
     project: RegressionConfigProject,
+    features: RegressionConfigFeatures,
+    collector: RegressionConfigCollector,
     verifications: RegressionConfigVerifications,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Data {
+struct JsonData {
     data: serde_json::Map<String, serde_json::Value>,
 }
+
+trait Object {
+    fn get_path(&self, module: String) -> String {
+        println!("{}", module);
+        String::from("/test/abc/hallo")
+    }
+}
+
+struct ObjectEut {
+    name: String,
+}
+
+impl Object for ObjectEut {}
 
 struct Regression {
     regression: indradb::Database<indradb::MemoryDatastore>,
@@ -232,7 +252,7 @@ impl Regression {
         cfg
     }
 
-    fn load_object_config(&self, _type: &VertexTypes, module: &String) -> Option<Data> {
+    fn load_object_config(&self, _type: &VertexTypes, module: &String) -> Option<JsonData> {
         println!("Loading module <{module}> configuration data...");
         let file: String;
         match _type.name() {
@@ -242,6 +262,12 @@ impl Regression {
             "rte" => {
                 file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
             }
+            "feature" => {
+                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
+            }
+            "test" => {
+                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
+            }
             _ => {
                 return None;
             }
@@ -249,7 +275,7 @@ impl Regression {
 
         let data: String = String::from(&file);
         let raw = std::fs::read_to_string(&data).unwrap();
-        let cfg = serde_json::from_str::<Data>(&raw).unwrap();
+        let cfg = serde_json::from_str::<JsonData>(&raw).unwrap();
         println!("Loading module <{module}> configuration data -> Done.");
         Some(cfg)
     }
@@ -270,39 +296,46 @@ impl Regression {
         let eut_p = self.get_object_properties(&eut);
         println!("Eut properties: {:?}", &eut_p);
 
+        self.create_relationship(&project, &eut);
+
         // Features
         for feature in eut_p.get(0).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").iter() {
             let o = self.create_object(VertexTypes::Feature);
-            println!("Feature: {:?}", &feature);
+            println!("Feature: {:?}", &o);
             let cfg = self.load_object_config(&VertexTypes::Feature, &String::from(feature[0]["module"].as_str().unwrap()));
+            println!("{:?}", &cfg);
             self.add_object_properties(&o, &cfg);
             let feature_p = self.get_object_properties(&o);
             println!("Feature properties: {:?}", &feature_p);
             self.create_relationship(&eut, &o);
         }
 
-        // Rte
+        // Rtes
         for rte in eut_p.get(0).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("rtes").iter() {
-            let o = self.create_object(VertexTypes::Rte);
-            println!("Rte: {:?}", &o);
+            let r_o = self.create_object(VertexTypes::Rte);
+            println!("Rte: {:?}", &r_o);
             let cfg = self.load_object_config(&VertexTypes::Rte, &String::from(rte[0]["module"].as_str().unwrap()));
-            self.add_object_properties(&v, &cfg);
-            let rte_p = self.get_object_properties(&o);
+            self.add_object_properties(&r_o, &cfg);
+            let rte_p = self.get_object_properties(&r_o);
             println!("Rte properties: {:?}", &rte_p);
-            self.create_relationship(&eut, &o);
-        }
+            self.create_relationship(&eut, &r_o);
 
-        // Relationships
-        self.create_relationship(&project, &eut);
-        self.create_relationship(&eut, &feature);
+            // Tests
+            for test in rte.get(0).unwrap()["tests"].as_array().unwrap() {
+                println!("{:?}", test);
+                let t_o = self.create_object(VertexTypes::Test);
+                println!("Test: {:?}", &t_o);
+                let cfg = self.load_object_config(&VertexTypes::Test, &String::from(test["module"].as_str().unwrap()));
+                println!("Test CFG: {:?}", &cfg);
+                self.add_object_properties(&t_o, &cfg);
+                let test_p = self.get_object_properties(&t_o);
+                println!("Test properties: {:?}", &test_p);
+                self.create_relationship(&r_o, &t_o);
+            }
+        }
 
         // println!("{:?}", self.get_relationship(&project, &eut));
         // self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
-
-        /*indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Feature.name()).unwrap());
-        indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Rte.name()).unwrap());
-        indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Test.name()).unwrap());
-        indradb::Vertex::new(indradb::Identifier::new(VertexTypes::Test.name()).unwrap());*/
     }
 
     fn create_object(&self, object_type: VertexTypes) -> Vertex {
@@ -401,56 +434,8 @@ fn main() {
 
 
     r.init();
-    /*let db: indradb::Database<indradb::MemoryDatastore> = indradb::MemoryDatastore::new_db();
-    let v_project = indradb::Vertex::new(indradb::Identifier::new(VERTEX_TYPE_PROJECT).unwrap());
-    let v_eut = indradb::Vertex::new(indradb::Identifier::new(VertexTypeEut).unwrap());
-    let v_rte = indradb::Vertex::new(indradb::Identifier::new(VERTEX_TYPE_RTE).unwrap());
-    let root_path = String::from("/home/cklewar/Projects/gitlab.com/F5/volterra/solution/sense8");
-    let file = format!("{}/{}/{}/{}", root_path, "eut", "mcn", CONFIG_FILE_NAME);
-    let raw = std::fs::read_to_string(file).expect("panic while opening rte config file");
-    let mut cfg = serde_json::from_str::<Data>(&raw).unwrap();
-    db.create_vertex(&v_project).expect("TODO: panic message");
-    let v = serde_json::to_value(cfg).unwrap();
-    println!("{:?}", &v.get("eut").unwrap());
-    let p = v.get("eut").unwrap();
-    let bi = indradb::BulkInsertItem::VertexProperty(v_project.id, indradb::Identifier::new("data").unwrap(), indradb::Json::new(p.clone()));
-    let mut data = Vec::new();
-    data.push(bi);
-    db.bulk_insert(data).unwrap();
-    let b = Box::new(indradb::Query::SpecificVertex(indradb::SpecificVertexQuery::single(v_project.id)));
-    let q = indradb::PipePropertyQuery::new(b).unwrap();
-    let props: Vec<indradb::QueryOutputValue> = db.get(q).unwrap();
-    let e = indradb::util::extract_vertex_properties(props).unwrap();
-    println!("V_PROP_AFTER_INSERT: {:?}", e[0].props[0]);*/
 
-    /*println!("{:?}", e[0].props[0].value.as_object());
-    println!("{:?}", e[0].props[0].value.get("age"));*/
+    /*let o = ObjectEut { name: "eutA".to_string() };
+    o.get_path(String::from("rte"));*/
 
-    //serde_json::from_value(e[0].props[0].value).unwrap();
-    //let p: Person = serde_json::from_str().unwrap();
-    //println!("Please call {} at the number {}", p.name, p.phones[0]);
-
-    //let vp = indradb::VertexProperty::new(v_project.id, indradb::Json::new(john));
-    /*db.create_vertex(&v_eut).expect("TODO: panic message");
-    db.create_vertex(&v_rte).expect("TODO: panic message");
-    let edge = indradb::Edge::new(v_project.id, indradb::Identifier::new(EDGE_TYPE_HAS).unwrap(), v_eut.id);
-    db.create_edge(&edge).expect("TODO: panic message");
-    let output: Vec<indradb::QueryOutputValue> = db.get(indradb::SpecificEdgeQuery::single(edge.clone())).unwrap();
-    println!("{:?}", &output);
-    let e = indradb::util::extract_edges(output).unwrap();
-    println!("{:?}", &e);
-    let edge = indradb::Edge::new(v_eut.id, indradb::Identifier::new(EDGE_TYPE_USES).unwrap(), v_rte.id);
-    db.create_edge(&edge).expect("TODO: panic message");
-    let output: Vec<indradb::QueryOutputValue> = db.get(indradb::SpecificEdgeQuery::single(edge.clone())).unwrap();
-    println!("{:?}", &output);
-    let e = indradb::util::extract_edges(output).unwrap();
-    println!("{:?}", &e);
-    //assert_eq!(e.len(), 1);
-    //assert_eq!(edge, e[0]);
-    println!("{:?}", v_project);
-    let vertex: Vec<indradb::QueryOutputValue> = db.get(indradb::SpecificVertexQuery::single(v_project.id)).unwrap();
-    println!("{:?}", vertex);
-    let b = Box::new(indradb::Query::SpecificVertex(indradb::SpecificVertexQuery::single(v_project.id)));
-    let q = indradb::PipePropertyQuery::new(b).unwrap();
-    println!("{:?}", q.inner);*/
 }
