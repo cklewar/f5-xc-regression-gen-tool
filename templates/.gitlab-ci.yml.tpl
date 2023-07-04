@@ -3,4 +3,20 @@
 #############################################
 
 {{ project.name }}
-{{ eut }}
+{{ eut.name }}
+{% for rte in rtes %}
+{{ rte.module }}
+{% endfor %}
+{% for rte in rtes %}
+{% for test in rte.tests %}
+{{ test.module }}
+{% endfor %}
+{% endfor %}
+
+{% for rte in rtes %}
+{% for test in rte.tests %}
+{% for verification in test.verifications %}
+{{ verification.module }}
+{% endfor %}
+{% endfor %}
+{% endfor %}

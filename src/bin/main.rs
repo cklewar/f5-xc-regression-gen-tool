@@ -15,33 +15,141 @@ use std::collections::{HashMap};
 use std::io::Write;
 use std::string::ToString;
 use clap::Parser;
-use indradb::{RangeVertexQuery, Vertex, VertexProperties};
+use indradb::{BulkInsertItem, Identifier, RangeVertexQuery, Vertex, VertexProperties, VertexProperty};
 use tera::{Context, Tera};
 use lazy_static::lazy_static;
 use std::option::Option;
 use std::os::unix::fs::chroot;
 use uuid::Uuid;
-use serde_json::json;
+use serde_json::{json, Value};
 
 const CONFIG_FILE_NAME: &str = "config.json";
 const PIPELINE_FILE_NAME: &str = ".gitlab-ci.yml";
 const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
 
-const VERTEX_PROP_DATA_IDENTIFIER: &str = "data";
+const PROPERTY_TYPE_EUT: &str = "eut";
+const PROPERTY_TYPE_MODULE: &str = "module";
 
+const VERTEX_TYPE_CI: &str = "ci";
 const VERTEX_TYPE_EUT: &str = "eut";
 const VERTEX_TYPE_RTE: &str = "rte";
 const VERTEX_TYPE_TEST: &str = "test";
+const VERTEX_TYPE_STAGE: &str = "stage";
 const VERTEX_TYPE_PROJECT: &str = "project";
 const VERTEX_TYPE_FEATURE: &str = "feature";
 const VERTEX_TYPE_VERIFICATION: &str = "verification";
+const VERTEX_TYPE_STAGE_DEPLOY: &str = "stage_deploy";
+const VERTEX_TYPE_STAGE_DESTROY: &str = "stage_destroy";
 
+const EDGE_TYPE_HAS_CI: &str = "has_ci";
 const EDGE_TYPE_HAS_EUT: &str = "has_eut";
 const EDGE_TYPE_USES_RTE: &str = "uses_rte";
 const EDGE_TYPE_USES_TEST: &str = "uses_test";
+const EDGE_TYPE_HAS_STAGE: &str = "has_stage";
+const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
 const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
+const EDGE_TYPE_HAS_DEPLOY_STAGE: &str = "deploy_stage";
+const EDGE_TYPE_HAS_DESTROY_STAGE: &str = "destroy_stage";
 const EDGE_TYPE_NEEDS_VERIFICATION: &str = "needs_verification";
 
+enum PropertyType {
+    Module,
+    Eut,
+}
+
+enum VertexTypes {
+    Ci,
+    Eut,
+    Rte,
+    Test,
+    Stage,
+    Feature,
+    Project,
+    StageDeploy,
+    StageDestroy,
+    Verification,
+}
+
+enum EdgeTypes {
+    HasCi,
+    HasEut,
+    UsesRte,
+    UsesTest,
+    HasStage,
+    NextStage,
+    HasFeature,
+    HasDeployStage,
+    HasDestroyStage,
+    NeedsVerification,
+}
+
+impl VertexTypes {
+    fn name(&self) -> &'static str {
+        match *self {
+            VertexTypes::Ci => VERTEX_TYPE_TEST,
+            VertexTypes::Eut => VERTEX_TYPE_EUT,
+            VertexTypes::Rte => VERTEX_TYPE_RTE,
+            VertexTypes::Test => VERTEX_TYPE_TEST,
+            VertexTypes::Stage => VERTEX_TYPE_STAGE,
+            VertexTypes::Project => VERTEX_TYPE_PROJECT,
+            VertexTypes::Feature => VERTEX_TYPE_FEATURE,
+            VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
+            VertexTypes::StageDestroy => VERTEX_TYPE_STAGE_DESTROY,
+            VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
+        }
+    }
+}
+
+impl EdgeTypes {
+    fn name(&self) -> &'static str {
+        match *self {
+            EdgeTypes::HasCi => EDGE_TYPE_HAS_CI,
+            EdgeTypes::HasEut => EDGE_TYPE_HAS_EUT,
+            EdgeTypes::UsesRte => EDGE_TYPE_USES_RTE,
+            EdgeTypes::UsesTest => EDGE_TYPE_USES_TEST,
+            EdgeTypes::HasStage => EDGE_TYPE_HAS_STAGE,
+            EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
+            EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
+            EdgeTypes::HasDeployStage => EDGE_TYPE_HAS_DEPLOY_STAGE,
+            EdgeTypes::HasDestroyStage => EDGE_TYPE_HAS_DESTROY_STAGE,
+            EdgeTypes::NeedsVerification => EDGE_TYPE_NEEDS_VERIFICATION,
+        }
+    }
+}
+
+impl PropertyType {
+    fn name(&self) -> &'static str {
+        match *self {
+            PropertyType::Eut => PROPERTY_TYPE_EUT,
+            PropertyType::Module => PROPERTY_TYPE_MODULE,
+        }
+    }
+    fn index(&self) -> usize {
+        match *self {
+            PropertyType::Eut => 0,
+            PropertyType::Module => 1,
+        }
+    }
+}
+
+lazy_static! {
+    static ref EDGE_TYPES: HashMap<VertexTuple, &'static str> = {
+        let mut map = HashMap::new();
+        map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::UsesRte.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::UsesTest.name());
+        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::NeedsVerification.name());
+        map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
+        map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasDeployStage.name());
+        map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::HasDestroyStage.name());
+        map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::Stage.name().to_string()), EdgeTypes::HasStage.name());
+        map.insert(VertexTuple(VertexTypes::StageDestroy.name().to_string(), VertexTypes::Stage.name().to_string()), EdgeTypes::HasStage.name());
+        map.insert(VertexTuple(VertexTypes::Stage.name().to_string(), VertexTypes::Stage.name().to_string()), EdgeTypes::NextStage.name());
+        map
+    };
+    static ref EDGES_COUNT: usize = EDGE_TYPES.len();
+}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -63,63 +171,8 @@ struct Cli {
     debug: bool,
 }
 
-enum VertexTypes {
-    Project,
-    Eut,
-    Feature,
-    Rte,
-    Test,
-    Verification,
-}
-
-enum EdgeTypes {
-    HasEut,
-    HasFeature,
-    UsesRte,
-    UsesTest,
-    NeedsVerification,
-}
-
-impl VertexTypes {
-    fn name(&self) -> &'static str {
-        match *self {
-            VertexTypes::Eut => VERTEX_TYPE_EUT,
-            VertexTypes::Rte => VERTEX_TYPE_RTE,
-            VertexTypes::Test => VERTEX_TYPE_TEST,
-            VertexTypes::Project => VERTEX_TYPE_PROJECT,
-            VertexTypes::Feature => VERTEX_TYPE_FEATURE,
-            VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
-        }
-    }
-}
-
-impl EdgeTypes {
-    fn name(&self) -> &'static str {
-        match *self {
-            EdgeTypes::HasEut => EDGE_TYPE_HAS_EUT,
-            EdgeTypes::UsesRte => EDGE_TYPE_USES_RTE,
-            EdgeTypes::UsesTest => EDGE_TYPE_USES_TEST,
-            EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
-            EdgeTypes::NeedsVerification => EDGE_TYPE_NEEDS_VERIFICATION,
-        }
-    }
-}
-
 #[derive(Hash, Eq, PartialEq, Debug)]
 struct VertexTuple(String, String);
-
-lazy_static! {
-    static ref EDGES: HashMap<VertexTuple, &'static str> = {
-        let mut map = HashMap::new();
-        map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::UsesRte.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::UsesTest.name());
-        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::NeedsVerification.name());
-        map
-    };
-    static ref EDGES_COUNT: usize = EDGES.len();
-}
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigCommon {
@@ -200,7 +253,7 @@ pub struct RegressionConfig {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonData {
-    data: serde_json::Map<String, serde_json::Value>,
+    data: serde_json::Map<String, Value>,
 }
 
 struct Regression {
@@ -222,7 +275,7 @@ impl Regression {
 
         println!("Render regression configuration file...");
         let mut _tera = Tera::new("../../regression/config/*").unwrap();
-        let mut context = tera::Context::new();
+        let mut context = Context::new();
         context.insert("eut", &cfg.eut);
         context.insert("rte", &cfg.rte);
         context.insert("common", &cfg.common);
@@ -271,64 +324,83 @@ impl Regression {
         Some(cfg)
     }
 
+    fn add_ci_stage(&self, start: &Vertex, value: &Value) -> Option<Vertex> {
+        let new = self.create_object(VertexTypes::Stage);
+        self.add_object_properties(&new, &value, PropertyType::Eut);
+        self.create_relationship(&start, &new);
+        Some(new)
+    }
+
     fn init(&self) -> uuid::Uuid {
         // Project
         let project = self.create_object(VertexTypes::Project);
-        println!("Project: {:?}", &project);
-        self.add_object_properties(&project, &self.config.project);
-        let project_p = self.get_object_properties(&project);
-        println!("Project properties: {:?}", &project_p);
+        self.add_object_properties(&project, &self.config.project, PropertyType::Eut);
+
+        // Ci
+        let ci = self.create_object(VertexTypes::Ci);
+        // println!("Ci: {:?}", &ci);
+        self.add_object_properties(&ci, &self.config.ci, PropertyType::Eut);
+        self.create_relationship(&project, &ci);
+
+        // Ci stages
+        let stage_deploy = self.create_object(VertexTypes::StageDeploy);
+        self.create_relationship(&ci, &stage_deploy);
+        let stage_destroy = self.create_object(VertexTypes::StageDestroy);
+        self.create_relationship(&ci, &stage_destroy);
 
         // Eut
         let eut = self.create_object(VertexTypes::Eut);
-        println!("Eut: {:?}", &eut);
         let cfg = self.load_object_config(&VertexTypes::Eut, &self.config.eut.name);
-        self.add_object_properties(&eut, &cfg.unwrap().data);
-        let eut_p = self.get_object_properties(&eut);
-        println!("Eut properties: {:?}", &eut_p);
-
+        self.add_object_properties(&eut, &cfg.unwrap().data, PropertyType::Eut);
         self.create_relationship(&project, &eut);
+        let eut_p = self.get_object_properties(&eut);
+        let mut deploy_stage: Option<Vertex> = self.add_ci_stage(&stage_deploy, &eut_p.get(0).unwrap().props.get(0).unwrap().value["eut"]["stages"]["deploy"][0]);
+        let mut destroy_stage: Option<Vertex> = self.add_ci_stage(&stage_destroy, &eut_p.get(0).unwrap().props.get(0).unwrap().value["eut"]["stages"]["destroy"][0]);
 
         // Features
-        for feature in eut_p.get(0).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").iter() {
+        for feature in eut_p.get(PropertyType::Eut.index()).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").iter() {
             let o = self.create_object(VertexTypes::Feature);
-            println!("Feature: {:?}", &o);
             let cfg = self.load_object_config(&VertexTypes::Feature, &String::from(feature[0]["module"].as_str().unwrap()));
-            println!("{:?}", &cfg);
-            self.add_object_properties(&o, &cfg);
+            self.add_object_properties(&o, &cfg, PropertyType::Eut);
             let feature_p = self.get_object_properties(&o);
-            println!("Feature properties: {:?}", &feature_p);
             self.create_relationship(&eut, &o);
+            deploy_stage = self.add_ci_stage(&deploy_stage.unwrap(), &feature_p.get(0).unwrap().props.get(0).unwrap().value);
+            destroy_stage = self.add_ci_stage(&destroy_stage.unwrap(), &feature_p.get(0).unwrap().props.get(0).unwrap().value);
         }
 
         // Rtes
-        for rte in eut_p.get(0).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("rtes").iter() {
+        for rte in eut_p.get(PropertyType::Eut.index()).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("rtes").unwrap().as_array().unwrap().iter() {
             let r_o = self.create_object(VertexTypes::Rte);
-            println!("Rte: {:?}", &r_o);
-            let cfg = self.load_object_config(&VertexTypes::Rte, &String::from(rte[0]["module"].as_str().unwrap()));
-            self.add_object_properties(&r_o, &cfg);
+            self.add_object_properties(&r_o, &rte, PropertyType::Eut);
+            let cfg = self.load_object_config(&VertexTypes::Rte, &String::from(rte["module"].as_str().unwrap()));
+            self.add_object_properties(&r_o, &cfg.unwrap().data, PropertyType::Module);
             let rte_p = self.get_object_properties(&r_o);
-            println!("Rte properties: {:?}", &rte_p);
+            // println!("Rte properties: {:#?}", &rte_p);
+            // println!("Rte properties: {:#?}", &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]);
             self.create_relationship(&eut, &r_o);
+            let rte_deploy_stage = self.add_ci_stage(deploy_stage.as_ref().unwrap(), &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]);
+            self.add_ci_stage(&destroy_stage.as_ref().unwrap(), &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]);
 
             // Tests
-            for test in rte.get(0).unwrap()["tests"].as_array().unwrap() {
+            for test in rte["tests"].as_array().unwrap() {
                 let t_o = self.create_object(VertexTypes::Test);
-                println!("Test: {:?}", &t_o);
-                let cfg = self.load_object_config(&VertexTypes::Test, &String::from(test["module"].as_str().unwrap()));
-                self.add_object_properties(&t_o, &cfg);
+                //println!("Test: {:?}", &t_o);
+                self.add_object_properties(&t_o, &test, PropertyType::Eut);
                 let test_p = self.get_object_properties(&t_o);
-                println!("Test properties: {:?}", &test_p);
+                //println!("Test properties: {:?}", &test_p);
+                // println!("Test properties: {:?}", &test_p.get(0).unwrap().props.get(0).unwrap().value["name"]);
                 self.create_relationship(&r_o, &t_o);
+                let test_deploy_stage = self.add_ci_stage(rte_deploy_stage.as_ref().unwrap(), &test_p.get(0).unwrap().props.get(0).unwrap().value["name"]);
 
                 for verification in test["verifications"].as_array().unwrap() {
                     let v_o = self.create_object(VertexTypes::Verification);
-                    println!("Verification: {:?}", &v_o);
-                    //let cfg = self.load_object_config(&VertexTypes::Verification, &String::from(test["module"].as_str().unwrap()));
-                    self.add_object_properties(&v_o, &verification);
+                    //println!("Verification: {:?}", &v_o);
+                    self.add_object_properties(&v_o, &verification, PropertyType::Eut);
                     let verification_p = self.get_object_properties(&v_o);
-                    println!("Test properties: {:?}", &verification_p);
+                    // println!("Verification properties: {:?}", &verification_p);
+                    // println!("Verification properties: {:?}", &verification_p.get(0).unwrap().props.get(0).unwrap().value);
                     self.create_relationship(&t_o, &v_o);
+                    self.add_ci_stage(test_deploy_stage.as_ref().unwrap(), &verification_p.get(0).unwrap().props.get(0).unwrap().value);
                 }
             }
         }
@@ -360,10 +432,20 @@ impl Regression {
         status
     }
 
-    fn add_object_properties<T: serde::Serialize>(&self, object: &Vertex, value: &T) {
+    fn add_object_properties<T: serde::Serialize>(&self, object: &Vertex, value: &T, property_type: PropertyType) {
         println!("Add new property to object <{}>...", object.t.to_string());
         let v = serde_json::to_value(value).unwrap();
-        let p = indradb::BulkInsertItem::VertexProperty(object.id, indradb::Identifier::new(VERTEX_PROP_DATA_IDENTIFIER).unwrap(), indradb::Json::new(v.clone()));
+        let mut p: BulkInsertItem;
+
+        match property_type {
+            PropertyType::Eut => {
+                p = BulkInsertItem::VertexProperty(object.id, indradb::Identifier::new(PROPERTY_TYPE_EUT).unwrap(), indradb::Json::new(v.clone()));
+            }
+            PropertyType::Module => {
+                p = BulkInsertItem::VertexProperty(object.id, indradb::Identifier::new(PROPERTY_TYPE_MODULE).unwrap(), indradb::Json::new(v.clone()));
+            }
+        }
+
         self.regression.bulk_insert(vec![p]).unwrap();
         println!("Add new property to object <{}> -> Done", object.t.to_string());
     }
@@ -375,7 +457,7 @@ impl Regression {
 
     fn get_relationship_type(&self, a: &Vertex, b: &Vertex) -> &str {
         println!("Get relationship type for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
-        let e = EDGES.get(&VertexTuple(a.t.to_string(), b.t.to_string())).unwrap();
+        let e = EDGE_TYPES.get(&VertexTuple(a.t.to_string(), b.t.to_string())).unwrap();
         println!("Get relationship type for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         e
     }
@@ -399,6 +481,17 @@ impl Regression {
         result
     }
 
+    fn get_direct_neighbour_objects_by_identifier(&self, start: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
+        println!("Get direct neighbors of <{}>...", start.t.as_str());
+        let mut rvq = RangeVertexQuery::new();
+        rvq.t = Option::from(indradb::Identifier::new(identifier.name()).unwrap());
+        rvq.limit = 10;
+        rvq.start_id = Option::from(start.id);
+        let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
+        println!("Get direct neighbors of <{}> -> Done.", start.t.as_str());
+        result
+    }
+
     fn get_object_properties(&self, object: &Vertex) -> Vec<VertexProperties> {
         println!("Get object <{}> properties...", object.t.as_str());
         let b = Box::new(indradb::Query::SpecificVertex(indradb::SpecificVertexQuery::single(object.id)));
@@ -418,26 +511,35 @@ impl Regression {
         e
     }
 
-    fn build_context(&self, id: uuid::Uuid) -> Context{
+    fn build_context(&self, id: uuid::Uuid) -> Context {
+        println!("Build render context...");
         let project = self.get_object(id);
         let project_p = self.get_object_properties(&project);
 
         let eut = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
         let eut_p = self.get_object_properties(&eut.get(0).unwrap());
 
-        let mut context = tera::Context::new();
+        let _rtes = self.get_direct_neighbour_objects_by_identifier(&eut.get(0).unwrap(), VertexTypes::Rte);
+        let mut rtes = Vec::new();
+
+        for rte in _rtes.iter() {
+            let rte_p = self.get_object_properties(&rte);
+            rtes.push(rte_p.get(0).unwrap().props.get(0).unwrap().value.clone());
+        }
+
+        let s_deploy = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::StageDeploy);
+        for stage in self.get_direct_neighbour_objects_by_identifier(&s_deploy[0], VertexTypes::Stage).iter() {
+            println!("{:?} --> {:?}", stage.t ,self.get_object_properties(&stage).get(0).unwrap().props.get(0).unwrap().value);
+        }
+
+        let mut context = Context::new();
         context.insert("config", &self.config);
         context.insert("project", &project_p.get(0).unwrap().props[0].value);
-        context.insert("eut", &eut_p.get(0).unwrap().props[0].value);
+        context.insert("eut", &eut_p.get(0).unwrap().props[0].value["eut"]);
+        context.insert("rtes", &rtes);
+        // println!("{:#?}", context);
+        println!("Build render context -> Done.");
         context
-
-        /*let objs = indradb::util::extract_vertices(q.unwrap());
-        let root = self.get_object_properties(&objs.unwrap().get(0).unwrap());*/
-        //println!("{:?}", &p);
-
-
-        // println!("{:?}", self.get_relationship(&project, &eut));
-        // self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
     }
 
     pub fn render(&self, context: &Context) -> String {
