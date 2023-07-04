@@ -12,14 +12,17 @@
 use indradb;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap};
+use std::io::Write;
 use std::string::ToString;
 use clap::Parser;
 use indradb::{RangeVertexQuery, Vertex, VertexProperties};
 use tera::Tera;
 use lazy_static::lazy_static;
 use std::option::Option;
+use serde_json::json;
 
 const CONFIG_FILE_NAME: &str = "config.json";
+const PIPELINE_FILE_NAME: &str = ".gitlab-ci.yml";
 const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
 
 const VERTEX_PROP_DATA_IDENTIFIER: &str = "data";
@@ -410,11 +413,28 @@ impl Regression {
         println!("Render regression pipeline file first step...");
         let mut _tera = Tera::new(&self.config.common.templates).unwrap();
         let mut context = tera::Context::new();
-        //context.insert("regression", &self.ci);
         context.insert("config", &self.config);
         let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
         println!("Render regression pipeline file first step -> Done.");
         rendered
+    }
+
+    pub fn to_json(&self) -> String {
+        let j = json!({
+                "config": &self.config,
+            });
+        j.to_string()
+    }
+
+    pub fn to_file(&self, file: &String) {
+        let mut f = std::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(file)
+            .expect("Couldn't open file");
+
+        f.write_all(&self.render().as_bytes()).expect("panic while writing to file");
     }
 }
 
@@ -439,6 +459,7 @@ fn main() {
 
 
     r.init();
+    r.to_file(&PIPELINE_FILE_NAME.to_string());
 
     /*let o = ObjectEut { name: "eutA".to_string() };
     o.get_path(String::from("rte"));*/
