@@ -16,9 +16,11 @@ use std::io::Write;
 use std::string::ToString;
 use clap::Parser;
 use indradb::{RangeVertexQuery, Vertex, VertexProperties};
-use tera::Tera;
+use tera::{Context, Tera};
 use lazy_static::lazy_static;
 use std::option::Option;
+use std::os::unix::fs::chroot;
+use uuid::Uuid;
 use serde_json::json;
 
 const CONFIG_FILE_NAME: &str = "config.json";
@@ -269,7 +271,7 @@ impl Regression {
         Some(cfg)
     }
 
-    fn init(&self) {
+    fn init(&self) -> uuid::Uuid {
         // Project
         let project = self.create_object(VertexTypes::Project);
         println!("Project: {:?}", &project);
@@ -331,8 +333,7 @@ impl Regression {
             }
         }
 
-        // println!("{:?}", self.get_relationship(&project, &eut));
-        // self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
+        project.id
     }
 
     fn create_object(&self, object_type: VertexTypes) -> Vertex {
@@ -379,6 +380,14 @@ impl Regression {
         e
     }
 
+    fn get_object(&self, id: uuid::Uuid) -> Vertex {
+        let q = self.regression.get(indradb::SpecificVertexQuery::single(id));
+        let objs = indradb::util::extract_vertices(q.unwrap());
+        let obj = objs.unwrap();
+        let o = obj.get(0).unwrap();
+        o.clone()
+    }
+
     fn get_direct_neighbour_object_by_identifier(&self, object: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
         println!("Get direct neighbor of <{}>...", object.t.as_str());
         let mut rvq = RangeVertexQuery::new();
@@ -409,11 +418,31 @@ impl Regression {
         e
     }
 
-    pub fn render(&self) -> String {
-        println!("Render regression pipeline file first step...");
-        let mut _tera = Tera::new(&self.config.common.templates).unwrap();
+    fn build_context(&self, id: uuid::Uuid) -> Context{
+        let project = self.get_object(id);
+        let project_p = self.get_object_properties(&project);
+
+        let eut = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
+        let eut_p = self.get_object_properties(&eut.get(0).unwrap());
+
         let mut context = tera::Context::new();
         context.insert("config", &self.config);
+        context.insert("project", &project_p.get(0).unwrap().props[0].value);
+        context.insert("eut", &eut_p.get(0).unwrap().props[0].value);
+        context
+
+        /*let objs = indradb::util::extract_vertices(q.unwrap());
+        let root = self.get_object_properties(&objs.unwrap().get(0).unwrap());*/
+        //println!("{:?}", &p);
+
+
+        // println!("{:?}", self.get_relationship(&project, &eut));
+        // self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
+    }
+
+    pub fn render(&self, context: &Context) -> String {
+        println!("Render regression pipeline file first step...");
+        let mut _tera = Tera::new(&self.config.common.templates).unwrap();
         let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
         println!("Render regression pipeline file first step -> Done.");
         rendered
@@ -426,7 +455,7 @@ impl Regression {
         j.to_string()
     }
 
-    pub fn to_file(&self, file: &String) {
+    pub fn to_file(&self, data: &String, file: &str) {
         let mut f = std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -434,33 +463,29 @@ impl Regression {
             .open(file)
             .expect("Couldn't open file");
 
-        f.write_all(&self.render().as_bytes()).expect("panic while writing to file");
+        f.write_all(data.as_bytes()).expect("panic while writing to file");
     }
 }
 
 fn main() {
     let cli = Cli::parse();
     let r = Regression::new(&cli.config);
+    let root = r.init();
+    r.to_file(&r.render(&r.build_context(root)), PIPELINE_FILE_NAME);
+
 
     /*if cli.write {
-        e.to_file(String::from(".gitlab-ci.yml"));
+        r.to_file(&PIPELINE_FILE_NAME.to_string());
     }
     if cli.json {
-        e.to_json();
-        println!("{}", e.to_json());
-    }
-    if cli.render {
-        println!("{}", e.render());
-    }
-
-    if cli.debug {
-        println!("{:#?}", e);
+        r.to_json();
+        println!("{}", r.to_json());
+    }*/
+    /*if cli.render {
+        println!("{}", r.render());
     }*/
 
-
-    r.init();
-    r.to_file(&PIPELINE_FILE_NAME.to_string());
-
-    /*let o = ObjectEut { name: "eutA".to_string() };
-    o.get_path(String::from("rte"));*/
+    /*if cli.debug {
+        println!("{:#?}", r);
+    }*/
 }
