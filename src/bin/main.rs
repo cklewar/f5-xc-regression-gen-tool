@@ -11,19 +11,16 @@
 
 use indradb;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashSet, HashMap};
-use std::fmt::format;
-use std::future::poll_fn;
+use std::collections::{HashMap};
 use std::string::ToString;
 use clap::Parser;
-use indradb::{Datastore, QueryExt, RangeVertexQuery, Vertex, VertexProperties, VertexProperty};
-use serde::de::Unexpected::Option as serde_option;
+use indradb::{RangeVertexQuery, Vertex, VertexProperties};
 use tera::Tera;
 use lazy_static::lazy_static;
 use std::option::Option;
 
-
 const CONFIG_FILE_NAME: &str = "config.json";
+const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
 
 const VERTEX_PROP_DATA_IDENTIFIER: &str = "data";
 
@@ -32,12 +29,13 @@ const VERTEX_TYPE_RTE: &str = "rte";
 const VERTEX_TYPE_TEST: &str = "test";
 const VERTEX_TYPE_PROJECT: &str = "project";
 const VERTEX_TYPE_FEATURE: &str = "feature";
-const VERTEX_TYPE_VALIDATION: &str = "validation";
+const VERTEX_TYPE_VERIFICATION: &str = "verification";
 
 const EDGE_TYPE_HAS_EUT: &str = "has_eut";
 const EDGE_TYPE_USES_RTE: &str = "uses_rte";
 const EDGE_TYPE_USES_TEST: &str = "uses_test";
 const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
+const EDGE_TYPE_NEEDS_VERIFICATION: &str = "needs_verification";
 
 
 #[derive(Parser, Debug)]
@@ -66,7 +64,7 @@ enum VertexTypes {
     Feature,
     Rte,
     Test,
-    Validation,
+    Verification,
 }
 
 enum EdgeTypes {
@@ -74,11 +72,7 @@ enum EdgeTypes {
     HasFeature,
     UsesRte,
     UsesTest,
-}
-
-enum RegressionConfigInterface {
-    Project(RegressionConfigProject),
-    Eut(RegressionConfigEut),
+    NeedsVerification,
 }
 
 impl VertexTypes {
@@ -87,9 +81,9 @@ impl VertexTypes {
             VertexTypes::Eut => VERTEX_TYPE_EUT,
             VertexTypes::Rte => VERTEX_TYPE_RTE,
             VertexTypes::Test => VERTEX_TYPE_TEST,
-            VertexTypes::Project => VERTEX_TYPE_RTE,
+            VertexTypes::Project => VERTEX_TYPE_PROJECT,
             VertexTypes::Feature => VERTEX_TYPE_FEATURE,
-            VertexTypes::Validation => VERTEX_TYPE_VALIDATION,
+            VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
         }
     }
 }
@@ -101,6 +95,7 @@ impl EdgeTypes {
             EdgeTypes::UsesRte => EDGE_TYPE_USES_RTE,
             EdgeTypes::UsesTest => EDGE_TYPE_USES_TEST,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
+            EdgeTypes::NeedsVerification => EDGE_TYPE_NEEDS_VERIFICATION,
         }
     }
 }
@@ -115,6 +110,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::UsesRte.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::UsesTest.name());
+        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::NeedsVerification.name());
         map
     };
     static ref EDGES_COUNT: usize = EDGES.len();
@@ -202,19 +198,6 @@ struct JsonData {
     data: serde_json::Map<String, serde_json::Value>,
 }
 
-trait Object {
-    fn get_path(&self, module: String) -> String {
-        println!("{}", module);
-        String::from("/test/abc/hallo")
-    }
-}
-
-struct ObjectEut {
-    name: String,
-}
-
-impl Object for ObjectEut {}
-
 struct Regression {
     regression: indradb::Database<indradb::MemoryDatastore>,
     config: RegressionConfig,
@@ -267,6 +250,9 @@ impl Regression {
             }
             "test" => {
                 file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
+            }
+            "verification" => {
+                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
             }
             _ => {
                 return None;
@@ -322,15 +308,23 @@ impl Regression {
 
             // Tests
             for test in rte.get(0).unwrap()["tests"].as_array().unwrap() {
-                println!("{:?}", test);
                 let t_o = self.create_object(VertexTypes::Test);
                 println!("Test: {:?}", &t_o);
                 let cfg = self.load_object_config(&VertexTypes::Test, &String::from(test["module"].as_str().unwrap()));
-                println!("Test CFG: {:?}", &cfg);
                 self.add_object_properties(&t_o, &cfg);
                 let test_p = self.get_object_properties(&t_o);
                 println!("Test properties: {:?}", &test_p);
                 self.create_relationship(&r_o, &t_o);
+
+                for verification in test["verifications"].as_array().unwrap() {
+                    let v_o = self.create_object(VertexTypes::Verification);
+                    println!("Verification: {:?}", &v_o);
+                    //let cfg = self.load_object_config(&VertexTypes::Verification, &String::from(test["module"].as_str().unwrap()));
+                    self.add_object_properties(&v_o, &verification);
+                    let verification_p = self.get_object_properties(&v_o);
+                    println!("Test properties: {:?}", &verification_p);
+                    self.create_relationship(&t_o, &v_o);
+                }
             }
         }
 
@@ -340,8 +334,8 @@ impl Regression {
 
     fn create_object(&self, object_type: VertexTypes) -> Vertex {
         println!("Create new object of type <{}>...", object_type.name());
-        let o = indradb::Vertex::new(indradb::Identifier::new(object_type.name()).unwrap());
-        let status = self.regression.create_vertex(&o).expect("panic while creating project db entry");
+        let o = Vertex::new(indradb::Identifier::new(object_type.name()).unwrap());
+        self.regression.create_vertex(&o).expect("panic while creating project db entry");
         println!("Create new object of type <{}> -> Done", object_type.name());
         o
     }
@@ -384,8 +378,8 @@ impl Regression {
 
     fn get_direct_neighbour_object_by_identifier(&self, object: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
         println!("Get direct neighbor of <{}>...", object.t.as_str());
-        let mut rvq = indradb::RangeVertexQuery::new();
-        rvq.t = Option::from(indradb::Identifier::new(VertexTypes::Eut.name()).unwrap());
+        let mut rvq = RangeVertexQuery::new();
+        rvq.t = Option::from(indradb::Identifier::new(identifier.name()).unwrap());
         rvq.limit = 1;
         rvq.start_id = Option::from(object.id);
         let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
@@ -410,6 +404,17 @@ impl Regression {
         let e = indradb::util::extract_edges(r).unwrap();
         println!("Get relationship for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         e
+    }
+
+    pub fn render(&self) -> String {
+        println!("Render regression pipeline file first step...");
+        let mut _tera = Tera::new(&self.config.common.templates).unwrap();
+        let mut context = tera::Context::new();
+        //context.insert("regression", &self.ci);
+        context.insert("config", &self.config);
+        let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
+        println!("Render regression pipeline file first step -> Done.");
+        rendered
     }
 }
 
@@ -437,5 +442,4 @@ fn main() {
 
     /*let o = ObjectEut { name: "eutA".to_string() };
     o.get_path(String::from("rte"));*/
-
 }
