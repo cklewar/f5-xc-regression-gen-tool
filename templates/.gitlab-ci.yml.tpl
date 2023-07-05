@@ -168,7 +168,7 @@ rte-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-")}}-apply:
 {% endfor -%}
 {% endfor -%}
 {% for provider in eut.provider -%}
-{% for rte in rtes -s%}
+{% for rte in rtes -%}
 {% for test in rte.cfg.tests %}
 # test - {{ test.module | replace(from="_", to="-")}} - {{ rte.cfg.module | replace(from="_", to="-") }} - {{ provider }} - apply
 regression-test-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-") }}-{{ test.name }}:
