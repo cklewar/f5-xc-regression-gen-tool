@@ -41,11 +41,17 @@ const VERTEX_TYPE_EUT: &str = "eut";
 const VERTEX_TYPE_RTE: &str = "rte";
 const VERTEX_TYPE_TEST: &str = "test";
 const VERTEX_TYPE_STAGE: &str = "stage";
+const VERTEX_TYPE_SCRIPTS: &str = "scripts";
 const VERTEX_TYPE_PROJECT: &str = "project";
 const VERTEX_TYPE_FEATURE: &str = "feature";
+const VERTEX_TYPE_PROVIDER: &str = "provider";
+const VERTEX_TYPE_PROVIDER_AWS: &str = "provider_aws";
+const VERTEX_TYPE_PROVIDER_GCP: &str = "provider_gcp";
 const VERTEX_TYPE_VERIFICATION: &str = "verification";
+const VERTEX_TYPE_SCRIPT_APPLY: &str = "script_apply";
 const VERTEX_TYPE_STAGE_DEPLOY: &str = "stage_deploy";
 const VERTEX_TYPE_STAGE_DESTROY: &str = "stage_destroy";
+const VERTEX_TYPE_PROVIDER_AZURE: &str = "provider_azure";
 const VERTEX_TYPE_STAGE_DEPLOY_ROOT: &str = "stage_deploy_root";
 const VERTEX_TYPE_STAGE_DESTROY_ROOT: &str = "stage_destroy_root";
 
@@ -55,9 +61,15 @@ const EDGE_TYPE_USES_RTE: &str = "uses_rte";
 const EDGE_TYPE_USES_TEST: &str = "uses_test";
 const EDGE_TYPE_HAS_STAGE: &str = "has_stage";
 const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
+const EDGE_TYPE_HAS_SCRIPTS: &str = "has_scripts";
 const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
+const EDGE_TYPE_HAS_PROVIDER: &str = "has_provider";
+const EDGE_TYPE_IS_APPLY_SCRIPT: &str = "is_apply_script";
 const EDGE_TYPE_HAS_DEPLOY_STAGE: &str = "deploy_stage";
+const EDGE_TYPE_HAS_PROVIDER_AWS: &str = "has_provider_aws";
+const EDGE_TYPE_HAS_PROVIDER_GCP: &str = "has_provider_gcp";
 const EDGE_TYPE_HAS_DESTROY_STAGE: &str = "destroy_stage";
+const EDGE_TYPE_HAS_PROVIDER_AZURE: &str = "has_provider_azure";
 const EDGE_TYPE_NEEDS_VERIFICATION: &str = "needs_verification";
 const EDGE_TYPE_HAS_DEPLOY_STAGE_ROOT: &str = "has_deploy_stage_root";
 const EDGE_TYPE_HAS_DESTROY_STAGE_ROOT: &str = "has_destroy_stage_root";
@@ -72,11 +84,17 @@ enum VertexTypes {
     Eut,
     Rte,
     Test,
+    Scripts,
     Feature,
     Project,
+    Provider,
+    ProviderAws,
+    ProviderGcp,
+    ScriptApply,
     StageDeploy,
     StageDestroy,
     Verification,
+    ProviderAzure,
     StageDeployRoot,
     StageDestroyRoot,
 }
@@ -89,8 +107,14 @@ enum EdgeTypes {
     HasStage,
     NextStage,
     HasFeature,
+    HasScripts,
+    HasProvider,
+    IsApplyScript,
+    HasProviderAws,
+    HasProviderGcp,
     HasDeployStage,
     HasDestroyStage,
+    HasProviderAzure,
     NeedsVerification,
     HasDeployStageRoot,
     HasDestroyStageRoot,
@@ -103,8 +127,14 @@ impl VertexTypes {
             VertexTypes::Eut => VERTEX_TYPE_EUT,
             VertexTypes::Rte => VERTEX_TYPE_RTE,
             VertexTypes::Test => VERTEX_TYPE_TEST,
+            VertexTypes::Scripts => VERTEX_TYPE_SCRIPTS,
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
             VertexTypes::Feature => VERTEX_TYPE_FEATURE,
+            VertexTypes::Provider => VERTEX_TYPE_PROVIDER,
+            VertexTypes::ProviderAws => VERTEX_TYPE_PROVIDER_AWS,
+            VertexTypes::ProviderGcp => VERTEX_TYPE_PROVIDER_GCP,
+            VertexTypes::ProviderAzure => VERTEX_TYPE_PROVIDER_AZURE,
+            VertexTypes::ScriptApply => VERTEX_TYPE_SCRIPT_APPLY,
             VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
             VertexTypes::StageDestroy => VERTEX_TYPE_STAGE_DESTROY,
             VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
@@ -123,9 +153,15 @@ impl EdgeTypes {
             EdgeTypes::UsesTest => EDGE_TYPE_USES_TEST,
             EdgeTypes::HasStage => EDGE_TYPE_HAS_STAGE,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
+            EdgeTypes::HasScripts => EDGE_TYPE_HAS_SCRIPTS,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
+            EdgeTypes::HasProvider => EDGE_TYPE_HAS_PROVIDER,
+            EdgeTypes::IsApplyScript => EDGE_TYPE_IS_APPLY_SCRIPT,
+            EdgeTypes::HasProviderAws => EDGE_TYPE_HAS_PROVIDER_AWS,
+            EdgeTypes::HasProviderGcp => EDGE_TYPE_HAS_PROVIDER_GCP,
             EdgeTypes::HasDeployStage => EDGE_TYPE_HAS_DEPLOY_STAGE,
             EdgeTypes::HasDestroyStage => EDGE_TYPE_HAS_DESTROY_STAGE,
+            EdgeTypes::HasProviderAzure => EDGE_TYPE_HAS_PROVIDER_AZURE,
             EdgeTypes::NeedsVerification => EDGE_TYPE_NEEDS_VERIFICATION,
             EdgeTypes::HasDeployStageRoot => EDGE_TYPE_HAS_DEPLOY_STAGE_ROOT,
             EdgeTypes::HasDestroyStageRoot => EDGE_TYPE_HAS_DESTROY_STAGE_ROOT,
@@ -155,6 +191,14 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::UsesRte.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::UsesTest.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Provider.name().to_string()), EdgeTypes::HasProvider.name());
+        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAws.name().to_string()), EdgeTypes::HasProviderAws.name());
+        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderGcp.name().to_string()), EdgeTypes::HasProviderGcp.name());
+        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAzure.name().to_string()), EdgeTypes::HasProviderAzure.name());
+        map.insert(VertexTuple(VertexTypes::ProviderAws.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::HasScripts.name());
+        map.insert(VertexTuple(VertexTypes::ProviderGcp.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::HasScripts.name());
+        map.insert(VertexTuple(VertexTypes::ProviderAzure.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::HasScripts.name());
+        map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::ScriptApply.name().to_string()), EdgeTypes::IsApplyScript.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::NeedsVerification.name());
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeployRoot.name().to_string()), EdgeTypes::HasDeployStageRoot.name());
@@ -436,27 +480,51 @@ impl Regression {
             let r_o = self.create_object(VertexTypes::Rte);
             self.add_object_properties(&r_o, &rte, PropertyType::Eut);
             let cfg = self.load_object_config(&VertexTypes::Rte, &String::from(rte["module"].as_str().unwrap()));
-            println!("##################################################################");
-            println!("RTE CFG: {:#?}", &cfg);
-            println!("##################################################################");
-            /*for script in &mut rte.scripts {
-                        let mut ctx: ScriptRenderContext = ScriptRenderContext::new(provider.clone());
-                        match script.name.as_ref() {
-                            SCRIPT_TYPE_APPLY => {
-                                ctx.rte_name = Option::from(rte.name.clone());
-                            }
-                            SCRIPT_TYPE_DESTROY => {}
-                            SCRIPT_TYPE_ARTIFACTS => {
-                                ctx.rte_name = Option::from(rte.name.clone());
-                            }
-                            _ => {
-                                println!("Given script type does not match any know types")
-                            }
-                        }
-                        script.value = render_script(&ctx, &script.value);
-                    }*/
             self.add_object_properties(&r_o, &cfg.unwrap().data, PropertyType::Module);
             self.create_relationship(&eut, &r_o);
+
+            // Rte - Provider - Scripts
+            let p_o = self.create_object(VertexTypes::Provider);
+            self.create_relationship(&r_o, &p_o);
+            let r_p = self.get_object_properties(&r_o);
+            for p in eut_p.get(0).unwrap().props.get(PropertyType::Eut.index()).unwrap().value[PropertyType::Eut.name()]["provider"].as_array().unwrap().iter() {
+                let mut o: Vertex = Vertex { id: Default::default(), t: Default::default() };
+                match p.as_str().unwrap() {
+                    "aws" => {
+                        o = self.create_object(VertexTypes::ProviderAws)
+                    }
+                    "gcp" => {
+                        o = self.create_object(VertexTypes::ProviderGcp)
+                    }
+                    "azure" => {
+                        o = self.create_object(VertexTypes::ProviderAzure)
+                    }
+                    _ => {}
+                }
+                self.create_relationship(&p_o, &o);
+                let s_o = self.create_object(VertexTypes::Scripts);
+                self.create_relationship(&o, &s_o);
+
+                println!("##################################################################");
+                for script in r_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value["scripts"].as_array().unwrap().iter() {
+                    match script["name"].as_str().unwrap() {
+                        "apply" => {
+                            let sa_o = self.create_object(VertexTypes::ScriptApply);
+                            self.create_relationship(&s_o, &sa_o);
+                            let s_path = &r_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value["scripts_path"];
+                            println!("{:?}", format!("{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte["module"].as_str().unwrap(), s_path.as_str().unwrap(), p.as_str().unwrap(), script["value"].as_str().unwrap()));
+                            let file = format!("{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte["module"].as_str().unwrap(), s_path.as_str().unwrap(), p.as_str().unwrap(), script["value"].as_str().unwrap());
+                            let contents = std::fs::read_to_string(file).expect("panic reading script file");
+                            let value = json!({
+                                "apply": contents
+                            });
+                            self.add_object_properties(&sa_o, &value, PropertyType::Module);
+                        }
+                        _ => {}
+                    }
+                }
+                println!("##################################################################");
+            }
 
             // Tests
             for test in rte["tests"].as_array().unwrap() {
@@ -605,7 +673,17 @@ impl Regression {
 
         for rte in _rtes.iter() {
             let rte_p = self.get_object_properties(&rte);
-            rtes.push(rte_p.get(0).unwrap().props.get(0).unwrap().value.clone());
+            println!("#################################################################");
+            println!("RTE_EUT_CFG {:#?}", &rte_p.get(0).unwrap().props.get(PropertyType::Eut.index()).unwrap().value.clone());
+            println!("#################################################################");
+            println!("#################################################################");
+            println!("RTE_MODULE_CFG {:#?}", &rte_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value.clone());
+            println!("#################################################################");
+            let data = json!({
+                "cfg": &rte_p.get(0).unwrap().props.get(PropertyType::Eut.index()).unwrap().value.clone(),
+                "module": &rte_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value.clone()
+            });
+            rtes.push(data);
         }
         let mut stages: Vec<String> = Vec::new();
         let mut deploy_stages: Vec<String> = Vec::new();

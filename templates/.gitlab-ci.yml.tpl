@@ -142,7 +142,65 @@ feature-{{ eut.name }}-{{ feature.name }}-apply:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+{% endfor -%}
+{% for provider in eut.provider -%}
+{% for rte in rtes %}
+# rte - {{ provider }} - {{ rte.cfg.module | replace(from="_", to="-")}} - apply
+rte-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-")}}-apply:
+  <<: *base
+  stage: rte-apply
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
+  script:
+      - |
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% endfor -%}
+{% for provider in eut.provider -%}
+{% for rte in rtes -s%}
+{% for test in rte.cfg.tests %}
+# test - {{ test.module | replace(from="_", to="-")}} - {{ rte.cfg.module | replace(from="_", to="-") }} - {{ provider }} - apply
+regression-test-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-") }}-{{ test.name }}:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .regression_test_{{ test.name | replace(from="-", to="_") }}, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
+        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}/{{ provider }}"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/{{ provider }}/artifacts.tfvars -auto-approve
+  timeout: {{ test.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% endfor -%}
 {% endfor %}
+
+
+
+
+
+
+
+
 
 {{ project.name }}
 {{ eut.name }}
@@ -150,13 +208,13 @@ feature-{{ eut.name }}-{{ feature.name }}-apply:
 {{ rte.module }}
 {% endfor %}
 {% for rte in rtes %}
-{% for test in rte.tests %}
+{% for test in rte.cfg.tests %}
 {{ test.module }}
 {% endfor %}
 {% endfor %}
 
 {% for rte in rtes %}
-{% for test in rte.tests %}
+{% for test in rte.cfg.tests %}
 {% for verification in test.verifications %}
 {{ verification.module }}
 {% endfor %}
