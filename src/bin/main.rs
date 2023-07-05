@@ -11,7 +11,7 @@
 
 use indradb;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap};
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::string::ToString;
 use clap::Parser;
@@ -175,12 +175,6 @@ struct Cli {
 struct VertexTuple(String, String);
 
 #[derive(Deserialize, Serialize, Debug)]
-struct RegressionConfigCommon {
-    templates: String,
-    root_path: String,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigCiVariables {
     name: String,
     value: String,
@@ -236,6 +230,8 @@ struct RegressionConfigVerifications {
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigProject {
     name: String,
+    templates: String,
+    root_path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -244,7 +240,6 @@ pub struct RegressionConfig {
     eut: RegressionConfigEut,
     rte: RegressionConfigRte,
     tests: RegressionConfigTests,
-    common: RegressionConfigCommon,
     project: RegressionConfigProject,
     features: RegressionConfigFeatures,
     collector: RegressionConfigCollector,
@@ -278,11 +273,11 @@ impl Regression {
         let mut context = Context::new();
         context.insert("eut", &cfg.eut);
         context.insert("rte", &cfg.rte);
-        context.insert("common", &cfg.common);
-        context.insert("collector", &cfg.collector);
         context.insert("tests", &cfg.tests);
-        context.insert("verifications", &cfg.verifications);
         context.insert("project", &cfg.project);
+        context.insert("collector", &cfg.collector);
+        context.insert("verifications", &cfg.verifications);
+
         let eutc = _tera.render("regression.json", &context).unwrap();
         println!("Render regression configuration file -> Done.");
 
@@ -298,19 +293,19 @@ impl Regression {
         let file: String;
         match _type.name() {
             "eut" => {
-                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
             }
             "rte" => {
-                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
             }
             "feature" => {
-                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
             }
             "test" => {
-                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
             }
             "verification" => {
-                file = format!("{}/{}/{}/{}", self.config.common.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
             }
             _ => {
                 return None;
@@ -354,18 +349,22 @@ impl Regression {
         self.add_object_properties(&eut, &cfg.unwrap().data, PropertyType::Eut);
         self.create_relationship(&project, &eut);
         let eut_p = self.get_object_properties(&eut);
-        let mut deploy_stage: Option<Vertex> = self.add_ci_stage(&stage_deploy, &eut_p.get(0).unwrap().props.get(0).unwrap().value["eut"]["stages"]["deploy"][0]);
-        let mut destroy_stage: Option<Vertex> = self.add_ci_stage(&stage_destroy, &eut_p.get(0).unwrap().props.get(0).unwrap().value["eut"]["stages"]["destroy"][0]);
+        let mut deploy_stage: Option<Vertex> = self.add_ci_stage(&stage_deploy, &eut_p.get(0).unwrap().props.get(0).unwrap().value["eut"]["stages"]["deploy"]);
+        let mut destroy_stage: Option<Vertex> = self.add_ci_stage(&stage_destroy, &eut_p.get(0).unwrap().props.get(0).unwrap().value["eut"]["stages"]["destroy"]);
 
         // Features
         for feature in eut_p.get(PropertyType::Eut.index()).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").iter() {
             let o = self.create_object(VertexTypes::Feature);
+            //println!("{:?}", feature[0]);
+            /*let cfg = self.load_object_config(&VertexTypes::Feature, &String::from(feature[0]["module"].as_str().unwrap()));
+            self.add_object_properties(&o, &cfg, PropertyType::Module);*/
             let cfg = self.load_object_config(&VertexTypes::Feature, &String::from(feature[0]["module"].as_str().unwrap()));
-            self.add_object_properties(&o, &cfg, PropertyType::Eut);
+            self.add_object_properties(&o, &cfg, PropertyType::Module);
             let feature_p = self.get_object_properties(&o);
             self.create_relationship(&eut, &o);
-            deploy_stage = self.add_ci_stage(&deploy_stage.unwrap(), &feature_p.get(0).unwrap().props.get(0).unwrap().value);
-            destroy_stage = self.add_ci_stage(&destroy_stage.unwrap(), &feature_p.get(0).unwrap().props.get(0).unwrap().value);
+            //println!("{:?}", json!([&feature_p.get(0).unwrap().props.get(0).unwrap().value["data"]]));
+            deploy_stage = self.add_ci_stage(&deploy_stage.unwrap(), &feature_p.get(0).unwrap().props.get(0).unwrap().value["data"]["stages"]["deploy"]);
+            destroy_stage = self.add_ci_stage(&destroy_stage.unwrap(), &feature_p.get(0).unwrap().props.get(0).unwrap().value["data"]["stages"]["destroy"]);
         }
 
         // Rtes
@@ -378,8 +377,8 @@ impl Regression {
             // println!("Rte properties: {:#?}", &rte_p);
             // println!("Rte properties: {:#?}", &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]);
             self.create_relationship(&eut, &r_o);
-            let rte_deploy_stage = self.add_ci_stage(deploy_stage.as_ref().unwrap(), &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]);
-            self.add_ci_stage(&destroy_stage.as_ref().unwrap(), &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]);
+            let rte_deploy_stage = self.add_ci_stage(deploy_stage.as_ref().unwrap(), &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]["deploy"]);
+            self.add_ci_stage(&destroy_stage.as_ref().unwrap(), &rte_p.get(PropertyType::Eut.index()).unwrap().props.get(PropertyType::Module.index()).unwrap().value["stages"]["destroy"]);
 
             // Tests
             for test in rte["tests"].as_array().unwrap() {
@@ -527,9 +526,17 @@ impl Regression {
             rtes.push(rte_p.get(0).unwrap().props.get(0).unwrap().value.clone());
         }
 
+        //let mut _unique_stages: HashSet<String> = HashSet::new();
+        //let mut stages = Vec::new();
         let s_deploy = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::StageDeploy);
         for stage in self.get_direct_neighbour_objects_by_identifier(&s_deploy[0], VertexTypes::Stage).iter() {
-            println!("{:?} --> {:?}", stage.t ,self.get_object_properties(&stage).get(0).unwrap().props.get(0).unwrap().value);
+            let _p = &self.get_object_properties(&stage);
+            let p = &_p.get(0).unwrap().props.get(0).unwrap().value;
+            println!("{:?} --> {:?}", &stage.t, &p);
+            /*if !_unique_stages.contains(p) {
+                stages.push(p.clone());
+                _unique_stages.insert(stage.t.to_string());
+            }*/
         }
 
         let mut context = Context::new();
@@ -544,7 +551,7 @@ impl Regression {
 
     pub fn render(&self, context: &Context) -> String {
         println!("Render regression pipeline file first step...");
-        let mut _tera = Tera::new(&self.config.common.templates).unwrap();
+        let mut _tera = Tera::new(&self.config.project.templates).unwrap();
         let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
         println!("Render regression pipeline file first step -> Done.");
         rendered
