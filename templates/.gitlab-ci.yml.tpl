@@ -167,11 +167,11 @@ rte-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-")}}-apply:
       - runner_system_failure
 {% endfor -%}
 {% endfor -%}
-{% for provider in eut.provider -%}
 {% for rte in rtes -%}
-{% for test in rte.cfg.tests %}
-# test - {{ test.module | replace(from="_", to="-")}} - {{ rte.cfg.module | replace(from="_", to="-") }} - {{ provider }} - apply
-regression-test-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-") }}-{{ test.name }}:
+{% for ep in rte.cfg.endpoints -%}
+{% for test in ep.tests %}
+# test - {{ test.module | replace(from="_", to="-")}} - {{ rte.cfg.module | replace(from="_", to="-") }} - apply
+regression-test-{{ rte.cfg.module | replace(from="_", to="-") }}-{{ test.name }}:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -181,8 +181,8 @@ regression-test-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-") }}-
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
-        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}/{{ provider }}"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/{{ provider }}/artifacts.tfvars -auto-approve
+        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/artifacts.tfvars -auto-approve
   timeout: {{ test.ci.timeout }}
   retry:
     max: 1
@@ -198,25 +198,29 @@ regression-test-{{ provider }}-{{ rte.cfg.module | replace(from="_", to="-") }}-
 
 
 
-
-
-
-
 {{ project.name }}
 {{ eut.name }}
 {% for rte in rtes %}
-{{ rte.module }}
-{% endfor %}
-{% for rte in rtes %}
-{% for test in rte.cfg.tests %}
-{{ test.module }}
-{% endfor %}
+{{ rte.cfg.module }}
 {% endfor %}
 
+
 {% for rte in rtes %}
-{% for test in rte.cfg.tests %}
+{% for ep in rte.cfg.endpoints %}
+{% for test in ep.tests %}
+{{ test.module }}
+{% endfor -%}
+{% endfor -%}
+{% endfor %}
+
+
+
+{% for rte in rtes %}
+{% for ep in rte.cfg.endpoints %}
+{% for test in ep.tests %}
 {% for verification in test.verifications %}
 {{ verification.module }}
-{% endfor %}
-{% endfor %}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
 {% endfor %}

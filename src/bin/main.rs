@@ -11,24 +11,23 @@
 
 use indradb;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::io::Write;
 use std::string::ToString;
 use clap::Parser;
-use indradb::{BulkInsertItem, Identifier, RangeVertexQuery, Vertex, VertexProperties, VertexProperty};
+use indradb::{BulkInsertItem, Edge, Identifier, QueryExt, QueryOutputValue, RangeVertexQuery, Vertex, VertexProperties};
 use tera::{Context, Tera};
 use lazy_static::lazy_static;
 use std::option::Option;
-use std::os::unix::fs::chroot;
 use uuid::Uuid;
 use serde_json::{json, Value};
 
 const CONFIG_FILE_NAME: &str = "config.json";
 
-const SCRIPT_TYPE_APPLY: &str = "apply";
-const SCRIPT_TYPE_DESTROY: &str = "destroy";
-const SCRIPT_TYPE_ARTIFACTS: &str = "artifacts";
-const SCRIPT_TYPE_COLLECTOR_PATH: &str = "scripts";
+// const SCRIPT_TYPE_APPLY: &str = "apply";
+// const SCRIPT_TYPE_DESTROY: &str = "destroy";
+// const SCRIPT_TYPE_ARTIFACTS: &str = "artifacts";
+// const SCRIPT_TYPE_COLLECTOR_PATH: &str = "scripts";
 
 const PIPELINE_FILE_NAME: &str = ".gitlab-ci.yml";
 const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
@@ -40,17 +39,23 @@ const VERTEX_TYPE_CI: &str = "ci";
 const VERTEX_TYPE_EUT: &str = "eut";
 const VERTEX_TYPE_RTE: &str = "rte";
 const VERTEX_TYPE_TEST: &str = "test";
-const VERTEX_TYPE_STAGE: &str = "stage";
 const VERTEX_TYPE_SCRIPTS: &str = "scripts";
 const VERTEX_TYPE_PROJECT: &str = "project";
 const VERTEX_TYPE_FEATURE: &str = "feature";
 const VERTEX_TYPE_PROVIDER: &str = "provider";
+const VERTEX_TYPE_ENDPOINT: &str = "endpoint";
+const VERTEX_TYPE_ENDPOINTS: &str = "endpoints";
+const VERTEX_TYPE_COMPONENTS: &str = "components";
+const VERTEX_TYPE_ENDPOINT_SRC: &str = "endpoint_src";
+const VERTEX_TYPE_ENDPOINT_DST: &str = "endpoint_dst";
 const VERTEX_TYPE_PROVIDER_AWS: &str = "provider_aws";
 const VERTEX_TYPE_PROVIDER_GCP: &str = "provider_gcp";
 const VERTEX_TYPE_VERIFICATION: &str = "verification";
 const VERTEX_TYPE_SCRIPT_APPLY: &str = "script_apply";
 const VERTEX_TYPE_STAGE_DEPLOY: &str = "stage_deploy";
 const VERTEX_TYPE_STAGE_DESTROY: &str = "stage_destroy";
+const VERTEX_TYPE_COMPONENT_SRC: &str = "component_src";
+const VERTEX_TYPE_COMPONENT_DST: &str = "component_dst";
 const VERTEX_TYPE_PROVIDER_AZURE: &str = "provider_azure";
 const VERTEX_TYPE_STAGE_DEPLOY_ROOT: &str = "stage_deploy_root";
 const VERTEX_TYPE_STAGE_DESTROY_ROOT: &str = "stage_destroy_root";
@@ -58,21 +63,28 @@ const VERTEX_TYPE_STAGE_DESTROY_ROOT: &str = "stage_destroy_root";
 const EDGE_TYPE_HAS_CI: &str = "has_ci";
 const EDGE_TYPE_HAS_EUT: &str = "has_eut";
 const EDGE_TYPE_USES_RTE: &str = "uses_rte";
-const EDGE_TYPE_USES_TEST: &str = "uses_test";
-const EDGE_TYPE_HAS_STAGE: &str = "has_stage";
+const EDGE_TYPE_RUNS_TEST: &str = "runs_test";
 const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
 const EDGE_TYPE_HAS_SCRIPTS: &str = "has_scripts";
 const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
 const EDGE_TYPE_HAS_PROVIDER: &str = "has_provider";
+const EDGE_TYPE_HAS_ENDPOINT: &str = "has_endpoint";
+const EDGE_TYPE_HAS_ENDPOINTS: &str = "has_endpoints";
+const EDGE_TYPE_PROVIDES_TEST: &str = "provides_test";
 const EDGE_TYPE_IS_APPLY_SCRIPT: &str = "is_apply_script";
 const EDGE_TYPE_HAS_DEPLOY_STAGE: &str = "deploy_stage";
+const EDGE_TYPE_HAS_COMPONENTS: &str = "has_components";
 const EDGE_TYPE_HAS_PROVIDER_AWS: &str = "has_provider_aws";
 const EDGE_TYPE_HAS_PROVIDER_GCP: &str = "has_provider_gcp";
+const EDGE_TYPE_HAS_ENDPOINT_SRC: &str = "has_endpoint_src";
+const EDGE_TYPE_HAS_ENDPOINT_DST: &str = "has_endpoint_dst";
 const EDGE_TYPE_HAS_DESTROY_STAGE: &str = "destroy_stage";
 const EDGE_TYPE_HAS_PROVIDER_AZURE: &str = "has_provider_azure";
 const EDGE_TYPE_NEEDS_VERIFICATION: &str = "needs_verification";
 const EDGE_TYPE_HAS_DEPLOY_STAGE_ROOT: &str = "has_deploy_stage_root";
 const EDGE_TYPE_HAS_DESTROY_STAGE_ROOT: &str = "has_destroy_stage_root";
+const EDGEP_TYPE_PROVIDES_SRC_COMPONENT: &str = "provides_src_component";
+const EDGEP_TYPE_PROVIDES_DST_COMPONENT: &str = "provides_dst_component";
 
 enum PropertyType {
     Module,
@@ -88,12 +100,19 @@ enum VertexTypes {
     Feature,
     Project,
     Provider,
+    Endpoint,
+    Endpoints,
+    Components,
+    EndpointSrc,
+    EndpointDst,
     ProviderAws,
     ProviderGcp,
     ScriptApply,
     StageDeploy,
     StageDestroy,
     Verification,
+    ComponentSrc,
+    ComponentDst,
     ProviderAzure,
     StageDeployRoot,
     StageDestroyRoot,
@@ -103,27 +122,34 @@ enum EdgeTypes {
     HasCi,
     HasEut,
     UsesRte,
-    UsesTest,
-    HasStage,
+    RunsTest,
     NextStage,
     HasFeature,
     HasScripts,
     HasProvider,
+    HasEndpoint,
+    HasEndpoints,
+    ProvidesTest,
+    HasComponents,
     IsApplyScript,
     HasProviderAws,
     HasProviderGcp,
     HasDeployStage,
+    HasEndpointSrc,
+    HasEndpointDst,
     HasDestroyStage,
     HasProviderAzure,
     NeedsVerification,
     HasDeployStageRoot,
     HasDestroyStageRoot,
+    ProvidesSrcComponent,
+    ProvidesDstComponent,
 }
 
 impl VertexTypes {
     fn name(&self) -> &'static str {
         match *self {
-            VertexTypes::Ci => VERTEX_TYPE_TEST,
+            VertexTypes::Ci => VERTEX_TYPE_CI,
             VertexTypes::Eut => VERTEX_TYPE_EUT,
             VertexTypes::Rte => VERTEX_TYPE_RTE,
             VertexTypes::Test => VERTEX_TYPE_TEST,
@@ -131,6 +157,11 @@ impl VertexTypes {
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
             VertexTypes::Feature => VERTEX_TYPE_FEATURE,
             VertexTypes::Provider => VERTEX_TYPE_PROVIDER,
+            VertexTypes::Endpoint => VERTEX_TYPE_ENDPOINT,
+            VertexTypes::Endpoints => VERTEX_TYPE_ENDPOINTS,
+            VertexTypes::Components => VERTEX_TYPE_COMPONENTS,
+            VertexTypes::EndpointSrc => VERTEX_TYPE_ENDPOINT_SRC,
+            VertexTypes::EndpointDst => VERTEX_TYPE_ENDPOINT_DST,
             VertexTypes::ProviderAws => VERTEX_TYPE_PROVIDER_AWS,
             VertexTypes::ProviderGcp => VERTEX_TYPE_PROVIDER_GCP,
             VertexTypes::ProviderAzure => VERTEX_TYPE_PROVIDER_AZURE,
@@ -138,8 +169,40 @@ impl VertexTypes {
             VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
             VertexTypes::StageDestroy => VERTEX_TYPE_STAGE_DESTROY,
             VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
+            VertexTypes::ComponentSrc => VERTEX_TYPE_COMPONENT_SRC,
+            VertexTypes::ComponentDst => VERTEX_TYPE_COMPONENT_DST,
             VertexTypes::StageDeployRoot => VERTEX_TYPE_STAGE_DEPLOY_ROOT,
             VertexTypes::StageDestroyRoot => VERTEX_TYPE_STAGE_DESTROY_ROOT,
+        }
+    }
+
+    fn get(object: &Vertex) -> &'static str {
+        match object.t.as_str() {
+            VERTEX_TYPE_CI => VertexTypes::Ci.name(),
+            VERTEX_TYPE_RTE => VertexTypes::Rte.name(),
+            VERTEX_TYPE_EUT => VertexTypes::Eut.name(),
+            VERTEX_TYPE_TEST =>VertexTypes::Test.name(),
+            VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts.name(),
+            VERTEX_TYPE_PROJECT => VertexTypes::Project.name(),
+            VERTEX_TYPE_FEATURE=> VertexTypes::Feature.name(),
+            VERTEX_TYPE_PROVIDER => VertexTypes::Provider.name(),
+            VERTEX_TYPE_ENDPOINT => VertexTypes::Endpoint.name(),
+            VERTEX_TYPE_ENDPOINTS => VertexTypes::Endpoints.name(),
+            VERTEX_TYPE_COMPONENTS => VertexTypes::Components.name(),
+            VERTEX_TYPE_ENDPOINT_SRC => VertexTypes::EndpointSrc.name(),
+            VERTEX_TYPE_ENDPOINT_DST => VertexTypes::EndpointDst.name(),
+            VERTEX_TYPE_PROVIDER_AWS => VertexTypes::ProviderAws.name(),
+            VERTEX_TYPE_PROVIDER_GCP => VertexTypes::ProviderGcp.name(),
+            VERTEX_TYPE_VERIFICATION => VertexTypes::Verification.name(),
+            VERTEX_TYPE_SCRIPT_APPLY => VertexTypes::ScriptApply.name(),
+            VERTEX_TYPE_STAGE_DEPLOY => VertexTypes::StageDeploy.name(),
+            VERTEX_TYPE_STAGE_DESTROY => VertexTypes::StageDestroy.name(),
+            VERTEX_TYPE_COMPONENT_SRC => VertexTypes::ComponentSrc.name(),
+            VERTEX_TYPE_COMPONENT_DST => VertexTypes::ComponentDst.name(),
+            VERTEX_TYPE_PROVIDER_AZURE => VertexTypes::ProviderAzure.name(),
+            VERTEX_TYPE_STAGE_DEPLOY_ROOT => VertexTypes::StageDeployRoot.name(),
+            VERTEX_TYPE_STAGE_DESTROY_ROOT => VertexTypes::StageDestroyRoot.name(),
+            _ => "empty"
         }
     }
 }
@@ -150,21 +213,28 @@ impl EdgeTypes {
             EdgeTypes::HasCi => EDGE_TYPE_HAS_CI,
             EdgeTypes::HasEut => EDGE_TYPE_HAS_EUT,
             EdgeTypes::UsesRte => EDGE_TYPE_USES_RTE,
-            EdgeTypes::UsesTest => EDGE_TYPE_USES_TEST,
-            EdgeTypes::HasStage => EDGE_TYPE_HAS_STAGE,
+            EdgeTypes::RunsTest => EDGE_TYPE_RUNS_TEST,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::HasScripts => EDGE_TYPE_HAS_SCRIPTS,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
             EdgeTypes::HasProvider => EDGE_TYPE_HAS_PROVIDER,
+            EdgeTypes::HasEndpoint => EDGE_TYPE_HAS_ENDPOINT,
+            EdgeTypes::HasEndpoints => EDGE_TYPE_HAS_ENDPOINTS,
+            EdgeTypes::ProvidesTest => EDGE_TYPE_PROVIDES_TEST,
+            EdgeTypes::HasComponents => EDGE_TYPE_HAS_COMPONENTS,
             EdgeTypes::IsApplyScript => EDGE_TYPE_IS_APPLY_SCRIPT,
             EdgeTypes::HasProviderAws => EDGE_TYPE_HAS_PROVIDER_AWS,
             EdgeTypes::HasProviderGcp => EDGE_TYPE_HAS_PROVIDER_GCP,
+            EdgeTypes::HasEndpointSrc => EDGE_TYPE_HAS_ENDPOINT_SRC,
+            EdgeTypes::HasEndpointDst => EDGE_TYPE_HAS_ENDPOINT_DST,
             EdgeTypes::HasDeployStage => EDGE_TYPE_HAS_DEPLOY_STAGE,
             EdgeTypes::HasDestroyStage => EDGE_TYPE_HAS_DESTROY_STAGE,
             EdgeTypes::HasProviderAzure => EDGE_TYPE_HAS_PROVIDER_AZURE,
             EdgeTypes::NeedsVerification => EDGE_TYPE_NEEDS_VERIFICATION,
             EdgeTypes::HasDeployStageRoot => EDGE_TYPE_HAS_DEPLOY_STAGE_ROOT,
             EdgeTypes::HasDestroyStageRoot => EDGE_TYPE_HAS_DESTROY_STAGE_ROOT,
+            EdgeTypes::ProvidesSrcComponent => EDGEP_TYPE_PROVIDES_SRC_COMPONENT,
+            EdgeTypes::ProvidesDstComponent => EDGEP_TYPE_PROVIDES_DST_COMPONENT,
         }
     }
 }
@@ -188,9 +258,9 @@ lazy_static! {
     static ref EDGE_TYPES: HashMap<VertexTuple, &'static str> = {
         let mut map = HashMap::new();
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name());
+        map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::UsesRte.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::UsesTest.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Provider.name().to_string()), EdgeTypes::HasProvider.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAws.name().to_string()), EdgeTypes::HasProviderAws.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderGcp.name().to_string()), EdgeTypes::HasProviderGcp.name());
@@ -198,9 +268,20 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::ProviderAws.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::HasScripts.name());
         map.insert(VertexTuple(VertexTypes::ProviderGcp.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::HasScripts.name());
         map.insert(VertexTuple(VertexTypes::ProviderAzure.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::HasScripts.name());
+        map.insert(VertexTuple(VertexTypes::ProviderAws.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
+        map.insert(VertexTuple(VertexTypes::ProviderGcp.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
+        map.insert(VertexTuple(VertexTypes::ProviderAzure.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
+        map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::ProvidesSrcComponent.name());
+        map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::ProvidesDstComponent.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::ScriptApply.name().to_string()), EdgeTypes::IsApplyScript.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Endpoints.name().to_string()), EdgeTypes::HasEndpoints.name());
+        map.insert(VertexTuple(VertexTypes::Endpoints.name().to_string(), VertexTypes::Endpoint.name().to_string()), EdgeTypes::HasEndpoint.name());
+        map.insert(VertexTuple(VertexTypes::Endpoint.name().to_string(), VertexTypes::EndpointSrc.name().to_string()), EdgeTypes::HasEndpointSrc.name());
+        map.insert(VertexTuple(VertexTypes::EndpointSrc.name().to_string(), VertexTypes::EndpointDst.name().to_string()), EdgeTypes::HasEndpointDst.name());
+        map.insert(VertexTuple(VertexTypes::EndpointSrc.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::RunsTest.name());
+        map.insert(VertexTuple(VertexTypes::EndpointDst.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::ProvidesTest.name());
+        map.insert(VertexTuple(VertexTypes::EndpointSrc.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::HasEndpointDst.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::NeedsVerification.name());
-        map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeployRoot.name().to_string()), EdgeTypes::HasDeployStageRoot.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroyRoot.name().to_string()), EdgeTypes::HasDestroyStageRoot.name());
         map.insert(VertexTuple(VertexTypes::StageDeployRoot.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasDeployStage.name());
@@ -329,7 +410,7 @@ struct ScriptRenderContext {
     collector_name: Option<String>,
 }
 
-impl ScriptRenderContext {
+/*impl ScriptRenderContext {
     pub fn new(provider: String) -> Self {
         Self {
             provider,
@@ -338,7 +419,7 @@ impl ScriptRenderContext {
             collector_name: None,
         }
     }
-}
+}*/
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonData {
@@ -351,11 +432,11 @@ struct Regression {
 }
 
 impl Regression {
-    fn new(file: &String) -> Self {
+    fn new(file: &str) -> Self {
         Regression { regression: indradb::MemoryDatastore::new_db(), config: Regression::load_regression_config(&file) }
     }
 
-    fn load_regression_config(file: &String) -> RegressionConfig {
+    fn load_regression_config(file: &str) -> RegressionConfig {
         println!("Loading regression configuration data...");
         let data: String = String::from(file);
         let raw = std::fs::read_to_string(&data).unwrap();
@@ -383,10 +464,10 @@ impl Regression {
         cfg
     }
 
-    fn load_object_config(&self, _type: &VertexTypes, module: &String) -> Option<JsonData> {
+    fn load_object_config(&self, _type: &str, module: &str) -> Option<JsonData> {
         println!("Loading module <{module}> configuration data...");
         let file: String;
-        match _type.name() {
+        match _type {
             "eut" => {
                 file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
             }
@@ -414,9 +495,10 @@ impl Regression {
         Some(cfg)
     }
 
-    fn render_script(context: &ScriptRenderContext, input: &String) -> String {
+    #[allow(dead_code)]
+    fn render_script(context: &ScriptRenderContext, input: &str) -> String {
         println!("Render regression pipeline file script section...");
-        let ctx = tera::Context::from_serialize(context);
+        let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
         println!("Render regression pipeline file script section -> Done.");
         rendered
@@ -429,14 +511,13 @@ impl Regression {
         Some(new)
     }
 
-    fn init(&self) -> uuid::Uuid {
+    fn init(&self) -> Uuid {
         // Project
         let project = self.create_object(VertexTypes::Project);
         self.add_object_properties(&project, &self.config.project, PropertyType::Eut);
 
         // Ci
         let ci = self.create_object(VertexTypes::Ci);
-        // println!("Ci: {:?}", &ci);
         self.add_object_properties(&ci, &self.config.ci, PropertyType::Eut);
         self.create_relationship(&project, &ci);
 
@@ -448,46 +529,83 @@ impl Regression {
 
         // Eut
         let eut = self.create_object(VertexTypes::Eut);
-        let cfg = self.load_object_config(&VertexTypes::Eut, &self.config.eut.name);
+        let cfg = self.load_object_config(&VertexTypes::get(&eut), &self.config.eut.name);
         self.add_object_properties(&eut, &cfg.unwrap().data, PropertyType::Eut);
         self.create_relationship(&project, &eut);
         let eut_p = self.get_object_properties(&eut);
 
-        for feature in eut_p.get(PropertyType::Eut.index()).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").unwrap().as_array().unwrap().iter() {
-            let o = self.create_object(VertexTypes::Feature);
-            let cfg = self.load_object_config(&VertexTypes::Feature, &String::from(feature["module"].as_str().unwrap()));
-            self.add_object_properties(&o, &cfg.unwrap().data, PropertyType::Module);
-            let feature_p = self.get_object_properties(&o);
-            self.create_relationship(&eut, &o);
+        for feature in eut_p.props.get(0).unwrap().value.get("eut").unwrap().get("features").unwrap().as_array().unwrap().iter() {
+            let f_o = self.create_object(VertexTypes::Feature);
+            let cfg = self.load_object_config(&VertexTypes::get(&f_o), &String::from(feature["module"].as_str().unwrap()));
+            self.add_object_properties(&f_o, &cfg.unwrap().data, PropertyType::Module);
+            self.create_relationship(&eut, &f_o);
         }
 
         //Stages Deploy
         let mut deploy_stage: Option<Vertex> = self.add_ci_stage(&stage_deploy, &json!(self.config.eut.ci.stages.deploy), VertexTypes::StageDeploy);
-        if eut_p.get(PropertyType::Eut.index()).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").iter().len() > 0 {
+        if eut_p.props.get(0).unwrap().value.get("eut").unwrap().get("features").iter().len() > 0 {
             deploy_stage = self.add_ci_stage(&deploy_stage.unwrap(), &json!(self.config.features.ci.stages.deploy), VertexTypes::StageDeploy);
         }
         let rte_deploy_stage = self.add_ci_stage(deploy_stage.as_ref().unwrap(), &json!(&self.config.rte.ci.stages.deploy), VertexTypes::StageDeploy);
 
         //Stages Destroy
         let mut destroy_stage: Option<Vertex> = self.add_ci_stage(&stage_destroy, &json!(&self.config.rte.ci.stages.destroy), VertexTypes::StageDestroy);
-        if eut_p.get(PropertyType::Eut.index()).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("features").iter().len() > 0 {
+        if eut_p.props.get(0).unwrap().value.get("eut").unwrap().get("features").iter().len() > 0 {
             destroy_stage = self.add_ci_stage(&destroy_stage.unwrap(), &json!(self.config.features.ci.stages.destroy), VertexTypes::StageDestroy);
         }
         self.add_ci_stage(&destroy_stage.unwrap(), &json!(self.config.eut.ci.stages.destroy), VertexTypes::StageDestroy);
 
         // Rtes
-        for rte in eut_p.get(PropertyType::Eut.index()).unwrap().props.get(0).unwrap().value.get("eut").unwrap().get("rtes").unwrap().as_array().unwrap().iter() {
+        for rte in eut_p.props.get(0).unwrap().value.get("eut").unwrap().get("rtes").unwrap().as_array().unwrap().iter() {
             let r_o = self.create_object(VertexTypes::Rte);
             self.add_object_properties(&r_o, &rte, PropertyType::Eut);
-            let cfg = self.load_object_config(&VertexTypes::Rte, &String::from(rte["module"].as_str().unwrap()));
+            let cfg = self.load_object_config(&VertexTypes::get(&r_o), &String::from(rte["module"].as_str().unwrap()));
             self.add_object_properties(&r_o, &cfg.unwrap().data, PropertyType::Module);
             self.create_relationship(&eut, &r_o);
 
-            // Rte - Provider - Scripts
+            //Rte - Endpoints
+            self.create_object(VertexTypes::Endpoints);
+            for _ in rte["endpoints"].as_array().unwrap().iter() {
+                let ep_o = self.create_object(VertexTypes::Endpoint);
+
+                //Rte - Endpoint - Src
+                for _ in rte["endpoints"].get(0).unwrap()["sources"].as_array().unwrap().iter() {
+                    let ep_src_o = self.create_object(VertexTypes::EndpointSrc);
+                    self.create_relationship(&ep_o, &ep_src_o);
+
+                    //Rte - Tests
+                    for test in rte["endpoints"].get(0).unwrap()["tests"].as_array().unwrap().iter() {
+                        let t_o = self.create_object(VertexTypes::Test);
+                        self.add_object_properties(&t_o, &test, PropertyType::Eut);
+                        let t_p = self.get_object_properties(&t_o);
+                        let name = format!("{}-{}-{}", self.config.tests.ci.stages.deploy[0], &rte["module"].as_str().unwrap().replace("_", "-"), &t_p.props.get(0).unwrap().value["name"].as_str().unwrap());
+                        let test_deploy_stage = self.add_ci_stage(rte_deploy_stage.as_ref().unwrap(), &json!([name]), VertexTypes::StageDeploy);
+
+                        //Rte - Verifications
+                        for verification in test["verifications"].as_array().unwrap() {
+                            let v_o = self.create_object(VertexTypes::Verification);
+                            self.add_object_properties(&v_o, &verification, PropertyType::Eut);
+                            // let verification_p = self.get_object_properties(&v_o);
+                            self.create_relationship(&t_o, &v_o);
+                            let name = format!("{}-{}-{}", self.config.verifications.ci.stages.deploy[0], &rte["module"].as_str().unwrap().replace("_", "-"), &t_p.props.get(0).unwrap().value["name"].as_str().unwrap());
+                            self.add_ci_stage(test_deploy_stage.as_ref().unwrap(), &json!([name]), VertexTypes::StageDeploy);
+                        }
+                    }
+
+                    //Rte - Endpoint - Dst
+                    for _ in rte["endpoints"].get(0).unwrap()["destinations"].as_array().unwrap().iter() {
+                        let ep_dst_o = self.create_object(VertexTypes::EndpointDst);
+                        self.create_relationship(&ep_src_o, &ep_dst_o);
+                    }
+                }
+            }
+
+
+            // Rte - Provider
             let p_o = self.create_object(VertexTypes::Provider);
             self.create_relationship(&r_o, &p_o);
             let r_p = self.get_object_properties(&r_o);
-            for p in eut_p.get(0).unwrap().props.get(PropertyType::Eut.index()).unwrap().value[PropertyType::Eut.name()]["provider"].as_array().unwrap().iter() {
+            for p in eut_p.props.get(PropertyType::Eut.index()).unwrap().value[PropertyType::Eut.name()]["provider"].as_array().unwrap().iter() {
                 let mut o: Vertex = Vertex { id: Default::default(), t: Default::default() };
                 match p.as_str().unwrap() {
                     "aws" => {
@@ -502,17 +620,30 @@ impl Regression {
                     _ => {}
                 }
                 self.create_relationship(&p_o, &o);
+
+                // Rte - Components
+                let c_o = self.create_object(VertexTypes::Components);
+                self.create_relationship(&o, &c_o);
+                let rte_module_cfg = self.get_object_properties(&r_o);
+                for p in eut_p.props.get(PropertyType::Eut.index()).unwrap().value[PropertyType::Eut.name()]["provider"].as_array().unwrap().iter() {
+                    let cs_o = self.create_object(VertexTypes::ComponentSrc);
+                    let ds_o = self.create_object(VertexTypes::ComponentDst);
+                    self.add_object_properties(&cs_o, &rte_module_cfg.props.get(PropertyType::Module.index()).unwrap().value["provider"][p.as_str().unwrap()]["components"]["src"], PropertyType::Module);
+                    self.add_object_properties(&ds_o, &rte_module_cfg.props.get(PropertyType::Module.index()).unwrap().value["provider"][p.as_str().unwrap()]["components"]["dst"], PropertyType::Module);
+                    self.create_relationship(&c_o, &cs_o);
+                    self.create_relationship(&c_o, &ds_o);
+                }
+
+                // Rte - Scripts
                 let s_o = self.create_object(VertexTypes::Scripts);
                 self.create_relationship(&o, &s_o);
 
-                println!("##################################################################");
-                for script in r_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value["scripts"].as_array().unwrap().iter() {
+                for script in r_p.props.get(PropertyType::Module.index()).unwrap().value["scripts"].as_array().unwrap().iter() {
                     match script["name"].as_str().unwrap() {
                         "apply" => {
                             let sa_o = self.create_object(VertexTypes::ScriptApply);
                             self.create_relationship(&s_o, &sa_o);
-                            let s_path = &r_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value["scripts_path"];
-                            println!("{:?}", format!("{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte["module"].as_str().unwrap(), s_path.as_str().unwrap(), p.as_str().unwrap(), script["value"].as_str().unwrap()));
+                            let s_path = &r_p.props.get(PropertyType::Module.index()).unwrap().value["scripts_path"];
                             let file = format!("{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte["module"].as_str().unwrap(), s_path.as_str().unwrap(), p.as_str().unwrap(), script["value"].as_str().unwrap());
                             let contents = std::fs::read_to_string(file).expect("panic reading script file");
                             let value = json!({
@@ -523,44 +654,24 @@ impl Regression {
                         _ => {}
                     }
                 }
-                println!("##################################################################");
-            }
-
-            // Tests
-            for test in rte["tests"].as_array().unwrap() {
-                let t_o = self.create_object(VertexTypes::Test);
-                self.add_object_properties(&t_o, &test, PropertyType::Eut);
-                let test_p = self.get_object_properties(&t_o);
-                self.create_relationship(&r_o, &t_o);
-                let name = format!("{}-{}-{}", self.config.tests.ci.stages.deploy[0], &rte["module"].as_str().unwrap().replace("_", "-"), &test_p.get(0).unwrap().props.get(0).unwrap().value["name"].as_str().unwrap());
-                let test_deploy_stage = self.add_ci_stage(rte_deploy_stage.as_ref().unwrap(), &json!([name]), VertexTypes::StageDeploy);
-
-                // Verifications
-                for verification in test["verifications"].as_array().unwrap() {
-                    let v_o = self.create_object(VertexTypes::Verification);
-                    self.add_object_properties(&v_o, &verification, PropertyType::Eut);
-                    let verification_p = self.get_object_properties(&v_o);
-                    self.create_relationship(&t_o, &v_o);
-                    let name = format!("{}-{}-{}", self.config.verifications.ci.stages.deploy[0], &rte["module"].as_str().unwrap().replace("_", "-"), &test_p.get(0).unwrap().props.get(0).unwrap().value["name"].as_str().unwrap());
-                    self.add_ci_stage(test_deploy_stage.as_ref().unwrap(), &json!([name]), VertexTypes::StageDeploy);
-                }
             }
         }
+
 
         project.id
     }
 
     fn create_object(&self, object_type: VertexTypes) -> Vertex {
         println!("Create new object of type <{}>...", object_type.name());
-        let o = Vertex::new(indradb::Identifier::new(object_type.name()).unwrap());
+        let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.regression.create_vertex(&o).expect("panic while creating project db entry");
         println!("Create new object of type <{}> -> Done", object_type.name());
         o
     }
 
-    fn create_relationship_identifier(&self, a: &Vertex, b: &Vertex) -> indradb::Identifier {
+    fn create_relationship_identifier(&self, a: &Vertex, b: &Vertex) -> Identifier {
         println!("Create relationship identifier for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
-        let i = indradb::Identifier::new(self.get_relationship_type(&a, &b)).unwrap();
+        let i = Identifier::new(self.get_relationship_type(&a, &b)).unwrap();
         println!("Create relationship identifier for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         i
     }
@@ -568,7 +679,7 @@ impl Regression {
     fn create_relationship(&self, a: &Vertex, b: &Vertex) -> bool {
         println!("Create relationship for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
         let i = self.create_relationship_identifier(&a, &b);
-        let e = indradb::Edge::new(a.id, i, b.id);
+        let e = Edge::new(a.id, i, b.id);
         let status = self.regression.create_edge(&e).expect(&format!("panic build relationship between {} and {}", a.t.as_str(), b.t.as_str()));
         println!("Create relationship for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         status
@@ -577,14 +688,14 @@ impl Regression {
     fn add_object_properties<T: serde::Serialize>(&self, object: &Vertex, value: &T, property_type: PropertyType) {
         println!("Add new property to object <{}>...", object.t.to_string());
         let v = serde_json::to_value(value).unwrap();
-        let mut p: BulkInsertItem;
+        let p: BulkInsertItem;
 
         match property_type {
             PropertyType::Eut => {
-                p = BulkInsertItem::VertexProperty(object.id, indradb::Identifier::new(PROPERTY_TYPE_EUT).unwrap(), indradb::Json::new(v.clone()));
+                p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_EUT).unwrap(), indradb::Json::new(v.clone()));
             }
             PropertyType::Module => {
-                p = BulkInsertItem::VertexProperty(object.id, indradb::Identifier::new(PROPERTY_TYPE_MODULE).unwrap(), indradb::Json::new(v.clone()));
+                p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_MODULE).unwrap(), indradb::Json::new(v.clone()));
             }
         }
 
@@ -592,6 +703,27 @@ impl Regression {
         println!("Add new property to object <{}> -> Done", object.t.to_string());
     }
 
+    #[allow(dead_code)]
+    fn add_relationship_properties<T: serde::Serialize>(&self, object: Edge, value: &T, property_type: PropertyType) {
+
+        //println!("Add new property to relationship <{}>...", object.t.to_string());
+        let v = serde_json::to_value(value).unwrap();
+        let p: BulkInsertItem;
+
+        match property_type {
+            PropertyType::Eut => {
+                p = BulkInsertItem::EdgeProperty(object, Identifier::new(PROPERTY_TYPE_EUT).unwrap(), indradb::Json::new(v.clone()));
+            }
+            PropertyType::Module => {
+                p = BulkInsertItem::EdgeProperty(object, Identifier::new(PROPERTY_TYPE_MODULE).unwrap(), indradb::Json::new(v.clone()));
+            }
+        }
+
+        self.regression.bulk_insert(vec![p]).unwrap();
+        //println!("Add new property to relationship <{}> -> Done", object.t.to_string());
+    }
+
+    #[allow(dead_code)]
     fn get_relationship_count() -> usize {
         println!("Relationship count: <{}>", *EDGES_COUNT);
         *EDGES_COUNT
@@ -604,7 +736,7 @@ impl Regression {
         e
     }
 
-    fn get_object(&self, id: uuid::Uuid) -> Vertex {
+    fn get_object(&self, id: Uuid) -> Vertex {
         let q = self.regression.get(indradb::SpecificVertexQuery::single(id));
         let objs = indradb::util::extract_vertices(q.unwrap());
         let obj = objs.unwrap();
@@ -612,21 +744,21 @@ impl Regression {
         o.clone()
     }
 
-    fn get_direct_neighbour_object_by_identifier(&self, object: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
+    fn get_direct_neighbour_object_by_identifier(&self, object: &Vertex, identifier: VertexTypes) -> Vertex {
         println!("Get direct neighbor of <{}>...", object.t.as_str());
         let mut rvq = RangeVertexQuery::new();
-        rvq.t = Option::from(indradb::Identifier::new(identifier.name()).unwrap());
+        rvq.t = Option::from(Identifier::new(identifier.name()).unwrap());
         rvq.limit = 1;
         rvq.start_id = Option::from(object.id);
         let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
         println!("Get direct neighbor of <{}> -> Done.", object.t.as_str());
-        result
+        result.get(0).unwrap().clone()
     }
 
     fn get_direct_neighbour_objects_by_identifier(&self, start: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
         println!("Get direct neighbors of <{}>...", start.t.as_str());
         let mut rvq = RangeVertexQuery::new();
-        rvq.t = Option::from(indradb::Identifier::new(identifier.name()).unwrap());
+        rvq.t = Option::from(Identifier::new(identifier.name()).unwrap());
         rvq.limit = 10;
         rvq.start_id = Option::from(start.id);
         let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
@@ -634,75 +766,80 @@ impl Regression {
         result
     }
 
-    fn get_object_properties(&self, object: &Vertex) -> Vec<VertexProperties> {
+    fn get_object_properties(&self, object: &Vertex) -> VertexProperties {
         println!("Get object <{}> properties...", object.t.as_str());
-        let b = Box::new(indradb::Query::SpecificVertex(indradb::SpecificVertexQuery::single(object.id)));
-        let q = indradb::PipePropertyQuery::new(b).unwrap();
-        let r = self.regression.get(q).unwrap();
+        let b = indradb::SpecificVertexQuery::new(vec!(object.id)).properties().unwrap();
+        let _r = self.regression.get(b);
+        let r = indradb::util::extract_vertex_properties(_r.unwrap()).unwrap();
         println!("Get object <{}> properties -> Done.", object.t.as_str());
-        indradb::util::extract_vertex_properties(r).unwrap()
+        r.get(0).unwrap().clone()
     }
 
-    fn get_relationship(&self, a: &Vertex, b: &Vertex) -> Vec<indradb::Edge> {
+    #[allow(dead_code)]
+    fn get_relationship(&self, a: &Vertex, b: &Vertex) -> Vec<Edge> {
         println!("Get relationship for <{}> and <{}>...", &a.t.as_str(), &b.t.as_str());
         let i = self.create_relationship_identifier(&a, &b);
-        let e = indradb::Edge::new(a.id, i, b.id);
+        let e = Edge::new(a.id, i, b.id);
         let r: Vec<indradb::QueryOutputValue> = self.regression.get(indradb::SpecificEdgeQuery::single(e.clone())).unwrap();
         let e = indradb::util::extract_edges(r).unwrap();
         println!("Get relationship for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         e
     }
 
-    fn build_context(&self, id: uuid::Uuid) -> Context {
+    fn build_context(&self, id: Uuid) -> Context {
         println!("Build render context...");
         let project = self.get_object(id);
         let project_p = self.get_object_properties(&project);
 
         let eut = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::Eut);
-        let eut_p = self.get_object_properties(&eut.get(0).unwrap());
+        let eut_p = self.get_object_properties(&eut);
 
-        let _features = self.get_direct_neighbour_objects_by_identifier(&eut[0], VertexTypes::Feature);
+        let _features = self.get_direct_neighbour_objects_by_identifier(&eut, VertexTypes::Feature);
         let mut features = Vec::new();
         for feature in _features.iter() {
             let feature_p = self.get_object_properties(&feature);
-            features.push(feature_p.get(0).unwrap().props.get(0).unwrap().value.clone())
+            features.push(feature_p.props.get(0).unwrap().value.clone())
         }
 
-        let _rtes = self.get_direct_neighbour_objects_by_identifier(&eut.get(0).unwrap(), VertexTypes::Rte);
+        let _rtes = self.get_direct_neighbour_objects_by_identifier(&eut, VertexTypes::Rte);
         let mut rtes = Vec::new();
-
+        println!("##################################################################");
         for rte in _rtes.iter() {
             let rte_p = self.get_object_properties(&rte);
-            println!("#################################################################");
-            println!("RTE_EUT_CFG {:#?}", &rte_p.get(0).unwrap().props.get(PropertyType::Eut.index()).unwrap().value.clone());
-            println!("#################################################################");
-            println!("#################################################################");
-            println!("RTE_MODULE_CFG {:#?}", &rte_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value.clone());
-            println!("#################################################################");
+
+            for ep in rte_p.props.get(PropertyType::Eut.index()).unwrap().value["endpoints"].as_array().unwrap().iter() {
+                for source in ep["sources"].as_array().unwrap().iter() {
+                    println!("{} CLIENT: {:?}", &source.as_str().unwrap(), &rte_p.props.get(PropertyType::Module.index()).unwrap().value["provider"][source.as_str().unwrap()]["components"]["src"]);
+                }
+                for destination in ep["destinations"].as_array().unwrap().iter() {
+                    println!("{} SERVER: {:?}", &destination.as_str().unwrap(), &rte_p.props.get(PropertyType::Module.index()).unwrap().value["provider"][destination.as_str().unwrap()]["components"]["dst"]);
+                }
+            }
             let data = json!({
-                "cfg": &rte_p.get(0).unwrap().props.get(PropertyType::Eut.index()).unwrap().value.clone(),
-                "module": &rte_p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value.clone()
+                "cfg": &rte_p.props.get(PropertyType::Eut.index()).unwrap().value.clone(),
+                "module": &rte_p.props.get(PropertyType::Module.index()).unwrap().value.clone()
             });
             rtes.push(data);
         }
+        println!("##################################################################");
         let mut stages: Vec<String> = Vec::new();
         let mut deploy_stages: Vec<String> = Vec::new();
         let mut destroy_stages: Vec<String> = Vec::new();
         let s_deploy = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::StageDeployRoot);
         let s_destroy = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::StageDestroyRoot);
 
-        for _stage in self.get_direct_neighbour_objects_by_identifier(&s_deploy[0], VertexTypes::StageDeploy).iter() {
+        for _stage in self.get_direct_neighbour_objects_by_identifier(&s_deploy, VertexTypes::StageDeploy).iter() {
             let _p = &self.get_object_properties(&_stage);
-            let p = &_p.get(0).unwrap().props.get(0).unwrap().value;
+            let p = &_p.props.get(0).unwrap().value;
 
             for stage in p.as_array().unwrap().iter() {
                 deploy_stages.push(stage.as_str().unwrap().to_string());
             }
         }
 
-        for _stage in self.get_direct_neighbour_objects_by_identifier(&s_destroy[0], VertexTypes::StageDestroy).iter() {
+        for _stage in self.get_direct_neighbour_objects_by_identifier(&s_destroy, VertexTypes::StageDestroy).iter() {
             let _p = &self.get_object_properties(&_stage);
-            let p = &_p.get(0).unwrap().props.get(0).unwrap().value;
+            let p = &_p.props.get(0).unwrap().value;
 
             for stage in p.as_array().unwrap().iter() {
                 destroy_stages.push(stage.as_str().unwrap().to_string());
@@ -713,14 +850,14 @@ impl Regression {
         stages.append(&mut destroy_stages);
 
         let mut context = Context::new();
-        context.insert("eut", &eut_p.get(0).unwrap().props[0].value["eut"]);
+        context.insert("eut", &eut_p.props[0].value["eut"]);
         context.insert("rtes", &rtes);
         context.insert("config", &self.config);
         context.insert("stages", &stages);
         context.insert("features", &features);
-        context.insert("project", &project_p.get(0).unwrap().props[0].value);
+        context.insert("project", &project_p.props[0].value);
 
-        println!("{:#?}", context);
+        //println!("{:#?}", context);
         println!("Build render context -> Done.");
         context
     }
@@ -733,6 +870,7 @@ impl Regression {
         rendered
     }
 
+    #[allow(dead_code)]
     pub fn to_json(&self) -> String {
         let j = json!({
                 "config": &self.config,
@@ -740,7 +878,7 @@ impl Regression {
         j.to_string()
     }
 
-    pub fn to_file(&self, data: &String, file: &str) {
+    pub fn to_file(&self, data: &str, file: &str) {
         let mut f = std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
