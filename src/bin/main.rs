@@ -320,12 +320,12 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Provider.name().to_string()), EdgeTypes::Uses.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Uses.name());
-        map.insert(VertexTuple(VertexTypes::Script.name().to_string(), VertexTypes::Value.name().to_string()), EdgeTypes::Uses.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rtes.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::Uses.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Provider.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Connections.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAws.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderGcp.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAzure.name().to_string()), EdgeTypes::Has.name());
@@ -338,7 +338,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Connection.name().to_string(), VertexTypes::ConnectionSrc.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ConnectionDst.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Runs.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Provides.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Runs.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
@@ -811,7 +811,7 @@ impl Regression {
                                                 }
                                                 //SRC -> TEST REL
                                                 for test in test_objs.iter() {
-                                                    self.create_relationship(src,&self.get_object(*test));
+                                                    self.create_relationship(src, &self.get_object(*test));
                                                 }
                                             }
                                             //DST -> TEST REL
@@ -824,7 +824,98 @@ impl Regression {
                             let r_p = self.get_object_properties(&r_o).unwrap().props;
                             let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("module").unwrap().as_str().unwrap();
                             let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
-                            error!("RTE MODULE CFG: {:#?}", &cfg);
+                            for (k, v) in cfg.as_object().unwrap().iter() {
+                                error!("K: {:#?} -- V: {:?}", k, v);
+                                match k {
+                                    k if k == NAME => {
+                                        self.add_object_properties(&r_o, v, PropertyType::Module);
+                                    }
+                                    k if k == CI => {
+                                        self.add_object_properties(&r_o, &json!({k: v}), PropertyType::Module);
+                                    }
+                                    k if k == PROVIDER => {
+                                        let p_o = self.create_object(VertexTypes::Provider);
+                                        //self.add_object_properties(&r_p_o, v, PropertyType::Base);
+                                        self.create_relationship(&r_o, &p_o);
+                                        self.add_object_properties(&p_o, &json!({
+                                            GVID: format!("{}_{}", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                            GV_LABEL: PROVIDER
+                                        }), PropertyType::Gv);
+                                        for (k, v) in v.as_object().unwrap().iter() {
+                                            // error!("K: {:#?} -- V: {:?}", k, v);
+                                            let o = self.create_object(VertexTypes::get_type_by_key(k));
+                                            self.create_relationship(&p_o, &o);
+                                            self.add_object_properties(&o, &json!({
+                                                GVID: format!("{}_{}_{}", PROVIDER, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                GV_LABEL: k
+                                            }), PropertyType::Gv);
+
+                                            for (k, v) in v.as_object().unwrap().iter() {
+                                                match k {
+                                                    k if k == CI => {
+
+                                                    }
+                                                    k if k == "components" => {
+                                                        let c_o = self.create_object(VertexTypes::Components);
+                                                        self.create_relationship(&o, &c_o);
+                                                        self.add_object_properties(&c_o, &json!({
+                                                            GVID: format!("{}_{}_{}_{}", PROVIDER, &o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            GV_LABEL: k
+                                                        }), PropertyType::Gv);
+                                                        for (k, v) in v.as_object().unwrap().iter() {
+                                                            match k {
+                                                                k if k == "src" => {
+                                                                    let c_src_o = self.create_object(VertexTypes::ComponentSrc);
+                                                                    self.create_relationship(&c_o, &c_src_o);
+                                                                    self.add_object_properties(&c_src_o, &json!({k: v}), PropertyType::Base);
+                                                                    self.add_object_properties(&c_src_o, &json!({
+                                                                        GVID: format!("{}_{}_{}_{}", PROVIDER, &o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        GV_LABEL: k
+                                                                    }), PropertyType::Gv);
+                                                                }
+                                                                k if k == "dst" => {
+                                                                    let c_dst_o = self.create_object(VertexTypes::ComponentSrc);
+                                                                    self.create_relationship(&c_o, &c_dst_o);
+                                                                    self.add_object_properties(&c_dst_o, &json!({k: v}), PropertyType::Base);
+                                                                    self.add_object_properties(&c_dst_o, &json!({
+                                                                        GVID: format!("{}_{}_{}_{}", PROVIDER, &o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        GV_LABEL: k
+                                                                    }), PropertyType::Gv);
+                                                                    let c_dst_o_p = self.get_object_properties(&c_dst_o);
+                                                                }
+                                                                _ => {}
+                                                            }
+                                                        }
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                        }
+                                    }
+                                    k if k == SCRIPTS => {
+                                        let r_s_o = self.create_object(VertexTypes::Scripts);
+                                        self.create_relationship(&r_o, &r_s_o);
+                                        self.add_object_properties(&r_s_o, &json!({
+                                            GVID: format!("{}_{}_{}_{}", RTE, &r_o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                            GV_LABEL: k
+                                        }), PropertyType::Gv);
+                                        for s in v.as_array().unwrap().iter() {
+                                            let s_o = self.create_object(VertexTypes::Script);
+                                            self.create_relationship(&r_s_o, &s_o);
+                                            let s_name = s.as_object().unwrap().get("script").unwrap().as_str().unwrap();
+                                            self.add_object_properties(&s_o, v, PropertyType::Base);
+                                            self.add_object_properties(&s_o, &json!({
+                                                GVID: format!("{}_{}_{}", "script", s_name, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                GV_LABEL: s_name
+                                            }), PropertyType::Gv);
+                                        }
+                                    }
+                                    k if k == "script_path" => {
+                                        self.add_object_properties(&r_o, v, PropertyType::Module);
+                                    }
+                                    _ => {}
+                                }
+                            }
                         }
                     }
                     &_ => {}
