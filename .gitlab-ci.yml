@@ -15,6 +15,7 @@ stages:
   - regression-test-client-server1-east-west-traffic-a
   - regression-test-verify-client-server1-east-west-traffic-a
   - regression-test-client-server1-east-west-traffic-b
+  - regression-test-verify-client-server1-east-west-traffic-b
   - rte-destroy
   - feature-destroy
   - eut-destroy
