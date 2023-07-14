@@ -681,16 +681,17 @@ impl Regression {
                                             }), PropertyType::Gv);
                             self.create_relationship(&o, &r_o);
                             for (k, v) in r.as_object().unwrap().iter() {
-                                let mut f_o = Vertex { id: Default::default(), t: Default::default() };
                                 match k {
                                     k if k == "module" => {
-                                        self.add_object_properties(&r_o, &v, PropertyType::Base);
+                                        let r_o_p = self.get_object_properties(&r_o).unwrap().props;
+                                        let mut p = r_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                        p.insert(k.clone(), v.clone());
+                                        self.add_object_properties(&r_o, &p, PropertyType::Base);
                                     }
                                     //Collector
                                     k if k == "collector" => {
                                         let c_o = self.create_object(VertexTypes::get_type_by_key(k));
                                         self.create_relationship(&r_o, &c_o);
-
                                         self.add_object_properties(&c_o, &json!({
                                                 GVID: format!("{}_{}", &k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                 GV_LABEL: &c_o.t.as_str()
@@ -821,11 +822,9 @@ impl Regression {
                             }
                             //Rte module cfg
                             let r_p = self.get_object_properties(&r_o).unwrap().props;
-                            //let module = r_p;  // .unwrap().get("module").unwrap().as_str().unwrap();
-                            error!("RTE MODULE: {:?}", &r_p);
-                            //let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
-                            //error!("RTE MODULE CFG: {:?}", &cfg);
-                            //let v = serde_json::to_value(module).unwrap();
+                            let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("module").unwrap().as_str().unwrap();
+                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
+                            error!("RTE MODULE CFG: {:#?}", &cfg);
                         }
                     }
                     &_ => {}
