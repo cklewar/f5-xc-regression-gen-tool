@@ -12,22 +12,18 @@ Supported command line arguments:
  */
 
 use std::collections::HashMap;
-use std::io::{stderr, Write};
-use std::option::{Iter, Option};
+use std::io::{Write};
+use std::option::{Option};
 use std::string::ToString;
 
 use clap::error::ErrorKind::Format as clap_format;
 use clap::Parser;
-use graphviz_rust::as_item;
 use indradb;
-use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, QueryExt, RangeVertexQuery, Vertex, VertexProperties, VertexProperty};
-use indradb::Query::AllVertex;
+use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, QueryExt, RangeVertexQuery, Vertex, VertexProperties};
 use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
-use phf::phf_map;
-use rand::distributions::{Alphanumeric, DistString};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
@@ -38,10 +34,6 @@ const CONFIG_FILE_NAME: &str = "config.json";
 // const SCRIPT_TYPE_DESTROY: &str = "destroy";
 // const SCRIPT_TYPE_ARTIFACTS: &str = "artifacts";
 // const SCRIPT_TYPE_COLLECTOR_PATH: &str = "scripts";
-
-// KEY MAP TYPES
-const DIRECT: &str = "direct";
-const OBJECT: &str = "object";
 
 // KEYS
 const CI: &str = "ci";
@@ -56,25 +48,23 @@ const SCRIPTS: &str = "scripts";
 const FEATURE: &str = "feature";
 const FEATURES: &str = "features";
 const PROVIDER: &str = "provider";
-const ENDPOINTS: &str = "endpoints";
+const CONNECTIONS: &str = "connections";
 const VERIFICATION: &str = "verification";
 
 const PIPELINE_FILE_NAME: &str = ".gitlab-ci.yml";
 const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
 
 const PROPERTY_TYPE_GV: &str = "gv";
-const PROPERTY_TYPE_EUT: &str = "eut";
 const PROPERTY_TYPE_BASE: &str = "base";
 const PROPERTY_TYPE_MODULE: &str = "module";
 
+//Objects types
 const VERTEX_TYPE_CI: &str = "ci";
 const VERTEX_TYPE_EUT: &str = "eut";
 const VERTEX_TYPE_RTE: &str = "rte";
 const VERTEX_TYPE_RTES: &str = "rtes";
 const VERTEX_TYPE_TEST: &str = "test";
 const VERTEX_TYPE_NONE: &str = "none";
-const VERTEX_TYPE_NAME: &str = "name";
-const VERTEX_TYPE_VALUE: &str = "value";
 const VERTEX_TYPE_SCRIPT: &str = "script";
 const VERTEX_TYPE_SCRIPTS: &str = "scripts";
 const VERTEX_TYPE_PROJECT: &str = "project";
@@ -90,14 +80,13 @@ const VERTEX_TYPE_CONNECTION_DST: &str = "destination";
 const VERTEX_TYPE_PROVIDER_AWS: &str = "aws";
 const VERTEX_TYPE_PROVIDER_GCP: &str = "gcp";
 const VERTEX_TYPE_VERIFICATION: &str = "verification";
-const VERTEX_TYPE_SCRIPT_APPLY: &str = "apply";
 const VERTEX_TYPE_STAGE_DEPLOY: &str = "deploy";
 const VERTEX_TYPE_STAGE_DESTROY: &str = "stage_destroy";
 const VERTEX_TYPE_COMPONENT_SRC: &str = "component_src";
 const VERTEX_TYPE_COMPONENT_DST: &str = "component_dst";
 const VERTEX_TYPE_PROVIDER_AZURE: &str = "azure";
-const VERTEX_TYPE_SCRIPT_ARTIFACTS: &str = "artifacts";
 
+// Rel type
 const EDGE_TYPE_IS: &str = "is";
 const EDGE_TYPE_HAS: &str = "has";
 const EDGE_TYPE_USES: &str = "uses";
@@ -119,8 +108,6 @@ enum VertexTypes {
     Rte,
     Rtes,
     Test,
-    Name,
-    Value,
     Script,
     Project,
     Scripts,
@@ -162,8 +149,6 @@ impl VertexTypes {
             VertexTypes::Rte => VERTEX_TYPE_RTE,
             VertexTypes::Rtes => VERTEX_TYPE_RTES,
             VertexTypes::Test => VERTEX_TYPE_TEST,
-            VertexTypes::Name => VERTEX_TYPE_NAME,
-            VertexTypes::Value => VERTEX_TYPE_VALUE,
             VertexTypes::Script => VERTEX_TYPE_SCRIPT,
             VertexTypes::Scripts => VERTEX_TYPE_SCRIPTS,
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
@@ -217,7 +202,7 @@ impl VertexTypes {
             _ => "None"
         }
     }
-    fn get_name_by_key(key: &str) -> &'static str {
+    /*fn get_name_by_key(key: &str) -> &'static str {
         match key {
             VERTEX_TYPE_CI => VertexTypes::Ci.name(),
             VERTEX_TYPE_RTE => VertexTypes::Rte.name(),
@@ -244,7 +229,7 @@ impl VertexTypes {
             VERTEX_TYPE_PROVIDER_AZURE => VertexTypes::ProviderAzure.name(),
             _ => "None"
         }
-    }
+    }*/
     fn get_type_by_key(key: &str) -> VertexTypes {
         match key {
             VERTEX_TYPE_CI => VertexTypes::Ci,
@@ -538,7 +523,7 @@ impl Regression {
                 file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
             }
             _ => {
-                return Value::Null;
+                return Null;
             }
         }
 
@@ -777,7 +762,7 @@ impl Regression {
                                                                         }), PropertyType::Gv);
                                                                     }
                                                                     k if k == CI => {
-                                                                        let mut t_o_p = self.get_object_properties(&t_o).unwrap().props;
+                                                                        let t_o_p = self.get_object_properties(&t_o).unwrap().props;
                                                                         let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                                                         p.append(&mut json!({k: v.as_object().unwrap().clone()}).as_object().unwrap().clone());
                                                                         self.add_object_properties(&t_o, &p, PropertyType::Base);
@@ -1226,8 +1211,7 @@ impl Regression {
         let _nodes = indradb::util::extract_vertices(result.unwrap());
 
         match &_nodes {
-            Some(n) => {
-                let nodes = &_nodes.unwrap();
+            Some(nodes) => {
                 let mut items = Vec::new();
 
                 for n in nodes.iter() {
@@ -1237,7 +1221,7 @@ impl Regression {
                             let gv_id = p.props.get(PropertyType::Gv.index()).unwrap().value[GVID].as_str();
                             let gv_label = p.props.get(PropertyType::Gv.index()).unwrap().value[GV_LABEL].as_str();
                             match gv_id {
-                                Some(p) => items.push(json!({"id": &gv_id.unwrap(), "label": &gv_label, "shape": "circle"})),
+                                Some(_) => items.push(json!({"id": &gv_id.unwrap(), "label": &gv_label, "shape": "circle"})),
                                 None => items.push(json!({"id": &n.t.as_str(), "label": &n.t.as_str(), "shape": "circle"}))
                             }
                         }
@@ -1258,10 +1242,9 @@ impl Regression {
 
         match &_edges {
             Some(e) => {
-                let edges = &_edges.unwrap();
                 let mut items = Vec::new();
 
-                for (i, e) in edges.iter().enumerate() {
+                for (i, e) in e.iter().enumerate() {
                     let o_a = self.get_object(e.outbound_id);
                     let o_b = self.get_object(e.inbound_id);
                     let a_id = format!("{}", self.get_object(e.outbound_id).t.to_string());
@@ -1330,7 +1313,7 @@ fn main() {
     env_logger::init();
     let cli = Cli::parse();
     let r = Regression::new(&cli.config);
-    let root = r.init();
+    r.init();
     // r.to_file(&r.render(&r.build_context(root)), PIPELINE_FILE_NAME);
     r.to_file(&r.to_gv(), &"graph.gv");
 
