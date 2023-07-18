@@ -300,9 +300,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Connections.name().to_string(), VertexTypes::Connection.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Connection.name().to_string(), VertexTypes::ConnectionSrc.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ConnectionDst.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Test123.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Runs.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Runs.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
@@ -696,6 +694,7 @@ impl Regression {
                                                 for d in destinations.iter() {
                                                     let dst_o = self.create_object(VertexTypes::ConnectionDst);
                                                     self.create_relationship(&src_o, &dst_o);
+                                                    self.add_object_properties(&dst_o, &json!({NAME: &d}), PropertyType::Base);
                                                     self.add_object_properties(&dst_o, &json!({
                                                          GVID: format!("{}_{}_{}", "connection_dst", d.as_str().unwrap(), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                          GV_LABEL: d.as_str().unwrap()
@@ -815,6 +814,7 @@ impl Regression {
                                                             GVID: format!("{}_{}_{}_{}", PROVIDER, &o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                             GV_LABEL: k
                                                         }), PropertyType::Gv);
+
                                                         for (k, v) in v.as_object().unwrap().iter() {
                                                             match k {
                                                                 k if k == "src" => {
@@ -874,46 +874,42 @@ impl Regression {
                             let connections = self.get_direct_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
                             let provider = self.get_direct_neighbour_objects_by_identifier(&r_o, VertexTypes::Provider);
 
-                            /*for c in connections.iter() {
+                            for c in connections.iter() {
                                 let sources = self.get_direct_neighbour_objects_by_identifier(&c, VertexTypes::ConnectionSrc);
 
-                                for source in sources.iter() {
-                                    //error!("SOURCE: {:?}", &source);
-                                    let c_p = self.get_object_properties(source).unwrap().props;
+                                for c_s in sources.iter() {
+                                    let c_p = self.get_object_properties(c_s).unwrap().props;
                                     let c_src_name = c_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                    let _c_d_s: Vec<Vertex> = self.get_direct_neighbour_objects_by_identifier(&source, VertexTypes::ConnectionDst);
-                                    //error!("CONNECTION DSTs: {:?}", &_c_d_s);
+                                    let _c_d_s: Vec<Vertex> = self.get_direct_neighbour_objects_by_identifier(&c_s, VertexTypes::ConnectionDst);
                                     for _p in provider.iter() {
-                                        let p_p = self.get_object_properties(source).unwrap().props;
+                                        let p_p = self.get_object_properties(c_s).unwrap().props;
                                         let p_name = p_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
 
                                         if c_src_name == p_name {
                                             let _c = self.get_direct_neighbour_object_by_identifier(&_p, VertexTypes::Components);
                                             let component_src = self.get_direct_neighbour_object_by_identifier(&_c, VertexTypes::ComponentSrc);
-                                            self.create_relationship(&source, &component_src);
+                                            self.create_relationship(&c_s, &component_src);
                                         }
                                     }
 
                                     //CONNECTION DSTs
                                     for c_d in _c_d_s.iter() {
-                                        //error!("CONNECTION DST: {:?}", &c_d);
-                                        let c_d_p = self.get_object_properties(source).unwrap().props;
+                                        let c_d_p = self.get_object_properties(c_d).unwrap().props;
                                         let c_dst_name = c_d_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                        //error!("CONNECTION DST NAME: {:#?}", c_d_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap());
-                                        /*for _p in provider.iter() {
-                                            let p_p = self.get_object_properties(source).unwrap().props;
-                                            error!("PROVIDER NAME: {:#?}", p_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap());
+
+                                        for _p in provider.iter() {
+                                            let p_p = self.get_object_properties(c_d).unwrap().props;
                                             let p_name = p_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
 
                                             if c_dst_name == p_name {
                                                 let _c = self.get_direct_neighbour_object_by_identifier(&_p, VertexTypes::Components);
-                                                let component_src = self.get_direct_neighbour_object_by_identifier(&_c, VertexTypes::ComponentSrc);
-                                                self.create_relationship(&source, &component_src);
+                                                let component_dst = self.get_direct_neighbour_object_by_identifier(&_c, VertexTypes::ComponentDst);
+                                                self.create_relationship(&c_d, &component_dst);
                                             }
-                                        }*/
+                                        }
                                     }
                                 }
-                            }*/
+                            }
                         }
                     }
                     &_ => {}
