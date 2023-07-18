@@ -12,8 +12,8 @@ Supported command line arguments:
  */
 
 use std::collections::HashMap;
-use std::io::{Write};
-use std::option::{Option};
+use std::io::Write;
+use std::option::Option;
 use std::string::ToString;
 
 use clap::error::ErrorKind::Format as clap_format;
@@ -311,6 +311,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Connections.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAws.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderGcp.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAzure.name().to_string()), EdgeTypes::Has.name());
@@ -810,7 +811,6 @@ impl Regression {
                             let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("module").unwrap().as_str().unwrap();
                             let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
                             for (k, v) in cfg.as_object().unwrap().iter() {
-                                error!("K: {:#?} -- V: {:?}", k, v);
                                 match k {
                                     k if k == NAME => {
                                         self.add_object_properties(&r_o, v, PropertyType::Module);
@@ -820,7 +820,6 @@ impl Regression {
                                     }
                                     k if k == PROVIDER => {
                                         let p_o = self.create_object(VertexTypes::Provider);
-                                        //self.add_object_properties(&r_p_o, v, PropertyType::Base);
                                         self.create_relationship(&r_o, &p_o);
                                         self.add_object_properties(&p_o, &json!({
                                             GVID: format!("{}_{}", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
@@ -838,7 +837,22 @@ impl Regression {
                                             for (k, v) in v.as_object().unwrap().iter() {
                                                 match k {
                                                     k if k == CI => {
+                                                        let p_ci_o = self.create_object(VertexTypes::Ci);
+                                                        self.create_relationship(&p_o, &p_ci_o);
+                                                        self.add_object_properties(&p_ci_o, &json!({
+                                                            GVID: format!("{}_{}_{}", PROVIDER, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            GV_LABEL: k
+                                                        }), PropertyType::Gv);
 
+                                                        //Variables
+                                                        let mut _variables = Vec::new();
+                                                        for var in v.as_object().unwrap().get("variables").unwrap().as_array().unwrap().iter() {
+                                                            error!("P: {:?}", var);
+                                                            _variables.push(var);
+                                                        }
+                                                        self.add_object_properties(&p_ci_o, &_variables, PropertyType::Base);
+                                                        let p_ci_po = self.get_object_properties(&p_ci_o).unwrap().props;
+                                                        error!("P AFTER: {:#?}", &p_ci_po);
                                                     }
                                                     k if k == "components" => {
                                                         let c_o = self.create_object(VertexTypes::Components);
