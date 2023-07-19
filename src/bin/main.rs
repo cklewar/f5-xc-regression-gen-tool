@@ -19,14 +19,14 @@ use std::string::ToString;
 use clap::error::ErrorKind::Format as clap_format;
 use clap::Parser;
 use indradb;
-use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, QueryExt, RangeVertexQuery, Vertex, VertexProperties};
+use indradb::{AllVertexQuery, BulkInsertItem, Edge, EdgeDirection, Identifier, ijson, PipeQuery, Query, QueryExt, RangeVertexQuery, SpecificEdgeQuery, Vertex, VertexProperties};
 use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use serde_json::Value::Null;
 use tera::{Context, Tera};
-use uuid::Uuid;
+use uuid::{Uuid, uuid};
 
 const CONFIG_FILE_NAME: &str = "config.json";
 
@@ -50,6 +50,8 @@ const SOURCES: &str = "sources";
 const FEATURE: &str = "feature";
 const FEATURES: &str = "features";
 const PROVIDER: &str = "provider";
+const PROVIDERS: &str = "providers";
+const COMPONENTS: &str = "components";
 const CONNECTIONS: &str = "connections";
 const VERIFICATION: &str = "verification";
 
@@ -72,21 +74,20 @@ const VERTEX_TYPE_SCRIPTS: &str = "scripts";
 const VERTEX_TYPE_PROJECT: &str = "project";
 const VERTEX_TYPE_FEATURE: &str = "feature";
 const VERTEX_TYPE_FEATURES: &str = "features";
-const VERTEX_TYPE_PROVIDER: &str = "provider";
+const VERTEX_TYPE_EUT_PROVIDER: &str = "eut_provider";
+const VERTEX_TYPE_RTE_PROVIDER: &str = "rte_provider";
+const VERTEX_TYPE_PROVIDERS: &str = "providers";
 const VERTEX_TYPE_CONNECTION: &str = "connection";
 const VERTEX_TYPE_CONNECTIONS: &str = "connections";
 const VERTEX_TYPE_COLLECTOR: &str = "collector";
 const VERTEX_TYPE_COMPONENTS: &str = "components";
 const VERTEX_TYPE_CONNECTION_SRC: &str = "connection_src";
 const VERTEX_TYPE_CONNECTION_DST: &str = "connection_dst";
-const VERTEX_TYPE_PROVIDER_AWS: &str = "aws";
-const VERTEX_TYPE_PROVIDER_GCP: &str = "gcp";
 const VERTEX_TYPE_VERIFICATION: &str = "verification";
 const VERTEX_TYPE_STAGE_DEPLOY: &str = "deploy";
 const VERTEX_TYPE_STAGE_DESTROY: &str = "stage_destroy";
 const VERTEX_TYPE_COMPONENT_SRC: &str = "component_src";
 const VERTEX_TYPE_COMPONENT_DST: &str = "component_dst";
-const VERTEX_TYPE_PROVIDER_AZURE: &str = "azure";
 
 // Rel type
 const EDGE_TYPE_HAS: &str = "has";
@@ -114,21 +115,20 @@ enum VertexTypes {
     Scripts,
     Feature,
     Features,
-    Provider,
+    Providers,
     Collector,
     Components,
     Connection,
     Connections,
-    ConnectionSrc,
-    ConnectionDst,
-    ProviderAws,
-    ProviderGcp,
+    RteProvider,
+    EutProvider,
     StageDeploy,
     StageDestroy,
     Verification,
     ComponentSrc,
     ComponentDst,
-    ProviderAzure,
+    ConnectionSrc,
+    ConnectionDst,
     None,
 }
 
@@ -154,21 +154,20 @@ impl VertexTypes {
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
             VertexTypes::Feature => VERTEX_TYPE_FEATURE,
             VertexTypes::Features => VERTEX_TYPE_FEATURES,
-            VertexTypes::Provider => VERTEX_TYPE_PROVIDER,
+            VertexTypes::EutProvider => VERTEX_TYPE_EUT_PROVIDER,
+            VertexTypes::RteProvider => VERTEX_TYPE_RTE_PROVIDER,
+            VertexTypes::Providers => VERTEX_TYPE_PROVIDERS,
             VertexTypes::Connection => VERTEX_TYPE_CONNECTION,
             VertexTypes::Connections => VERTEX_TYPE_CONNECTIONS,
             VertexTypes::Collector => VERTEX_TYPE_COLLECTOR,
             VertexTypes::Components => VERTEX_TYPE_COMPONENTS,
             VertexTypes::ConnectionSrc => VERTEX_TYPE_CONNECTION_SRC,
             VertexTypes::ConnectionDst => VERTEX_TYPE_CONNECTION_DST,
-            VertexTypes::ProviderAws => VERTEX_TYPE_PROVIDER_AWS,
-            VertexTypes::ProviderGcp => VERTEX_TYPE_PROVIDER_GCP,
             VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
             VertexTypes::StageDestroy => VERTEX_TYPE_STAGE_DESTROY,
             VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
             VertexTypes::ComponentSrc => VERTEX_TYPE_COMPONENT_SRC,
             VertexTypes::ComponentDst => VERTEX_TYPE_COMPONENT_DST,
-            VertexTypes::ProviderAzure => VERTEX_TYPE_PROVIDER_AZURE,
             VertexTypes::None => VERTEX_TYPE_NONE,
         }
     }
@@ -184,19 +183,18 @@ impl VertexTypes {
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts.name(),
             VERTEX_TYPE_PROJECT => VertexTypes::Project.name(),
             VERTEX_TYPE_FEATURE => VertexTypes::Feature.name(),
-            VERTEX_TYPE_PROVIDER => VertexTypes::Provider.name(),
+            VERTEX_TYPE_EUT_PROVIDER => VertexTypes::EutProvider.name(),
+            VERTEX_TYPE_RTE_PROVIDER => VertexTypes::RteProvider.name(),
+            VERTEX_TYPE_PROVIDERS => VertexTypes::Providers.name(),
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector.name(),
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection.name(),
             VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections.name(),
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components.name(),
-            VERTEX_TYPE_PROVIDER_AWS => VertexTypes::ProviderAws.name(),
-            VERTEX_TYPE_PROVIDER_GCP => VertexTypes::ProviderGcp.name(),
             VERTEX_TYPE_VERIFICATION => VertexTypes::Verification.name(),
             VERTEX_TYPE_STAGE_DEPLOY => VertexTypes::StageDeploy.name(),
             VERTEX_TYPE_STAGE_DESTROY => VertexTypes::StageDestroy.name(),
             VERTEX_TYPE_COMPONENT_SRC => VertexTypes::ComponentSrc.name(),
             VERTEX_TYPE_COMPONENT_DST => VertexTypes::ComponentDst.name(),
-            VERTEX_TYPE_PROVIDER_AZURE => VertexTypes::ProviderAzure.name(),
             VERTEX_TYPE_CONNECTION_SRC => VertexTypes::ConnectionSrc.name(),
             VERTEX_TYPE_CONNECTION_DST => VertexTypes::ConnectionDst.name(),
             _ => "None"
@@ -215,21 +213,20 @@ impl VertexTypes {
             VERTEX_TYPE_PROJECT => VertexTypes::Project,
             VERTEX_TYPE_FEATURE => VertexTypes::Feature,
             VERTEX_TYPE_FEATURES => VertexTypes::Features,
-            VERTEX_TYPE_PROVIDER => VertexTypes::Provider,
+            VERTEX_TYPE_EUT_PROVIDER => VertexTypes::EutProvider,
+            VERTEX_TYPE_RTE_PROVIDER => VertexTypes::RteProvider,
+            VERTEX_TYPE_PROVIDERS => VertexTypes::Providers,
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection,
             VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections,
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components,
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector,
             VERTEX_TYPE_CONNECTION_SRC => VertexTypes::ConnectionSrc,
             VERTEX_TYPE_CONNECTION_DST => VertexTypes::ConnectionDst,
-            VERTEX_TYPE_PROVIDER_AWS => VertexTypes::ProviderAws,
-            VERTEX_TYPE_PROVIDER_GCP => VertexTypes::ProviderGcp,
             VERTEX_TYPE_VERIFICATION => VertexTypes::Verification,
             VERTEX_TYPE_STAGE_DEPLOY => VertexTypes::StageDeploy,
             VERTEX_TYPE_STAGE_DESTROY => VertexTypes::StageDestroy,
             VERTEX_TYPE_COMPONENT_SRC => VertexTypes::ComponentSrc,
             VERTEX_TYPE_COMPONENT_DST => VertexTypes::ComponentDst,
-            VERTEX_TYPE_PROVIDER_AZURE => VertexTypes::ProviderAzure,
             _ => VertexTypes::None
         }
     }
@@ -274,23 +271,22 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rtes.name().to_string()), EdgeTypes::Uses.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Provider.name().to_string()), EdgeTypes::Uses.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::Uses.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Uses.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rtes.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::Uses.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Provider.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Connections.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::Needs.name());
-        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAws.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderGcp.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::Provider.name().to_string(), VertexTypes::ProviderAzure.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::ProviderAws.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::ProviderGcp.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::ProviderAzure.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::EutProvider.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::RteProvider.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::EutProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::EutProvider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::Provides.name());
         map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::Provides.name());
         map.insert(VertexTuple(VertexTypes::Connections.name().to_string(), VertexTypes::Connection.name().to_string()), EdgeTypes::Has.name());
@@ -417,6 +413,29 @@ pub struct RegressionConfig {
     features: RegressionConfigFeatures,
     collector: RegressionConfigCollector,
     verifications: RegressionConfigVerifications,
+}
+
+#[derive(Serialize, Debug)]
+struct EutRenderContext {
+    base: Map<String, Value>,
+    module: Map<String, Value>,
+    ci: Map<String, Value>,
+    provider: Vec<String>,
+}
+
+#[derive(Serialize, Debug)]
+struct RteComponentRenderContext {
+    job: String,
+    rte: String,
+    component: String,
+    provider: String,
+    ci: Map<String, Value>,
+    scripts: Vec<Map<String, Value>>,
+}
+
+#[derive(Serialize, Debug)]
+struct RteComponentsRenderContext {
+    component: Vec<RteComponentRenderContext>,
 }
 
 #[derive(Serialize, Debug)]
@@ -566,8 +585,9 @@ impl Regression {
         let module = self.load_object_config(&VertexTypes::get_name_by_object(&eut), &self.config.eut.module);
         let v = serde_json::to_value(module).unwrap();
         self.create_relationship(&project, &eut);
-        let eut_provider = self.create_object(VertexTypes::Provider);
-        self.create_relationship(&eut, &eut_provider);
+
+        let eut_providers = self.create_object(VertexTypes::Providers);
+        self.create_relationship(&eut, &eut_providers);
 
         for (k, v) in v.as_object().unwrap().iter() {
             match k {
@@ -576,11 +596,26 @@ impl Regression {
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.clone(), v.clone());
                     self.add_object_properties(&eut, &p, PropertyType::Module);
+                    self.add_object_properties(&eut_providers, &json!({
+                        GVID: format!("{}_{}_{}", eut.t.as_str(), PROVIDERS, &v.as_str().unwrap()),
+                        GV_LABEL: PROVIDERS
+                    }), PropertyType::Gv);
+                }
+                k if k == "release" => {
+                    let eut_o_p = self.get_object_properties(&eut).unwrap().props;
+                    let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                    p.insert(k.clone(), v.clone());
+                    self.add_object_properties(&eut, &p, PropertyType::Module);
                 }
                 k if k == PROVIDER => {
                     for p in v.as_array().unwrap().iter() {
-                        let p_o = self.create_object(VertexTypes::get_type_by_key(p.as_str().unwrap()));
-                        self.create_relationship(&eut_provider, &p_o);
+                        let p_o = self.create_object(VertexTypes::EutProvider);
+                        self.create_relationship(&eut_providers, &p_o);
+                        self.add_object_properties(&p_o, &json!({NAME: &p.as_str().unwrap()}), PropertyType::Base);
+                        self.add_object_properties(&p_o, &json!({
+                            GVID: format!("{}_{}_{}", eut.t.as_str(), PROVIDER, &p.as_str().unwrap()),
+                            GV_LABEL: &p.as_str().unwrap()
+                        }), PropertyType::Gv);
                     }
                 }
                 k if k == CI => {
@@ -643,11 +678,19 @@ impl Regression {
                     //Rte
                     for r in v.as_array().unwrap().iter() {
                         let r_o = self.create_object(VertexTypes::Rte);
-                        self.add_object_properties(&r_o, &json!({
-                                                GVID: format!("{}_{}", &k, &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()),
-                                                GV_LABEL: &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()
-                                            }), PropertyType::Gv);
                         self.create_relationship(&o, &r_o);
+                        self.add_object_properties(&r_o, &json!({
+                            GVID: format!("{}_{}", RTE, &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()),
+                            GV_LABEL: &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()
+                        }), PropertyType::Gv);
+
+                        let rte_p_o = self.create_object(VertexTypes::Providers);
+                        self.create_relationship(&r_o, &rte_p_o);
+                        self.add_object_properties(&rte_p_o, &json!({
+                            GVID: format!("{}_{}_{}", RTE, PROVIDERS, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                            GV_LABEL: PROVIDERS
+                        }), PropertyType::Gv);
+                        // REL: RTE -> Features
                         let eut_f_o = self.get_direct_neighbour_object_by_identifier(&eut, VertexTypes::Features);
                         self.create_relationship(&r_o, &eut_f_o);
 
@@ -669,7 +712,7 @@ impl Regression {
                                             }), PropertyType::Gv);
                                 }
                                 //Connections
-                                k if k == "connections" => {
+                                k if k == CONNECTIONS => {
                                     let cs_o = self.create_object(VertexTypes::get_type_by_key(k));
                                     self.add_object_properties(&cs_o, &json!({
                                                 GVID: format!("{}_{}", &k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
@@ -775,6 +818,7 @@ impl Regression {
                         let r_p = self.get_object_properties(&r_o).unwrap().props;
                         let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap();
                         let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
+
                         for (k, v) in cfg.as_object().unwrap().iter() {
                             match k {
                                 k if k == NAME => {
@@ -784,27 +828,22 @@ impl Regression {
                                     self.add_object_properties(&r_o, &json!({k: v}), PropertyType::Module);
                                 }
                                 k if k == PROVIDER => {
-                                    let p_o = self.create_object(VertexTypes::Provider);
-                                    self.create_relationship(&r_o, &p_o);
-                                    self.add_object_properties(&p_o, &json!({
-                                            GVID: format!("{}_{}", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                            GV_LABEL: PROVIDER
-                                        }), PropertyType::Gv);
-                                    for (k, v) in v.as_object().unwrap().iter() {
-                                        let o = self.create_object(VertexTypes::get_type_by_key(k));
-                                        self.create_relationship(&p_o, &o);
+                                    for (p, v) in v.as_object().unwrap().iter() {
+                                        let o = self.create_object(VertexTypes::RteProvider);
+                                        self.create_relationship(&rte_p_o, &o);
+                                        self.add_object_properties(&o, &json!({NAME: p}), PropertyType::Module);
                                         self.add_object_properties(&o, &json!({
-                                                GVID: format!("{}_{}_{}", PROVIDER, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                GV_LABEL: k
+                                                GVID: format!("{}_{}_{}", PROVIDER, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                GV_LABEL: p
                                             }), PropertyType::Gv);
 
                                         for (k, v) in v.as_object().unwrap().iter() {
                                             match k {
                                                 k if k == CI => {
                                                     let p_ci_o = self.create_object(VertexTypes::Ci);
-                                                    self.create_relationship(&p_o, &p_ci_o);
+                                                    self.create_relationship(&o, &p_ci_o);
                                                     self.add_object_properties(&p_ci_o, &json!({
-                                                            GVID: format!("{}_{}_{}", PROVIDER, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            GVID: format!("{}_{}_{}_{}", PROVIDER, k, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                             GV_LABEL: k
                                                         }), PropertyType::Gv);
 
@@ -815,11 +854,11 @@ impl Regression {
                                                     }
                                                     self.add_object_properties(&p_ci_o, &_variables, PropertyType::Base);
                                                 }
-                                                k if k == "components" => {
+                                                k if k == COMPONENTS => {
                                                     let c_o = self.create_object(VertexTypes::Components);
                                                     self.create_relationship(&o, &c_o);
                                                     self.add_object_properties(&c_o, &json!({
-                                                            GVID: format!("{}_{}_{}_{}", PROVIDER, &o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            GVID: format!("{}_{}_{}_{}", PROVIDER, p, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                             GV_LABEL: k
                                                         }), PropertyType::Gv);
 
@@ -830,7 +869,7 @@ impl Regression {
                                                                 self.create_relationship(&c_o, &c_src_o);
                                                                 self.add_object_properties(&c_src_o, &json!({k: v}), PropertyType::Base);
                                                                 self.add_object_properties(&c_src_o, &json!({
-                                                                        GVID: format!("{}_{}_{}_{}", PROVIDER, &o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        GVID: format!("{}_{}_{}_{}_{}", "rte", p, "component", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                                         GV_LABEL: k
                                                                     }), PropertyType::Gv);
                                                             }
@@ -839,7 +878,7 @@ impl Regression {
                                                                 self.create_relationship(&c_o, &c_dst_o);
                                                                 self.add_object_properties(&c_dst_o, &json!({k: v}), PropertyType::Base);
                                                                 self.add_object_properties(&c_dst_o, &json!({
-                                                                        GVID: format!("{}_{}_{}_{}", PROVIDER, &o.t.as_str(), k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        GVID: format!("{}_{}_{}_{}_{}", "rte", p, "component", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                                         GV_LABEL: k
                                                                     }), PropertyType::Gv);
                                                             }
@@ -879,7 +918,7 @@ impl Regression {
                         // Connection -> Component
                         let _c = self.get_direct_neighbour_object_by_identifier(&r_o, VertexTypes::Connections);
                         let connections = self.get_direct_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
-                        let provider = self.get_direct_neighbour_objects_by_identifier(&r_o, VertexTypes::Provider);
+                        let provider = self.get_direct_neighbour_objects_by_identifier(&r_o, VertexTypes::RteProvider);
 
                         for c in connections.iter() {
                             let sources = self.get_direct_neighbour_objects_by_identifier(&c, VertexTypes::ConnectionSrc);
@@ -888,9 +927,10 @@ impl Regression {
                                 let c_p = self.get_object_properties(c_s).unwrap().props;
                                 let c_src_name = c_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
                                 let _c_d_s: Vec<Vertex> = self.get_direct_neighbour_objects_by_identifier(&c_s, VertexTypes::ConnectionDst);
+
                                 for _p in provider.iter() {
-                                    let p_p = self.get_object_properties(c_s).unwrap().props;
-                                    let p_name = p_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                                    let p_p = self.get_object_properties(_p).unwrap().props;
+                                    let p_name = p_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
 
                                     if c_src_name == p_name {
                                         let _c = self.get_direct_neighbour_object_by_identifier(&_p, VertexTypes::Components);
@@ -905,8 +945,8 @@ impl Regression {
                                     let c_dst_name = c_d_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
 
                                     for _p in provider.iter() {
-                                        let p_p = self.get_object_properties(c_d).unwrap().props;
-                                        let p_name = p_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                                        let p_p = self.get_object_properties(_p).unwrap().props;
+                                        let p_name = p_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
 
                                         if c_dst_name == p_name {
                                             let _c = self.get_direct_neighbour_object_by_identifier(&_p, VertexTypes::Components);
@@ -1121,9 +1161,20 @@ impl Regression {
         let eut_p = self.get_object_properties(&eut).unwrap().props;
         let eut_p_base = eut_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
-        let _eut_provider = self.get_direct_neighbour_object_by_identifier(&eut, VertexTypes::Provider);
-        let eut_provider = self.get_direct_neighbour_objects_by_identifier(&_eut_provider, VertexTypes::Provider);
-        error!("EUT_PROVIDER: {:?}", &eut_provider);
+
+        let _providers = self.get_direct_neighbour_object_by_identifier(&eut, VertexTypes::Providers);
+        let _eut_provider = self.get_direct_neighbour_objects_by_identifier(&_providers, VertexTypes::EutProvider);
+        let mut eut_provider = Vec::new();
+
+        for p in _eut_provider.iter() {
+            let _p = self.get_object_properties(&p).unwrap().props;
+            let name = _p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+            eut_provider.push(String::from(name));
+        }
+
+        let _eut_ci_o = self.get_direct_neighbour_object_by_identifier(&eut, VertexTypes::Ci);
+        let eut_ci_p = self.get_object_properties(&_eut_ci_o).unwrap().props;
+        let eut_ci = eut_ci_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
 
         let _features = self.get_direct_neighbour_objects_by_identifier(&eut, VertexTypes::Feature);
         let mut features = Vec::new();
@@ -1133,11 +1184,36 @@ impl Regression {
         }
 
         let _rtes = self.get_direct_neighbour_objects_by_identifier(&eut, VertexTypes::Rte);
+
         //let mut rtes = Vec::new();
         error!("##################################################################");
         for rte in _rtes.iter() {
+            //let mut rte_crc: RteComponentRenderContext;
             let rte_p = self.get_object_properties(&rte).unwrap().props;
-            error!("RTE_P: {:?}", &rte_p);
+            //error!("RTE_PROPS_BASE: {:?}", rte_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap());
+            let rte_name = rte_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("module").unwrap().as_str().unwrap();
+            let _c = self.get_direct_neighbour_object_by_identifier(rte, VertexTypes::Connections);
+            let connections = self.get_direct_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
+
+            for conn in connections.iter() {
+                let srcs = self.get_direct_neighbour_objects_by_identifier(conn, VertexTypes::ConnectionSrc);
+                /*for src in srcs.iter() {
+                    error!("SRC: {:?}", src);
+                    let src_p = self.get_object_properties(&src).unwrap().props;
+                    error!("SRC_P: {:?}", &src_p);
+                    let src_name = src_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                    let component_src = self.get_direct_neighbour_object_by_identifier(src, VertexTypes::ComponentSrc);
+                    error!("COMPONENT_SRC: {:?}", &component_src);
+                    let comp_prop = self.get_object_properties(&component_src).unwrap().props;
+                    error!("COMPONENT_SRC_PROPS: {:?}", &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap());
+                    let comp_src_name = &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("src").unwrap().as_str().unwrap();
+                    let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &src_name, &comp_src_name);
+                    error!("RTE_JOB_NAME: {}", &rte_job_name);*/
+                    /*rte_crc.job = rte_job_name.clone();
+                    rte_crc.component = comp_src_name.parse().unwrap();
+                    rte_crc.provider = src_name.parse().unwrap();
+                }*/
+            }
 
             /*for c in rte_p.get(PropertyType::Base.index()).unwrap().value[CONNECTIONS].as_array().unwrap().iter() {
                 for source in c[SOURCES].as_array().unwrap().iter() {
@@ -1179,9 +1255,17 @@ impl Regression {
         stages.append(&mut deploy_stages);
         stages.append(&mut destroy_stages);
 
+        let data = EutRenderContext {
+            base: eut_p_base.clone(),
+            module: eut_p_module.clone(),
+            ci: eut_ci.clone(),
+            provider: eut_provider,
+        };
+
         let mut context = Context::new();
-        context.insert(EUT, &json!({PropertyType::Base.name(): eut_p_base, PropertyType::Module.name(): eut_p_module}));
+        //context.insert(EUT, &json!({PropertyType::Base.name(): eut_p_base, PropertyType::Module.name(): eut_p_module, PROVIDER: eut_provider, CI: eut_ci}));
         // context.insert(RTES, &rtes);
+        context.insert("eut", &data);
         context.insert("config", &self.config);
         context.insert("stages", &stages);
         context.insert(FEATURES, &features);
