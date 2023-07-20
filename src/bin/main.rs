@@ -15,11 +15,14 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::option::Option;
 use std::string::ToString;
+use std::vec;
 
 use clap::error::ErrorKind::Format as clap_format;
 use clap::Parser;
+use graphviz_rust::attributes::defaultdist;
 use indradb;
-use indradb::{AllVertexQuery, BulkInsertItem, Edge, EdgeDirection, Identifier, ijson, PipeQuery, Query, QueryExt, RangeVertexQuery, SpecificEdgeQuery, Vertex, VertexProperties};
+use indradb::{AllVertexQuery, BulkInsertItem, Edge, EdgeDirection, Identifier, Json, PipeQuery, Query, QueryExt, RangeVertexQuery, SpecificEdgeQuery, Vertex, VertexProperties, VertexWithPropertyValueQuery};
+use indradb::Query::VertexWithPropertyValue;
 use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
@@ -27,6 +30,8 @@ use serde_json::{json, Map, Value};
 use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::{Uuid, uuid};
+
+//use clap::builder::Resettable::Value;
 
 const CONFIG_FILE_NAME: &str = "config.json";
 
@@ -424,19 +429,29 @@ struct EutRenderContext {
 }
 
 #[derive(Serialize, Debug)]
-struct RteComponentRenderContext {
+struct RteConnectionRenderContext {
     job: String,
     rte: String,
     component: String,
     provider: String,
-    ci: Map<String, Value>,
-    scripts: Vec<Map<String, Value>>,
 }
 
 #[derive(Serialize, Debug)]
-struct RteComponentsRenderContext {
-    component: Vec<RteComponentRenderContext>,
+struct RteProviderCiRenderContext {
+    timeout: Value,
+    variables: Value,
 }
+
+#[derive(Serialize, Debug)]
+struct RteRenderContext {
+    ci: HashMap<String, RteProviderCiRenderContext>,
+    connections: Vec<RteConnectionRenderContext>,
+}
+
+/*
+ci: Map<String, Value>,
+scripts: Vec<Map<String, Value>>,
+*/
 
 #[derive(Serialize, Debug)]
 struct ScriptRenderContext {
@@ -558,6 +573,7 @@ impl Regression {
     }
 
     fn init(&self) -> Uuid {
+        // self.regression.index_property(indradb::Identifier::new(PropertyType::Base.name()).unwrap()).expect("error adding index for rte key");
         // Project
         let project = self.create_object(VertexTypes::Project);
         self.add_object_properties(&project, &self.config.project, PropertyType::Base);
@@ -736,7 +752,7 @@ impl Regression {
                                         for s in sources.iter() {
                                             let src_o = self.create_object(VertexTypes::ConnectionSrc);
                                             self.create_relationship(&c_o, &src_o);
-                                            self.add_object_properties(&src_o, &json!({NAME: &s}), PropertyType::Base);
+                                            self.add_object_properties(&src_o, &json!({NAME: &s, RTE: &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
                                             self.add_object_properties(&src_o, &json!({
                                                     GVID: format!("{}_{}_{}", "connection_src", s.as_str().unwrap(), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                     GV_LABEL: s.as_str().unwrap()
@@ -746,7 +762,7 @@ impl Regression {
                                             for d in destinations.iter() {
                                                 let dst_o = self.create_object(VertexTypes::ConnectionDst);
                                                 self.create_relationship(&src_o, &dst_o);
-                                                self.add_object_properties(&dst_o, &json!({NAME: &d}), PropertyType::Base);
+                                                self.add_object_properties(&dst_o, &json!({NAME: &d, RTE: &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
                                                 self.add_object_properties(&dst_o, &json!({
                                                          GVID: format!("{}_{}_{}", "connection_dst", d.as_str().unwrap(), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                          GV_LABEL: d.as_str().unwrap()
@@ -824,9 +840,6 @@ impl Regression {
                                 k if k == NAME => {
                                     self.add_object_properties(&r_o, v, PropertyType::Module);
                                 }
-                                k if k == CI => {
-                                    self.add_object_properties(&r_o, &json!({k: v}), PropertyType::Module);
-                                }
                                 k if k == PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
                                         let o = self.create_object(VertexTypes::RteProvider);
@@ -846,13 +859,7 @@ impl Regression {
                                                             GVID: format!("{}_{}_{}_{}", PROVIDER, k, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                             GV_LABEL: k
                                                         }), PropertyType::Gv);
-
-                                                    //Variables
-                                                    let mut _variables = Vec::new();
-                                                    for var in v.as_object().unwrap().get("variables").unwrap().as_array().unwrap().iter() {
-                                                        _variables.push(var);
-                                                    }
-                                                    self.add_object_properties(&p_ci_o, &_variables, PropertyType::Base);
+                                                    self.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == COMPONENTS => {
                                                     let c_o = self.create_object(VertexTypes::Components);
@@ -876,6 +883,7 @@ impl Regression {
                                                             k if k == "dst" => {
                                                                 let c_dst_o = self.create_object(VertexTypes::ComponentDst);
                                                                 self.create_relationship(&c_o, &c_dst_o);
+                                                                error!("K: {:?} -----> V: {:?}", k, v);
                                                                 self.add_object_properties(&c_dst_o, &json!({k: v}), PropertyType::Base);
                                                                 self.add_object_properties(&c_dst_o, &json!({
                                                                         GVID: format!("{}_{}_{}_{}_{}", "rte", p, "component", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
@@ -917,16 +925,16 @@ impl Regression {
                         }
                         // Connection -> Component
                         let _c = self.get_direct_neighbour_object_by_identifier(&r_o, VertexTypes::Connections);
-                        let connections = self.get_direct_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
-                        let provider = self.get_direct_neighbour_objects_by_identifier(&r_o, VertexTypes::RteProvider);
+                        let connections = self.get_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
+                        let provider = self.get_neighbour_objects_by_identifier(&r_o, VertexTypes::RteProvider);
 
                         for c in connections.iter() {
-                            let sources = self.get_direct_neighbour_objects_by_identifier(&c, VertexTypes::ConnectionSrc);
+                            let sources = self.get_neighbour_objects_by_identifier(&c, VertexTypes::ConnectionSrc);
 
                             for c_s in sources.iter() {
                                 let c_p = self.get_object_properties(c_s).unwrap().props;
                                 let c_src_name = c_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                let _c_d_s: Vec<Vertex> = self.get_direct_neighbour_objects_by_identifier(&c_s, VertexTypes::ConnectionDst);
+                                let _c_d_s: Vec<Vertex> = self.get_neighbour_objects_by_identifier(&c_s, VertexTypes::ConnectionDst);
 
                                 for _p in provider.iter() {
                                     let p_p = self.get_object_properties(_p).unwrap().props;
@@ -974,7 +982,7 @@ impl Regression {
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
-        let features = self.get_direct_neighbour_objects_by_identifier(&eut, VertexTypes::Feature);
+        let features = self.get_neighbour_objects_by_identifier(&eut, VertexTypes::Feature);
         if features.len() > 0 {
             stage_destroy = self.add_ci_stages(&ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
         }
@@ -989,14 +997,6 @@ impl Regression {
         self.add_ci_stages(&stage_destroy.unwrap(), &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         project.id
-    }
-
-    fn object_map(key: &str) -> Value {
-        let mut a = HashMap::new();
-        a.insert(String::from("scripts"), json!({"name": {"o": "script", "ancestor": "scripts"}, "value": {"o": "value", "ancestor": "script"}}));
-        a.insert(String::from("eut"), json!({"name": {"o": "name", "ancestor": "eut"}}));
-        error!("{:?}", &a.get(key));
-        a.get(key).unwrap().clone()
     }
 
     fn create_object(&self, object_type: VertexTypes) -> Vertex {
@@ -1034,15 +1034,15 @@ impl Regression {
         match property_type {
             PropertyType::Gv => {
                 p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_GV)
-                    .unwrap(), indradb::Json::new(v.clone()));
+                    .unwrap(), Json::new(v.clone()));
             }
             PropertyType::Base => {
                 p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_BASE)
-                    .unwrap(), indradb::Json::new(v.clone()));
+                    .unwrap(), Json::new(v.clone()));
             }
             PropertyType::Module => {
                 p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_MODULE)
-                    .unwrap(), indradb::Json::new(v.clone()));
+                    .unwrap(), Json::new(v.clone()));
             }
         }
 
@@ -1059,15 +1059,15 @@ impl Regression {
         match property_type {
             PropertyType::Gv => {
                 p = BulkInsertItem::EdgeProperty(object.clone(), Identifier::new(PROPERTY_TYPE_GV)
-                    .unwrap(), indradb::Json::new(v.clone()));
+                    .unwrap(), Json::new(v.clone()));
             }
             PropertyType::Base => {
                 p = BulkInsertItem::EdgeProperty(object.clone(), Identifier::new(PROPERTY_TYPE_BASE)
-                    .unwrap(), indradb::Json::new(v.clone()));
+                    .unwrap(), Json::new(v.clone()));
             }
             PropertyType::Module => {
                 p = BulkInsertItem::EdgeProperty(object.clone(), Identifier::new(PROPERTY_TYPE_MODULE)
-                    .unwrap(), indradb::Json::new(v.clone()));
+                    .unwrap(), Json::new(v.clone()));
             }
         }
         self.regression.bulk_insert(vec![p]).unwrap();
@@ -1107,7 +1107,7 @@ impl Regression {
         result.get(0).unwrap().clone()
     }
 
-    fn get_direct_neighbour_objects_by_identifier(&self, start: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
+    fn get_neighbour_objects_by_identifier(&self, start: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
         info!("Get direct neighbors of <{}>...", start.t.as_str());
         let mut rvq = RangeVertexQuery::new();
         rvq.t = Option::from(Identifier::new(identifier.name()).unwrap());
@@ -1115,6 +1115,14 @@ impl Regression {
         rvq.start_id = Option::from(start.id);
         let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
         info!("Get direct neighbors of <{}> -> Done.", start.t.as_str());
+        result
+    }
+
+    fn get_objects_by_property_value(&self, identifier: VertexTypes, value: &str) -> Vec<Vertex> {
+        info!("Get objects with value <{}>...", value);
+        let vwpvq = VertexWithPropertyValueQuery { name: Identifier::new(identifier.name()).unwrap(), value: Json::new(serde_json::Value::from(value)) };
+        let result = indradb::util::extract_vertices(self.regression.get(vwpvq).unwrap()).unwrap();
+        info!("Get objects with value <{}> -> Done", value);
         result
     }
 
@@ -1145,7 +1153,7 @@ impl Regression {
         info!("Get relationship for <{}> and <{}>...", &a.t.as_str(), &b.t.as_str());
         let i = self.create_relationship_identifier(&a, &b);
         let e = Edge::new(a.id, i, b.id);
-        let r: Vec<indradb::QueryOutputValue> = self.regression.get(indradb::SpecificEdgeQuery::single(e.clone())).unwrap();
+        let r: Vec<indradb::QueryOutputValue> = self.regression.get(SpecificEdgeQuery::single(e.clone())).unwrap();
         let e = indradb::util::extract_edges(r).unwrap();
         info!("Get relationship for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         e
@@ -1163,7 +1171,7 @@ impl Regression {
         let eut_p_module = eut_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
 
         let _providers = self.get_direct_neighbour_object_by_identifier(&eut, VertexTypes::Providers);
-        let _eut_provider = self.get_direct_neighbour_objects_by_identifier(&_providers, VertexTypes::EutProvider);
+        let _eut_provider = self.get_neighbour_objects_by_identifier(&_providers, VertexTypes::EutProvider);
         let mut eut_provider = Vec::new();
 
         for p in _eut_provider.iter() {
@@ -1176,61 +1184,80 @@ impl Regression {
         let eut_ci_p = self.get_object_properties(&_eut_ci_o).unwrap().props;
         let eut_ci = eut_ci_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
 
-        let _features = self.get_direct_neighbour_objects_by_identifier(&eut, VertexTypes::Feature);
+        let _features = self.get_neighbour_objects_by_identifier(&eut, VertexTypes::Feature);
         let mut features = Vec::new();
         for feature in _features.iter() {
             let feature_p = self.get_object_properties(&feature).unwrap().props;
             features.push(feature_p.get(PropertyType::Base.index()).unwrap().value.clone())
         }
 
-        let _rtes = self.get_direct_neighbour_objects_by_identifier(&eut, VertexTypes::Rte);
+        let _rtes = self.get_neighbour_objects_by_identifier(&eut, VertexTypes::Rte);
 
         //let mut rtes = Vec::new();
         error!("##################################################################");
         for rte in _rtes.iter() {
-            //let mut rte_crc: RteComponentRenderContext;
             let rte_p = self.get_object_properties(&rte).unwrap().props;
-            //error!("RTE_PROPS_BASE: {:?}", rte_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap());
             let rte_name = rte_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("module").unwrap().as_str().unwrap();
             let _c = self.get_direct_neighbour_object_by_identifier(rte, VertexTypes::Connections);
-            let connections = self.get_direct_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
+            let connections = self.get_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
+            let mut rte_crcs = RteRenderContext { connections: Default::default(), ci: HashMap::new() };
+            let provider = self.get_neighbour_objects_by_identifier(rte, VertexTypes::RteProvider);
+
+            for p in provider.iter() {
+                let p_props = self.get_object_properties(&p).unwrap().props;
+                let ci_o = self.get_direct_neighbour_object_by_identifier(p, VertexTypes::Ci);
+                let _ci_p = self.get_object_properties(&ci_o).unwrap().props;
+                let p_name = p_props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                rte_crcs.ci.insert(p_name.to_string(), RteProviderCiRenderContext {
+                    timeout: _ci_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
+                    variables: _ci_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
+                });
+            }
 
             for conn in connections.iter() {
-                let srcs = self.get_direct_neighbour_objects_by_identifier(conn, VertexTypes::ConnectionSrc);
-                /*for src in srcs.iter() {
-                    error!("SRC: {:?}", src);
-                    let src_p = self.get_object_properties(&src).unwrap().props;
-                    error!("SRC_P: {:?}", &src_p);
-                    let src_name = src_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                    let component_src = self.get_direct_neighbour_object_by_identifier(src, VertexTypes::ComponentSrc);
-                    error!("COMPONENT_SRC: {:?}", &component_src);
-                    let comp_prop = self.get_object_properties(&component_src).unwrap().props;
-                    error!("COMPONENT_SRC_PROPS: {:?}", &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap());
-                    let comp_src_name = &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("src").unwrap().as_str().unwrap();
-                    let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &src_name, &comp_src_name);
-                    error!("RTE_JOB_NAME: {}", &rte_job_name);*/
-                    /*rte_crc.job = rte_job_name.clone();
-                    rte_crc.component = comp_src_name.parse().unwrap();
-                    rte_crc.provider = src_name.parse().unwrap();
-                }*/
-            }
+                let srcs = self.get_neighbour_objects_by_identifier(conn, VertexTypes::ConnectionSrc);
 
-            /*for c in rte_p.get(PropertyType::Base.index()).unwrap().value[CONNECTIONS].as_array().unwrap().iter() {
-                for source in c[SOURCES].as_array().unwrap().iter() {
-                    error!("{} CLIENT: {:?}", &source.as_str().unwrap(), &rte_p.get(PropertyType::Module.index())
-                        .unwrap().value[PROVIDER][source.as_str().unwrap()]["components"]["src"]);
-                }
-                for destination in c["destinations"].as_array().unwrap().iter() {
-                    error!("{} SERVER: {:?}", &destination.as_str().unwrap(), &rte_p.get(PropertyType::Module.index())
-                        .unwrap().value[PROVIDER][destination.as_str()
-                            .unwrap()]["components"]["dst"]);
+                for src in srcs.iter() {
+                    let src_p = self.get_object_properties(&src).unwrap().props;
+                    let _rte_src_name = src_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("rte").unwrap().as_str().unwrap();
+                    if rte_name == _rte_src_name {
+                        let src_name = src_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                        let component_src = self.get_direct_neighbour_object_by_identifier(src, VertexTypes::ComponentSrc);
+                        let comp_prop = self.get_object_properties(&component_src).unwrap().props;
+                        let comp_src_name = &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("src").unwrap().as_str().unwrap();
+                        let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &src_name, &comp_src_name);
+                        let rte_crc = RteConnectionRenderContext {
+                            job: rte_job_name.clone(),
+                            rte: rte_name.to_string(),
+                            component: comp_src_name.to_string(),
+                            provider: src_name.to_string(),
+                        };
+                        rte_crcs.connections.push(rte_crc);
+
+                        let dsts = self.get_neighbour_objects_by_identifier(src, VertexTypes::ConnectionDst);
+                        for dst in dsts.iter() {
+                            let dst_p = self.get_object_properties(&dst).unwrap().props;
+                            let _rte_dst_name = dst_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("rte").unwrap().as_str().unwrap();
+                            if rte_name == _rte_dst_name {
+                                let dst_p = self.get_object_properties(dst).unwrap().props;
+                                let dst_name = dst_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                                let component_dst = self.get_direct_neighbour_object_by_identifier(dst, VertexTypes::ComponentDst);
+                                let comp_prop = self.get_object_properties(&component_dst).unwrap().props;
+                                let comp_dst_name = &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("dst").unwrap().as_str().unwrap();
+                                let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &dst_name, &comp_dst_name);
+                                let rte_crc = RteConnectionRenderContext {
+                                    job: rte_job_name.clone(),
+                                    rte: rte_name.to_string(),
+                                    component: comp_dst_name.to_string(),
+                                    provider: dst_name.to_string(),
+                                };
+                                rte_crcs.connections.push(rte_crc);
+                            }
+                        }
+                    }
                 }
             }
-            let data = json!({
-                "cfg": &rte_p.get(PropertyType::Base.index()).unwrap().value.clone(),
-                MODULE: &rte_p.get(PropertyType::Module.index()).unwrap().value.clone()
-            });
-            rtes.push(data);*/
+            error!("STRUCT: {:#?}", &rte_crcs);
         }
         error!("##################################################################");
 
@@ -1240,13 +1267,13 @@ impl Regression {
         let s_deploy = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::StageDeploy);
         let s_destroy = self.get_direct_neighbour_object_by_identifier(&project, VertexTypes::StageDestroy);
 
-        for _stage in self.get_direct_neighbour_objects_by_identifier(&s_deploy, VertexTypes::StageDeploy).iter() {
+        for _stage in self.get_neighbour_objects_by_identifier(&s_deploy, VertexTypes::StageDeploy).iter() {
             let _p = &self.get_object_properties(&_stage).unwrap().props;
             let p = &_p.get(PropertyType::Base.index()).unwrap().value;
             deploy_stages.push(p.as_str().unwrap().to_string());
         }
 
-        for _stage in self.get_direct_neighbour_objects_by_identifier(&s_destroy, VertexTypes::StageDestroy).iter() {
+        for _stage in self.get_neighbour_objects_by_identifier(&s_destroy, VertexTypes::StageDestroy).iter() {
             let _p = &self.get_object_properties(&_stage).unwrap().props;
             let p = &_p.get(PropertyType::Base.index()).unwrap().value;
             destroy_stages.push(p.as_str().unwrap().to_string());
@@ -1263,7 +1290,6 @@ impl Regression {
         };
 
         let mut context = Context::new();
-        //context.insert(EUT, &json!({PropertyType::Base.name(): eut_p_base, PropertyType::Module.name(): eut_p_module, PROVIDER: eut_provider, CI: eut_ci}));
         // context.insert(RTES, &rtes);
         context.insert("eut", &data);
         context.insert("config", &self.config);
