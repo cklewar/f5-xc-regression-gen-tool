@@ -120,3 +120,50 @@ eut-apply:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+{% for rte in rtes -%}
+{% for connection in rte.connections %}
+# {{ connection.job | replace(from="_", to="-") }} - apply
+{{ connection.job | replace(from="_", to="-") }}-apply:
+  <<: *base
+  stage: rte-apply
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
+  script:
+      - |
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[connection.provider].timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% endfor %}
+{% for feature in features %}
+# feature - {{ eut.base.module }} - {{ feature.name }} - apply
+feature-{{ eut.base.module }}-{{ feature.name }}-apply:
+  <<: *base
+  stage: feature-apply
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_features_rules, rules ]
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $FEATURES_ROOT_DIR/{{ feature.name }}
+        terraform init --backend-config="key=$S3_EUT_ROOT/{{ eut.base.module }}/features/{{ feature.name }}"  
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
+        terraform output > $FEATURES_ROOT_DIR/{{ feature.name }}/feature.tfvars
+  timeout: {{ feature.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}

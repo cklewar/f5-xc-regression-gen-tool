@@ -52,6 +52,7 @@ const NAME: &str = "name";
 const MODULE: &str = "module";
 const SCRIPTS: &str = "scripts";
 const SOURCES: &str = "sources";
+const PROJECT: &str = "project";
 const FEATURE: &str = "feature";
 const FEATURES: &str = "features";
 const PROVIDER: &str = "provider";
@@ -1193,7 +1194,7 @@ impl Regression {
 
         let _rtes = self.get_neighbour_objects_by_identifier(&eut, VertexTypes::Rte);
 
-        //let mut rtes = Vec::new();
+        let mut rtes: Vec<RteRenderContext> = Vec::new();
         error!("##################################################################");
         for rte in _rtes.iter() {
             let rte_p = self.get_object_properties(&rte).unwrap().props;
@@ -1258,6 +1259,8 @@ impl Regression {
                 }
             }
             error!("STRUCT: {:#?}", &rte_crcs);
+            rtes.push(rte_crcs);
+
         }
         error!("##################################################################");
 
@@ -1290,12 +1293,12 @@ impl Regression {
         };
 
         let mut context = Context::new();
-        // context.insert(RTES, &rtes);
-        context.insert("eut", &data);
+        context.insert(RTES, &rtes);
+        context.insert(EUT, &data);
         context.insert("config", &self.config);
         context.insert("stages", &stages);
         context.insert(FEATURES, &features);
-        context.insert("project", &project_p_base);
+        context.insert(PROJECT, &project_p_base);
 
         //error!("{:#?}", context);
         info!("Build render context -> Done.");
