@@ -11,25 +11,23 @@ Supported command line arguments:
 --config <provide regression environment configuration file>
  */
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::Write;
 use std::option::Option;
 use std::string::ToString;
 use std::vec;
 
-use clap::error::ErrorKind::Format as clap_format;
+// use clap::error::ErrorKind::Format as clap_format;
 use clap::Parser;
-use graphviz_rust::attributes::defaultdist;
 use indradb;
-use indradb::{AllVertexQuery, BulkInsertItem, Edge, EdgeDirection, Identifier, Json, NamedProperty, PipeQuery, Query, QueryExt, RangeVertexQuery, SpecificEdgeQuery, Vertex, VertexProperties, VertexWithPropertyValueQuery};
-use indradb::Query::VertexWithPropertyValue;
+use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, QueryExt, Vertex, VertexProperties};
 use lazy_static::lazy_static;
-use log::{debug, error, info, warn};
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use serde_json::Value::Null;
 use tera::{Context, Tera};
-use uuid::{Uuid, uuid};
+use uuid::Uuid;
 
 //use clap::builder::Resettable::Value;
 
@@ -41,26 +39,32 @@ const CONFIG_FILE_NAME: &str = "config.json";
 // const SCRIPT_TYPE_COLLECTOR_PATH: &str = "scripts";
 
 // KEYS
-const CI: &str = "ci";
-const EUT: &str = "eut";
-const RTE: &str = "rte";
-const RTES: &str = "rtes";
-const TEST: &str = "test";
-const GVID: &str = "id";
-const GV_LABEL: &str = "label";
-const NAME: &str = "name";
-const MODULE: &str = "module";
-const SCRIPTS: &str = "scripts";
-const SOURCES: &str = "sources";
-const PROJECT: &str = "project";
-const FEATURE: &str = "feature";
-const FEATURES: &str = "features";
-const PROVIDER: &str = "provider";
-const PROVIDERS: &str = "providers";
-const COMPONENTS: &str = "components";
-const CONNECTIONS: &str = "connections";
-const VERIFICATION: &str = "verification";
-const SCRIPTS_PATH: &str = "scripts_path";
+const KEY_CI: &str = "ci";
+const KEY_EUT: &str = "eut";
+const KEY_RTE: &str = "rte";
+const KEY_RTES: &str = "rtes";
+const KEY_TEST: &str = "test";
+const KEY_TESTS: &str = "tests";
+const KEY_GVID: &str = "id";
+const KEY_NAME: &str = "name";
+const KEY_CONFIG: &str = "config";
+const KEY_MODULE: &str = "module";
+const KEY_RELEASE: &str = "release";
+const KEY_SCRIPTS: &str = "scripts";
+const KEY_SOURCES: &str = "sources";
+const KEY_PROJECT: &str = "project";
+const KEY_FEATURE: &str = "feature";
+const KEY_GV_LABEL: &str = "label";
+const KEY_FEATURES: &str = "features";
+const KEY_PROVIDER: &str = "provider";
+const KEY_PROVIDERS: &str = "providers";
+const KEY_COMPONENT: &str = "component";
+const KEY_COMPONENTS: &str = "components";
+const KEY_CONNECTION: &str = "connection";
+const KEY_CONNECTIONS: &str = "connections";
+const KEY_VERIFICATION: &str = "verification";
+const KEY_SCRIPTS_PATH: &str = "scripts_path";
+const KEY_VERIFICATIONS: &str = "verifications";
 
 const PIPELINE_FILE_NAME: &str = ".gitlab-ci.yml";
 const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
@@ -68,7 +72,6 @@ const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
 const PROPERTY_TYPE_GV: &str = "gv";
 const PROPERTY_TYPE_BASE: &str = "base";
 const PROPERTY_TYPE_MODULE: &str = "module";
-const PROPERTY_TYPE_NAME: &str = "name";
 
 //Objects types
 const VERTEX_TYPE_CI: &str = "ci";
@@ -82,45 +85,50 @@ const VERTEX_TYPE_SCRIPTS: &str = "scripts";
 const VERTEX_TYPE_PROJECT: &str = "project";
 const VERTEX_TYPE_FEATURE: &str = "feature";
 const VERTEX_TYPE_FEATURES: &str = "features";
-const VERTEX_TYPE_EUT_PROVIDER: &str = "eut_provider";
-const VERTEX_TYPE_RTE_PROVIDER: &str = "rte_provider";
 const VERTEX_TYPE_PROVIDERS: &str = "providers";
-const VERTEX_TYPE_CONNECTION: &str = "connection";
-const VERTEX_TYPE_CONNECTIONS: &str = "connections";
 const VERTEX_TYPE_COLLECTOR: &str = "collector";
 const VERTEX_TYPE_COMPONENTS: &str = "components";
-const VERTEX_TYPE_CONNECTION_SRC: &str = "connection_src";
-const VERTEX_TYPE_CONNECTION_DST: &str = "connection_dst";
+const VERTEX_TYPE_CONNECTION: &str = "connection";
+const VERTEX_TYPE_CONNECTIONS: &str = "connections";
 const VERTEX_TYPE_VERIFICATION: &str = "verification";
+const VERTEX_TYPE_EUT_PROVIDER: &str = "eut_provider";
+const VERTEX_TYPE_RTE_PROVIDER: &str = "rte_provider";
 const VERTEX_TYPE_STAGE_DEPLOY: &str = "deploy";
 const VERTEX_TYPE_STAGE_DESTROY: &str = "stage_destroy";
 const VERTEX_TYPE_COMPONENT_SRC: &str = "component_src";
 const VERTEX_TYPE_COMPONENT_DST: &str = "component_dst";
+const VERTEX_TYPE_CONNECTION_SRC: &str = "connection_src";
+const VERTEX_TYPE_CONNECTION_DST: &str = "connection_dst";
 
 // Rel type
 const EDGE_TYPE_HAS: &str = "has";
-const EDGE_TYPE_USES: &str = "uses";
 const EDGE_TYPE_RUNS: &str = "runs";
-const EDGE_TYPE_NEXT: &str = "next";
 const EDGE_TYPE_NEEDS: &str = "needs";
-const EDGE_TYPE_PROVIDES: &str = "provides";
 const EDGE_TYPE_HAS_CI: &str = "has_ci";
 const EDGE_TYPE_HAS_EUT: &str = "has_eut";
-const EDGE_TYPE_HAS_PROVIDERS: &str = "has_providers";
-const EDGE_TYPE_HAS_SCRIPTS: &str = "has_scripts";
-const EDGE_TYPE_USES_PROVIDER: &str = "uses_provider";
-const EDGE_TYPE_HAS_FEATURES: &str = "has_features";
-const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
-const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
-const EDGE_TYPE_HAS_STAGES: &str = "has_stages";
 const EDGE_TYPE_USES_RTES: &str = "uses_rtes";
+const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
+const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
+const EDGE_TYPE_HAS_FEATURES: &str = "has_features";
 const EDGE_TYPE_PROVIDES_RTE: &str = "provides_rte";
+const EDGE_TYPE_USES_PROVIDER: &str = "uses_provider";
+const EDGE_TYPE_HAS_PROVIDERS: &str = "has_providers";
+const EDGE_TYPE_NEEDS_PROVIDER: &str = "needs_provider";
+const EDGE_TYPE_HAS_COMPONENTS: &str = "has_components";
+const EDGE_TYPE_HAS_CONNECTION: &str = "has_connection";
+const EDGE_TYPE_HAS_CONNECTIONS: &str = "has_connections";
+const EDGE_TYPE_PROVIDES_PROVIDER: &str = "provides_provider";
+const EDGE_TYPE_HAS_COMPONENT_SRC: &str = "has_component_src";
+const EDGE_TYPE_HAS_COMPONENT_DST: &str = "has_component_dst";
+const EDGE_TYPE_HAS_CONNECTION_SRC: &str = "has_connection_src";
+const EDGE_TYPE_HAS_CONNECTION_DST: &str = "has_connection_dst";
+const EDGE_TYPE_HAS_DEPLOY_STAGES: &str = "has_deploy_stages";
+const EDGE_TYPE_HAS_DESTROY_STAGES: &str = "has_destroy_stages";
 
 enum PropertyType {
     Gv,
     Base,
     Module,
-    Name,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -154,22 +162,28 @@ enum VertexTypes {
 
 enum EdgeTypes {
     Has,
-    Uses,
     Runs,
-    Next,
     Needs,
-    Provides,
     HasCi,
     HasEut,
-    HasScripts,
     HasProviders,
+    NeedsProvider,
+    ProvidesProvider,
     UsesProvider,
     HasFeatures,
     HasFeature,
     NextStage,
-    HasStages,
     UsesRtes,
     ProvidesRte,
+    HasConnections,
+    HasConnection,
+    HasConnectionSrc,
+    HasConnectionDst,
+    HasComponentSrc,
+    HasComponentDst,
+    HasComponents,
+    HasDeployStages,
+    HasDestroyStages,
 }
 
 impl VertexTypes {
@@ -267,22 +281,28 @@ impl EdgeTypes {
     fn name(&self) -> &'static str {
         match *self {
             EdgeTypes::Has => EDGE_TYPE_HAS,
-            EdgeTypes::Uses => EDGE_TYPE_USES,
             EdgeTypes::Runs => EDGE_TYPE_RUNS,
-            EdgeTypes::Next => EDGE_TYPE_NEXT,
             EdgeTypes::Needs => EDGE_TYPE_NEEDS,
-            EdgeTypes::Provides => EDGE_TYPE_PROVIDES,
             EdgeTypes::HasCi => EDGE_TYPE_HAS_CI,
             EdgeTypes::HasEut => EDGE_TYPE_HAS_EUT,
-            EdgeTypes::HasScripts => EDGE_TYPE_HAS_SCRIPTS,
             EdgeTypes::UsesProvider => EDGE_TYPE_USES_PROVIDER,
             EdgeTypes::HasProviders => EDGE_TYPE_HAS_PROVIDERS,
             EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
-            EdgeTypes::HasStages => EDGE_TYPE_HAS_STAGES,
             EdgeTypes::UsesRtes => EDGE_TYPE_USES_RTES,
             EdgeTypes::ProvidesRte => EDGE_TYPE_PROVIDES_RTE,
+            EdgeTypes::HasConnection => EDGE_TYPE_HAS_CONNECTION,
+            EdgeTypes::HasConnections => EDGE_TYPE_HAS_CONNECTIONS,
+            EdgeTypes::NeedsProvider => EDGE_TYPE_NEEDS_PROVIDER,
+            EdgeTypes::ProvidesProvider => EDGE_TYPE_PROVIDES_PROVIDER,
+            EdgeTypes::HasConnectionSrc => EDGE_TYPE_HAS_CONNECTION_SRC,
+            EdgeTypes::HasConnectionDst => EDGE_TYPE_HAS_CONNECTION_DST,
+            EdgeTypes::HasComponentSrc => EDGE_TYPE_HAS_COMPONENT_SRC,
+            EdgeTypes::HasComponentDst => EDGE_TYPE_HAS_COMPONENT_DST,
+            EdgeTypes::HasComponents => EDGE_TYPE_HAS_COMPONENTS,
+            EdgeTypes::HasDeployStages => EDGE_TYPE_HAS_DEPLOY_STAGES,
+            EdgeTypes::HasDestroyStages => EDGE_TYPE_HAS_DESTROY_STAGES,
         }
     }
 }
@@ -293,7 +313,6 @@ impl PropertyType {
             PropertyType::Gv => PROPERTY_TYPE_GV,
             PropertyType::Base => PROPERTY_TYPE_BASE,
             PropertyType::Module => PROPERTY_TYPE_MODULE,
-            PropertyType::Name => PROPERTY_TYPE_NAME,
         }
     }
 
@@ -302,7 +321,6 @@ impl PropertyType {
             PropertyType::Gv => 1,
             PropertyType::Base => 0,
             PropertyType::Module => 2,
-            PropertyType::Name => 3,
         }
     }
 }
@@ -318,29 +336,29 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::HasProviders.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rtes.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::ProvidesRte.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::HasProviders.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Connections.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::NeedsProvider.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Connections.name().to_string()), EdgeTypes::HasConnections.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::Needs.name());
-        map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::EutProvider.name().to_string()), EdgeTypes::UsesProvider.name());
-        map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::RteProvider.name().to_string()), EdgeTypes::UsesProvider.name());
-        map.insert(VertexTuple(VertexTypes::EutProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::EutProvider.name().to_string()), EdgeTypes::ProvidesProvider.name());
+        map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::RteProvider.name().to_string()), EdgeTypes::ProvidesProvider.name());
+        map.insert(VertexTuple(VertexTypes::EutProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
         map.insert(VertexTuple(VertexTypes::EutProvider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
-        map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
         map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
-        map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::Provides.name());
-        map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::Provides.name());
-        map.insert(VertexTuple(VertexTypes::Connections.name().to_string(), VertexTypes::Connection.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::Connection.name().to_string(), VertexTypes::ConnectionSrc.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ConnectionDst.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::HasComponentSrc.name());
+        map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::HasComponentDst.name());
+        map.insert(VertexTuple(VertexTypes::Connections.name().to_string(), VertexTypes::Connection.name().to_string()), EdgeTypes::HasConnection.name());
+        map.insert(VertexTuple(VertexTypes::Connection.name().to_string(), VertexTypes::ConnectionSrc.name().to_string()), EdgeTypes::HasConnectionSrc.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ConnectionDst.name().to_string()), EdgeTypes::HasConnectionDst.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Runs.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::HasComponentSrc.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::HasComponentDst.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasStages.name());
-        map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::HasStages.name());
+        map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasDeployStages.name());
+        map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::HasDestroyStages.name());
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::StageDestroy.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
@@ -526,7 +544,6 @@ struct Regression {
 fn convert_vertex_properties_to_vec(properties: Vec<VertexProperties>) -> Vec<HashMap<String, Map<String, Value>>> {
     let mut data: Vec<HashMap<String, Map<String, Value>>> = Vec::new();
     for p in properties.iter() {
-        error!("PROPERTY: {:?}", p);
         let p_base = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let p_module = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
         let mut h = HashMap::new();
@@ -552,11 +569,11 @@ impl Regression {
         info!("Render regression configuration file...");
         let mut _tera = Tera::new("../../regression/config/*").unwrap();
         let mut context = Context::new();
-        context.insert(EUT, &cfg.eut);
-        context.insert(RTE, &cfg.rte);
-        context.insert("tests", &cfg.tests);
-        context.insert("project", &cfg.project);
-        context.insert(FEATURES, &cfg.features);
+        context.insert(KEY_EUT, &cfg.eut);
+        context.insert(KEY_RTE, &cfg.rte);
+        context.insert(KEY_TESTS, &cfg.tests);
+        context.insert(KEY_PROJECT, &cfg.project);
+        context.insert(KEY_FEATURES, &cfg.features);
         context.insert("collector", &cfg.collector);
         context.insert("verifications", &cfg.verifications);
 
@@ -574,19 +591,19 @@ impl Regression {
         info!("Loading module <{module}> configuration data...");
         let file: String;
         match _type {
-            EUT => {
+            KEY_EUT => {
                 file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
             }
-            RTE => {
+            KEY_RTE => {
                 file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
             }
-            FEATURE => {
+            KEY_FEATURE => {
                 file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
             }
-            TEST => {
+            KEY_TEST => {
                 file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
             }
-            VERIFICATION => {
+            KEY_VERIFICATION => {
                 file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
             }
             _ => {
@@ -617,8 +634,8 @@ impl Regression {
             let new = self.create_object(object_type.clone());
             self.add_object_properties(&new, &stage, PropertyType::Base);
             self.add_object_properties(&new, &json!({
-                GVID: stage.replace("-", "_"),
-                GV_LABEL: stage,
+                KEY_GVID: stage.replace("-", "_"),
+                KEY_GV_LABEL: stage,
             }), PropertyType::Gv);
 
             if i == 0 {
@@ -633,21 +650,21 @@ impl Regression {
     }
 
     fn init(&self) -> Uuid {
-        self.regression.index_property(indradb::Identifier::new("name").unwrap()).expect("TODO: panic message");
+        // self.regression.index_property(indradb::Identifier::new("name").unwrap()).expect("TODO: panic message");
         // Project
         let project = self.create_object(VertexTypes::Project);
         self.add_object_properties(&project, &self.config.project, PropertyType::Base);
         self.add_object_properties(&project, &json!({
-            GVID: self.config.project.name.replace("-", "_"),
-            GV_LABEL: self.config.project.name.replace("-", "_"),
+            KEY_GVID: self.config.project.name.replace("-", "_"),
+            KEY_GV_LABEL: self.config.project.name.replace("-", "_"),
         }), PropertyType::Gv);
 
         // Ci
         let ci = self.create_object(VertexTypes::Ci);
         self.add_object_properties(&ci, &self.config.ci, PropertyType::Base);
         self.add_object_properties(&ci, &json!({
-            GVID: format!("{}_{}", self.config.project.name.replace("-", "_"), CI),
-            GV_LABEL: CI,
+            KEY_GVID: format!("{}_{}", self.config.project.name.replace("-", "_"), KEY_CI),
+            KEY_GV_LABEL: KEY_CI,
         }), PropertyType::Gv);
         self.create_relationship(&project, &ci);
 
@@ -655,8 +672,8 @@ impl Regression {
         let eut = self.create_object(VertexTypes::Eut);
         self.add_object_properties(&eut, &self.config.eut, PropertyType::Base);
         self.add_object_properties(&eut, &json!({
-            GVID: self.config.eut.module.replace("-", "_"),
-            GV_LABEL: self.config.eut.module,
+            KEY_GVID: self.config.eut.module.replace("-", "_"),
+            KEY_GV_LABEL: self.config.eut.module,
         }), PropertyType::Gv);
         let module = self.load_object_config(&VertexTypes::get_name_by_object(&eut), &self.config.eut.module);
         let v = serde_json::to_value(module).unwrap();
@@ -667,89 +684,89 @@ impl Regression {
 
         for (k, v) in v.as_object().unwrap().iter() {
             match k {
-                k if k == NAME => {
+                k if k == KEY_NAME => {
                     let eut_o_p = self.get_object_properties(&eut).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.clone(), v.clone());
                     self.add_object_properties(&eut, &p, PropertyType::Module);
                     self.add_object_properties(&eut_providers, &json!({
-                        GVID: format!("{}_{}_{}", eut.t.as_str(), PROVIDERS, &v.as_str().unwrap()),
-                        GV_LABEL: PROVIDERS
+                        KEY_GVID: format!("{}_{}_{}", eut.t.as_str(), KEY_PROVIDERS, &v.as_str().unwrap()),
+                        KEY_GV_LABEL: KEY_PROVIDERS
                     }), PropertyType::Gv);
                 }
-                k if k == "release" => {
+                k if k == KEY_RELEASE => {
                     let eut_o_p = self.get_object_properties(&eut).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.clone(), v.clone());
                     self.add_object_properties(&eut, &p, PropertyType::Module);
                 }
-                k if k == PROVIDER => {
+                k if k == KEY_PROVIDER => {
                     for p in v.as_array().unwrap().iter() {
                         let p_o = self.create_object(VertexTypes::EutProvider);
                         self.create_relationship(&eut_providers, &p_o);
-                        self.add_object_properties(&p_o, &json!({NAME: &p.as_str().unwrap()}), PropertyType::Base);
+                        self.add_object_properties(&p_o, &json!({KEY_NAME: &p.as_str().unwrap()}), PropertyType::Base);
                         self.add_object_properties(&p_o, &json!({
-                            GVID: format!("{}_{}_{}", eut.t.as_str(), PROVIDER, &p.as_str().unwrap()),
-                            GV_LABEL: &p.as_str().unwrap()
+                            KEY_GVID: format!("{}_{}_{}", eut.t.as_str(), KEY_PROVIDER, &p.as_str().unwrap()),
+                            KEY_GV_LABEL: &p.as_str().unwrap()
                         }), PropertyType::Gv);
                     }
                 }
-                k if k == CI => {
+                k if k == KEY_CI => {
                     let eut_o_p = self.get_object_properties(&eut).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.clone(), v.clone());
                     self.add_object_properties(&eut, &p, PropertyType::Module);
                 }
-                k if k == FEATURES => {
+                k if k == KEY_FEATURES => {
                     let o = self.create_object(VertexTypes::get_type_by_key(k));
                     self.create_relationship(&eut, &o);
                     self.add_object_properties(&o, &json!({
-                        GVID: format!("{}_{}", self.config.eut.module, k),
-                        GV_LABEL: k
+                        KEY_GVID: format!("{}_{}", self.config.eut.module, k),
+                        KEY_GV_LABEL: k
                     }), PropertyType::Gv);
 
                     for f in v.as_array().unwrap().iter() {
                         for (k, v) in f.as_object().unwrap().iter() {
                             let f_o = self.create_object(VertexTypes::get_type_by_key(k));
                             self.create_relationship(&o, &f_o);
-                            self.add_object_properties(&f_o, &json!({NAME: &v.as_str().unwrap()}), PropertyType::Base);
+                            self.add_object_properties(&f_o, &json!({KEY_NAME: &v.as_str().unwrap()}), PropertyType::Base);
                             self.add_object_properties(&f_o, &json!({
-                                    GVID: format!("{}_{}_{}", self.config.eut.module, k, v.as_str().unwrap()),
-                                    GV_LABEL: &v.as_str().unwrap()
+                                    KEY_GVID: format!("{}_{}_{}", self.config.eut.module, k, v.as_str().unwrap()),
+                                    KEY_GV_LABEL: &v.as_str().unwrap()
                                 }), PropertyType::Gv);
 
                             let f_p = self.get_object_properties(&f_o).unwrap().props;
-                            let name = f_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                            let name = f_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                             // FEATURE MODULE CFG
                             let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&f_o), &name);
                             for (k, v) in cfg.as_object().unwrap().iter() {
                                 match k {
-                                    k if k == SCRIPTS_PATH => {
+                                    k if k == KEY_SCRIPTS_PATH => {
                                         let f_o_p = self.get_object_properties(&f_o).unwrap().props;
                                         let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                         p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
                                         self.add_object_properties(&f_o, &p, PropertyType::Module);
                                     }
-                                    k if k == "release" => {
+                                    k if k == KEY_RELEASE => {
                                         let f_o_p = self.get_object_properties(&f_o).unwrap().props;
                                         let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                         p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
                                         self.add_object_properties(&f_o, &p, PropertyType::Module);
                                     }
-                                    k if k == NAME => {
+                                    k if k == KEY_NAME => {
                                         let f_o_p = self.get_object_properties(&f_o).unwrap().props;
                                         let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                         p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
                                         self.add_object_properties(&f_o, &p, PropertyType::Module);
                                     }
-                                    k if k == CI => {
+                                    k if k == KEY_CI => {
                                         let f_o_p = self.get_object_properties(&f_o).unwrap().props;
                                         let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                         p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
                                         self.add_object_properties(&f_o, &p, PropertyType::Module);
                                     }
-                                    k if k == SCRIPTS => {
+                                    k if k == KEY_SCRIPTS => {
                                         let f_o_p = self.get_object_properties(&f_o).unwrap().props;
                                         let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                         p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
@@ -761,19 +778,19 @@ impl Regression {
                         }
                     }
                 }
-                k if k == SCRIPTS_PATH => {
+                k if k == KEY_SCRIPTS_PATH => {
                     let eut_o_p = self.get_object_properties(&eut).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.clone(), v.clone());
                     self.add_object_properties(&eut, &p, PropertyType::Module);
                 }
-                k if k == SCRIPTS => {
+                k if k == KEY_SCRIPTS => {
                     let eut_o_p = self.get_object_properties(&eut).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.clone(), v.clone());
                     self.add_object_properties(&eut, &p, PropertyType::Module);
                 }
-                k if k == RTES => {
+                k if k == KEY_RTES => {
                     let o = self.create_object(VertexTypes::get_type_by_key(k));
                     self.create_relationship(&eut, &o);
                     //Rte
@@ -781,23 +798,23 @@ impl Regression {
                         let r_o = self.create_object(VertexTypes::Rte);
                         self.create_relationship(&o, &r_o);
                         self.add_object_properties(&r_o, &json!({
-                            GVID: format!("{}_{}", RTE, &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()),
-                            GV_LABEL: &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()
+                            KEY_GVID: format!("{}_{}", KEY_RTE, &r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()),
+                            KEY_GV_LABEL: &r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()
                         }), PropertyType::Gv);
 
                         let rte_p_o = self.create_object(VertexTypes::Providers);
                         self.create_relationship(&r_o, &rte_p_o);
                         self.add_object_properties(&rte_p_o, &json!({
-                            GVID: format!("{}_{}_{}", RTE, PROVIDERS, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                            GV_LABEL: PROVIDERS
+                            KEY_GVID: format!("{}_{}_{}", KEY_RTE, KEY_PROVIDERS, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                            KEY_GV_LABEL: KEY_PROVIDERS
                         }), PropertyType::Gv);
                         // REL: RTE -> Features
-                        let eut_f_o = self.get_direct_neighbour_object_by_identifier(&eut, VertexTypes::Features);
+                        let eut_f_o = self.get_object_neighbour(&eut.id, EdgeTypes::HasFeatures);
                         self.create_relationship(&r_o, &eut_f_o);
 
                         for (k, v) in r.as_object().unwrap().iter() {
                             match k {
-                                k if k == MODULE => {
+                                k if k == KEY_MODULE => {
                                     let r_o_p = self.get_object_properties(&r_o).unwrap().props;
                                     let mut p = r_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                     p.insert(k.clone(), v.clone());
@@ -808,16 +825,16 @@ impl Regression {
                                     let c_o = self.create_object(VertexTypes::get_type_by_key(k));
                                     self.create_relationship(&r_o, &c_o);
                                     self.add_object_properties(&c_o, &json!({
-                                                GVID: format!("{}_{}", &k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                GV_LABEL: &c_o.t.as_str()
+                                                KEY_GVID: format!("{}_{}", &k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: &c_o.t.as_str()
                                             }), PropertyType::Gv);
                                 }
                                 //Connections
-                                k if k == CONNECTIONS => {
+                                k if k == KEY_CONNECTIONS => {
                                     let cs_o = self.create_object(VertexTypes::get_type_by_key(k));
                                     self.add_object_properties(&cs_o, &json!({
-                                                GVID: format!("{}_{}", &k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                GV_LABEL: &cs_o.t.as_str()
+                                                KEY_GVID: format!("{}_{}", &k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: &cs_o.t.as_str()
                                             }), PropertyType::Gv);
                                     self.create_relationship(&r_o, &cs_o);
 
@@ -825,49 +842,49 @@ impl Regression {
                                         //Connection
                                         let c_o = self.create_object(VertexTypes::Connection);
                                         self.create_relationship(&cs_o, &c_o);
-                                        let c_name = item.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                        self.add_object_properties(&c_o, &json!({NAME: c_name}), PropertyType::Base);
+                                        let c_name = item.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                        self.add_object_properties(&c_o, &json!({KEY_NAME: c_name}), PropertyType::Base);
                                         self.add_object_properties(&c_o, &json!({
-                                                GVID: format!("{}_{}_{}", "connection", c_name.replace("-", "_"), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                GV_LABEL: "connection"
+                                                KEY_GVID: format!("{}_{}_{}", KEY_CONNECTION, c_name.replace("-", "_"), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: KEY_CONNECTION
                                             }), PropertyType::Gv);
 
                                         //Sources
-                                        let sources = item.as_object().unwrap().get(SOURCES).unwrap().as_array().unwrap();
+                                        let sources = item.as_object().unwrap().get(KEY_SOURCES).unwrap().as_array().unwrap();
                                         for s in sources.iter() {
                                             let src_o = self.create_object(VertexTypes::ConnectionSrc);
                                             self.create_relationship(&c_o, &src_o);
-                                            self.add_object_properties(&src_o, &json!({NAME: &s, RTE: &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
+                                            self.add_object_properties(&src_o, &json!({KEY_NAME: &s, KEY_RTE: &r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
                                             self.add_object_properties(&src_o, &json!({
-                                                    GVID: format!("{}_{}_{}", "connection_src", s.as_str().unwrap(), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                    GV_LABEL: s.as_str().unwrap()
+                                                    KEY_GVID: format!("{}_{}_{}", "connection_src", s.as_str().unwrap(), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                    KEY_GV_LABEL: s.as_str().unwrap()
                                                 }), PropertyType::Gv);
                                             //Destinations
                                             let destinations = item.as_object().unwrap().get("destinations").unwrap().as_array().unwrap();
                                             for d in destinations.iter() {
                                                 let dst_o = self.create_object(VertexTypes::ConnectionDst);
                                                 self.create_relationship(&src_o, &dst_o);
-                                                self.add_object_properties(&dst_o, &json!({NAME: &d, RTE: &r.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
+                                                self.add_object_properties(&dst_o, &json!({KEY_NAME: &d, KEY_RTE: &r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
                                                 self.add_object_properties(&dst_o, &json!({
-                                                         GVID: format!("{}_{}_{}", "connection_dst", d.as_str().unwrap(), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                         GV_LABEL: d.as_str().unwrap()
+                                                         KEY_GVID: format!("{}_{}_{}", "connection_dst", d.as_str().unwrap(), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                         KEY_GV_LABEL: d.as_str().unwrap()
                                                      }), PropertyType::Gv);
                                             }
                                             //Tests
-                                            let tests = item.as_object().unwrap().get("tests").unwrap().as_array().unwrap();
+                                            let tests = item.as_object().unwrap().get(KEY_TESTS).unwrap().as_array().unwrap();
                                             for test in tests.iter() {
                                                 let t_o = self.create_object(VertexTypes::Test);
                                                 self.create_relationship(&src_o, &t_o);
 
                                                 for (k, v) in test.as_object().unwrap().iter() {
                                                     match k {
-                                                        k if k == NAME => {
+                                                        k if k == KEY_NAME => {
                                                             let t_o_p = self.get_object_properties(&t_o).unwrap().props;
                                                             let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                                             p.insert(k.clone(), v.clone());
                                                             self.add_object_properties(&t_o, &p, PropertyType::Base);
                                                         }
-                                                        k if k == MODULE => {
+                                                        k if k == KEY_MODULE => {
                                                             let t_o_p = self.get_object_properties(&t_o).unwrap().props;
                                                             let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                                             p.insert(k.clone(), v.clone());
@@ -879,28 +896,28 @@ impl Regression {
                                                             p.insert(k.clone(), v.clone());
                                                             self.add_object_properties(&t_o, &p, PropertyType::Base);
                                                             t_o_p = self.get_object_properties(&t_o).unwrap().props;
-                                                            let t_name = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                                            let t_module = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap();
+                                                            let t_name = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                                            let t_module = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                                                             self.add_object_properties(&t_o, &json!({
-                                                                             GVID: format!("{}_{}_{}", t_o.t.as_str(), t_name.replace("-", "_"), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                             GV_LABEL: t_module
+                                                                             KEY_GVID: format!("{}_{}_{}", t_o.t.as_str(), t_name.replace("-", "_"), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                             KEY_GV_LABEL: t_module
                                                                          }), PropertyType::Gv);
                                                         }
-                                                        k if k == CI => {
+                                                        k if k == KEY_CI => {
                                                             let t_o_p = self.get_object_properties(&t_o).unwrap().props;
                                                             let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                                             p.append(&mut json!({k: v.as_object().unwrap().clone()}).as_object().unwrap().clone());
                                                             self.add_object_properties(&t_o, &p, PropertyType::Base);
                                                         }
-                                                        k if k == "verifications" => {
+                                                        k if k == KEY_VERIFICATIONS => {
                                                             for v in v.as_array().unwrap().iter() {
                                                                 let v_o = self.create_object(VertexTypes::Verification);
-                                                                let v_name = v.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                                                let v_module = v.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap();
+                                                                let v_name = v.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                                                let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                                                                 self.add_object_properties(&v_o, v, PropertyType::Base);
                                                                 self.add_object_properties(&v_o, &json!({
-                                                                                 GVID: format!("{}_{}_{}", v_o.t.as_str(), v_name.replace("-", "_"), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                                 GV_LABEL: v_module
+                                                                                 KEY_GVID: format!("{}_{}_{}", v_o.t.as_str(), v_name.replace("-", "_"), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                                 KEY_GV_LABEL: v_module
                                                                              }), PropertyType::Gv);
                                                                 self.create_relationship(&t_o, &v_o);
                                                             }
@@ -917,45 +934,44 @@ impl Regression {
                         }
                         //Rte module cfg
                         let r_p = self.get_object_properties(&r_o).unwrap().props;
-                        let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(MODULE).unwrap().as_str().unwrap();
+                        let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
 
                         for (k, v) in cfg.as_object().unwrap().iter() {
-                            error!("K: {:?} ---- V: {:?}", k, v);
                             match k {
-                                k if k == NAME => {
+                                k if k == KEY_NAME => {
                                     let r_o_p = self.get_object_properties(&r_o).unwrap().props;
                                     let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                     p.append(&mut json!({k: v}).as_object().unwrap().clone());
                                     self.add_object_properties(&r_o, &p, PropertyType::Module);
                                 }
-                                k if k == PROVIDER => {
+                                k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
                                         let o = self.create_object(VertexTypes::RteProvider);
                                         self.create_relationship(&rte_p_o, &o);
-                                        self.add_object_properties(&o, &json!({NAME: p}), PropertyType::Module);
+                                        self.add_object_properties(&o, &json!({KEY_NAME: p}), PropertyType::Module);
                                         self.add_object_properties(&o, &json!({
-                                                GVID: format!("{}_{}_{}", PROVIDER, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                GV_LABEL: p
+                                                KEY_GVID: format!("{}_{}_{}", KEY_PROVIDER, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: p
                                             }), PropertyType::Gv);
 
                                         for (k, v) in v.as_object().unwrap().iter() {
                                             match k {
-                                                k if k == CI => {
+                                                k if k == KEY_CI => {
                                                     let p_ci_o = self.create_object(VertexTypes::Ci);
                                                     self.create_relationship(&o, &p_ci_o);
                                                     self.add_object_properties(&p_ci_o, &json!({
-                                                            GVID: format!("{}_{}_{}_{}", PROVIDER, k, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                            GV_LABEL: k
+                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            KEY_GV_LABEL: k
                                                         }), PropertyType::Gv);
                                                     self.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
-                                                k if k == COMPONENTS => {
+                                                k if k == KEY_COMPONENTS => {
                                                     let c_o = self.create_object(VertexTypes::Components);
                                                     self.create_relationship(&o, &c_o);
                                                     self.add_object_properties(&c_o, &json!({
-                                                            GVID: format!("{}_{}_{}_{}", PROVIDER, p, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                            GV_LABEL: k
+                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, p, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            KEY_GV_LABEL: k
                                                         }), PropertyType::Gv);
 
                                                     for (k, v) in v.as_object().unwrap().iter() {
@@ -965,8 +981,8 @@ impl Regression {
                                                                 self.create_relationship(&c_o, &c_src_o);
                                                                 self.add_object_properties(&c_src_o, &json!({k: v}), PropertyType::Base);
                                                                 self.add_object_properties(&c_src_o, &json!({
-                                                                        GVID: format!("{}_{}_{}_{}_{}", "rte", p, "component", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                        GV_LABEL: k
+                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        KEY_GV_LABEL: k
                                                                     }), PropertyType::Gv);
                                                             }
                                                             k if k == "dst" => {
@@ -974,8 +990,8 @@ impl Regression {
                                                                 self.create_relationship(&c_o, &c_dst_o);
                                                                 self.add_object_properties(&c_dst_o, &json!({k: v}), PropertyType::Base);
                                                                 self.add_object_properties(&c_dst_o, &json!({
-                                                                        GVID: format!("{}_{}_{}_{}_{}", "rte", p, "component", k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                        GV_LABEL: k
+                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        KEY_GV_LABEL: k
                                                                     }), PropertyType::Gv);
                                                             }
                                                             _ => {}
@@ -987,13 +1003,13 @@ impl Regression {
                                         }
                                     }
                                 }
-                                k if k == SCRIPTS => {
+                                k if k == KEY_SCRIPTS => {
                                     let r_o_p = self.get_object_properties(&r_o).unwrap().props;
                                     let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                     p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
                                     self.add_object_properties(&r_o, &p, PropertyType::Module);
                                 }
-                                k if k == SCRIPTS_PATH => {
+                                k if k == KEY_SCRIPTS_PATH => {
                                     let r_o_p = self.get_object_properties(&r_o).unwrap().props;
                                     let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                     p.append(&mut json!({k: v}).as_object().unwrap().clone());
@@ -1003,43 +1019,30 @@ impl Regression {
                             }
                         }
                         // Connection -> Component
-                        let _c = self.get_direct_neighbour_object_by_identifier(&r_o, VertexTypes::Connections);
-                        let connections = self.get_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
-                        let provider = self.get_neighbour_objects_by_identifier(&r_o, VertexTypes::RteProvider);
+                        let _c = self.get_object_neighbour(&r_o.id, EdgeTypes::HasConnections);
+                        let connections = self.get_object_neighbours(&_c.id, EdgeTypes::HasConnection);
+                        let _p = self.get_object_neighbour(&r_o.id, EdgeTypes::NeedsProvider);
+                        let provider = self.get_object_neighbours(&_p.id, EdgeTypes::ProvidesProvider);
 
                         for c in connections.iter() {
-                            let sources = self.get_neighbour_objects_by_identifier(&c, VertexTypes::ConnectionSrc);
+                            let sources = self.get_object_neighbours_with_properties(&c.id, EdgeTypes::HasConnectionSrc);
 
                             for c_s in sources.iter() {
-                                let c_p = self.get_object_properties(c_s).unwrap().props;
-                                let c_src_name = c_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                let _c_d_s: Vec<Vertex> = self.get_neighbour_objects_by_identifier(&c_s, VertexTypes::ConnectionDst);
+                                let _c_d_s: Vec<VertexProperties> = self.get_object_neighbours_with_properties(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
 
-                                for _p in provider.iter() {
-                                    let p_p = self.get_object_properties(_p).unwrap().props;
-                                    let p_name = p_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-
-                                    if c_src_name == p_name {
-                                        let _c = self.get_direct_neighbour_object_by_identifier(&_p, VertexTypes::Components);
-                                        let component_src = self.get_direct_neighbour_object_by_identifier(&_c, VertexTypes::ComponentSrc);
-                                        self.create_relationship(&c_s, &component_src);
-                                    }
+                                for p in provider.iter() {
+                                    let _components = self.get_object_neighbour(&p.id, EdgeTypes::HasComponents);
+                                    let component_src = self.get_object_neighbour(&_components.id, EdgeTypes::HasComponentSrc);
+                                    self.create_relationship(&c_s.vertex, &component_src);
                                 }
 
                                 //CONNECTION DSTs
                                 for c_d in _c_d_s.iter() {
-                                    let c_d_p = self.get_object_properties(c_d).unwrap().props;
-                                    let c_dst_name = c_d_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                                    for p in provider.iter() {
+                                        let _components = self.get_object_neighbour(&p.id, EdgeTypes::HasComponents);
+                                        let component_dst = self.get_object_neighbour(&_components.id, EdgeTypes::HasComponentDst);
+                                        self.create_relationship(&c_d.vertex, &component_dst);
 
-                                    for _p in provider.iter() {
-                                        let p_p = self.get_object_properties(_p).unwrap().props;
-                                        let p_name = p_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-
-                                        if c_dst_name == p_name {
-                                            let _c = self.get_direct_neighbour_object_by_identifier(&_p, VertexTypes::Components);
-                                            let component_dst = self.get_direct_neighbour_object_by_identifier(&_c, VertexTypes::ComponentDst);
-                                            self.create_relationship(&c_d, &component_dst);
-                                        }
                                     }
                                 }
                             }
@@ -1061,7 +1064,7 @@ impl Regression {
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
-        let features = self.get_neighbour_objects_by_identifier(&eut, VertexTypes::Feature);
+        let features = self.get_object_neighbours(&eut.id, EdgeTypes::HasFeature);
         if features.len() > 0 {
             stage_destroy = self.add_ci_stages(&ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
         }
@@ -1123,10 +1126,6 @@ impl Regression {
                 p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_MODULE)
                     .unwrap(), Json::new(v.clone()));
             }
-            PropertyType::Name => {
-                p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_NAME)
-                    .unwrap(), Json::new(v.clone()));
-            }
         }
 
         self.regression.bulk_insert(vec![p]).unwrap();
@@ -1150,10 +1149,6 @@ impl Regression {
             }
             PropertyType::Module => {
                 p = BulkInsertItem::EdgeProperty(object.clone(), Identifier::new(PROPERTY_TYPE_MODULE)
-                    .unwrap(), Json::new(v.clone()));
-            }
-            PropertyType::Name => {
-                p = BulkInsertItem::EdgeProperty(object.clone(), Identifier::new(PROPERTY_TYPE_NAME)
                     .unwrap(), Json::new(v.clone()));
             }
         }
@@ -1195,6 +1190,18 @@ impl Regression {
         let id = indradb::util::extract_edges(o.unwrap()).unwrap().get(0).unwrap().inbound_id;
         self.get_object(&id)
     }
+
+    fn get_object_neighbours(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<Vertex> {
+        let i = Identifier::new(identifier.name().to_string()).unwrap();
+        let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
+        let mut objs: Vec<Vertex> = Vec::new();
+
+        for item in indradb::util::extract_edges(o.unwrap()).unwrap().iter() {
+            objs.push(self.get_object(&item.inbound_id));
+        }
+        objs
+    }
+
     fn get_object_neighbour_with_properties(&self, id: &Uuid, identifier: EdgeTypes) -> VertexProperties {
         let i = Identifier::new(identifier.name().to_string()).unwrap();
         let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
@@ -1211,57 +1218,6 @@ impl Regression {
             objs.push(self.get_object_with_properties(&item.inbound_id));
         }
         objs
-    }
-
-    fn get_object_neighbours(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<Vertex> {
-        let i = Identifier::new(identifier.name().to_string()).unwrap();
-        let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
-        let mut objs: Vec<Vertex> = Vec::new();
-
-        for item in indradb::util::extract_edges(o.unwrap()).unwrap().iter() {
-            objs.push(self.get_object(&item.inbound_id));
-        }
-        objs
-    }
-
-    fn get_direct_neighbour_object_by_identifier(&self, object: &Vertex, identifier: VertexTypes) -> Vertex {
-        info!("Get direct neighbor of <{}>...", object.t.as_str());
-        let mut rvq = RangeVertexQuery::new();
-        rvq.t = Option::from(Identifier::new(identifier.name()).unwrap());
-        rvq.limit = 1;
-        rvq.start_id = Option::from(object.id);
-        let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
-        info!("Get direct neighbor of <{}> -> Done.", object.t.as_str());
-        result.get(0).unwrap().clone()
-    }
-
-    fn get_neighbour_objects_by_identifier(&self, start: &Vertex, identifier: VertexTypes) -> Vec<Vertex> {
-        info!("Get direct neighbors of <{}>...", start.t.as_str());
-        let mut rvq = RangeVertexQuery::new();
-        rvq.t = Option::from(Identifier::new(identifier.name()).unwrap());
-        rvq.limit = 20;
-        rvq.start_id = Option::from(start.id);
-        let result = indradb::util::extract_vertices(self.regression.get(rvq).unwrap()).unwrap();
-        info!("Get direct neighbors of <{}> -> Done.", start.t.as_str());
-        result
-    }
-
-    /*fn get_objects_by_property_value(&self, identifier: VertexTypes, value: &str) -> Vec<Vertex> {
-        info!("Get objects with value <{}>...", value);
-        let vwpvq = VertexWithPropertyValueQuery { name: Identifier::new(identifier.name()).unwrap(), value: Json::new(serde_json::Value::from(value)) };
-        let result = indradb::util::extract_vertices(self.regression.get(vwpvq).unwrap()).unwrap();
-        info!("Get objects with value <{}> -> Done", value);
-        result
-    }*/
-
-    fn get_objects_by_property_type(&self, value: Value, identifier: PropertyType) {
-        info!("Get objects with value <{}>...", &value);
-        let property_value = indradb::Json::new(value.clone());
-        let name_identifier = indradb::Identifier::new(identifier.name().to_string()).unwrap();
-        let base_q = indradb::VertexWithPropertyValueQuery::new(name_identifier, property_value);
-        let result = self.regression.get(base_q.include().properties().unwrap());
-        // error!("RESULTS: {:#?}", &result);
-        info!("Get objects with value <{}> -> Done", &value);
     }
 
     fn get_object_properties(&self, object: &Vertex) -> Option<VertexProperties> {
@@ -1295,130 +1251,108 @@ impl Regression {
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
 
-        let eut_providers = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasProviders);
-        let _eut_provider = self.get_object_neighbours_with_properties(&eut_providers.id, EdgeTypes::UsesProvider);
-        let mut eut_provider = Vec::new();
-        for p in _eut_provider.iter() {
-            let name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-            eut_provider.push(String::from(name));
+        let _eut_providers = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasProviders);
+        let eut_provider = self.get_object_neighbours_with_properties(&_eut_providers.id, EdgeTypes::UsesProvider);
+        let mut eut_provider_p_base = Vec::new();
+        for p in eut_provider.iter() {
+            let name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            eut_provider_p_base.push(String::from(name));
         }
+
+        let eut_p = EutRenderContext {
+            base: eut_p_base.clone(),
+            module: eut_p_module.clone(),
+            provider: eut_provider_p_base,
+        };
 
         let _features = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasFeatures);
         let features = self.get_object_neighbours_with_properties(&_features.id, EdgeTypes::HasFeature);
-        ;
         let features_p = convert_vertex_properties_to_vec(features);
 
+        let _rtes = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::UsesRtes);
+        let rtes = self.get_object_neighbours_with_properties(&_rtes.id, EdgeTypes::ProvidesRte);
+        let mut rtes_p: Vec<RteRenderContext> = Vec::new();
 
-        let _rtes = self.get_object_neighbour_with_properties(&eut.vertex.id, EdgeTypes::UsesRtes);
-        let rtes = self.get_object_neighbours_with_properties(&_rtes.vertex.id, EdgeTypes::ProvidesRte);
-
-        let mut rtes: Vec<RteRenderContext> = Vec::new();
-        error!("##################################################################");
-        /*for rte in _rtes.iter() {
-            let rte_p = self.get_object_properties(&rte).unwrap().props;
-            let rte_name = rte_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("module").unwrap().as_str().unwrap();
-            let _c = self.get_direct_neighbour_object_by_identifier(rte, VertexTypes::Connections);
-            let connections = self.get_neighbour_objects_by_identifier(&_c, VertexTypes::Connection);
+        for rte in rtes.iter() {
+            let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+            let _c = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::HasConnections);
+            let connections = self.get_object_neighbours_with_properties(&_c.id, EdgeTypes::HasConnection);
             let mut rte_crcs = RteRenderContext { connections: Default::default(), ci: HashMap::new() };
-            let provider = self.get_neighbour_objects_by_identifier(rte, VertexTypes::RteProvider);
+            let _provider = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::NeedsProvider);
+            let provider = self.get_object_neighbours_with_properties(&_provider.id, EdgeTypes::ProvidesProvider);
 
             for p in provider.iter() {
-                let p_props = self.get_object_properties(&p).unwrap().props;
-                let ci_o = self.get_direct_neighbour_object_by_identifier(p, VertexTypes::Ci);
-                let _ci_p = self.get_object_properties(&ci_o).unwrap().props;
-                let p_name = p_props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
+                let ci_p = self.get_object_neighbour_with_properties(&p.vertex.id, EdgeTypes::HasCi);
+                let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 rte_crcs.ci.insert(p_name.to_string(), RteProviderCiRenderContext {
-                    timeout: _ci_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
-                    variables: _ci_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
+                    timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
+                    variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
                 });
             }
 
             for conn in connections.iter() {
-                let srcs = self.get_neighbour_objects_by_identifier(conn, VertexTypes::ConnectionSrc);
+                let srcs = self.get_object_neighbours_with_properties(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
 
                 for src in srcs.iter() {
-                    let src_p = self.get_object_properties(&src).unwrap().props;
-                    let _rte_src_name = src_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("rte").unwrap().as_str().unwrap();
-                    if rte_name == _rte_src_name {
-                        let src_name = src_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                        let component_src = self.get_direct_neighbour_object_by_identifier(src, VertexTypes::ComponentSrc);
-                        let comp_prop = self.get_object_properties(&component_src).unwrap().props;
-                        let comp_src_name = &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("src").unwrap().as_str().unwrap();
-                        let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &src_name, &comp_src_name);
+                    let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let c_src = self.get_object_neighbour_with_properties(&src.vertex.id, EdgeTypes::HasComponentSrc);
+                    let c_src_name = &c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("src").unwrap().as_str().unwrap();
+                    let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &src_name, &c_src_name);
+                    let rte_crc = RteConnectionRenderContext {
+                        job: rte_job_name.clone(),
+                        rte: rte_name.to_string(),
+                        component: c_src_name.to_string(),
+                        provider: src_name.to_string(),
+                    };
+                    rte_crcs.connections.push(rte_crc);
+
+                    let dsts = self.get_object_neighbours_with_properties(&src.vertex.id, EdgeTypes::HasConnectionDst);
+                    for dst in dsts.iter() {
+                        let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                        let component_dst = self.get_object_neighbour_with_properties(&dst.vertex.id, EdgeTypes::HasComponentDst);
+                        let comp_dst_name = &component_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("dst").unwrap().as_str().unwrap();
+                        let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &dst_name, &comp_dst_name);
                         let rte_crc = RteConnectionRenderContext {
                             job: rte_job_name.clone(),
                             rte: rte_name.to_string(),
-                            component: comp_src_name.to_string(),
-                            provider: src_name.to_string(),
+                            component: comp_dst_name.to_string(),
+                            provider: dst_name.to_string(),
                         };
                         rte_crcs.connections.push(rte_crc);
-
-                        let dsts = self.get_neighbour_objects_by_identifier(src, VertexTypes::ConnectionDst);
-                        for dst in dsts.iter() {
-                            let dst_p = self.get_object_properties(&dst).unwrap().props;
-                            let _rte_dst_name = dst_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("rte").unwrap().as_str().unwrap();
-                            if rte_name == _rte_dst_name {
-                                let dst_p = self.get_object_properties(dst).unwrap().props;
-                                let dst_name = dst_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(NAME).unwrap().as_str().unwrap();
-                                let component_dst = self.get_direct_neighbour_object_by_identifier(dst, VertexTypes::ComponentDst);
-                                let comp_prop = self.get_object_properties(&component_dst).unwrap().props;
-                                let comp_dst_name = &comp_prop.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("dst").unwrap().as_str().unwrap();
-                                let rte_job_name = format!("rte_{}_{}_{}", &rte_name, &dst_name, &comp_dst_name);
-                                let rte_crc = RteConnectionRenderContext {
-                                    job: rte_job_name.clone(),
-                                    rte: rte_name.to_string(),
-                                    component: comp_dst_name.to_string(),
-                                    provider: dst_name.to_string(),
-                                };
-                                rte_crcs.connections.push(rte_crc);
-                            }
-                        }
                     }
                 }
             }
-            rtes.push(rte_crcs);
-        }*/
-        error!("##################################################################");
+            rtes_p.push(rte_crcs);
+        }
 
         let mut stages: Vec<String> = Vec::new();
         let mut deploy_stages: Vec<String> = Vec::new();
         let mut destroy_stages: Vec<String> = Vec::new();
 
         let project_ci = self.get_object_neighbour(&project.vertex.id, EdgeTypes::HasCi);
-        let s_deploy = self.get_direct_neighbour_object_by_identifier(&project_ci, VertexTypes::StageDeploy);
-        let s_destroy = self.get_direct_neighbour_object_by_identifier(&project_ci, VertexTypes::StageDestroy);
+        let s_deploy = self.get_object_neighbour(&project_ci.id, EdgeTypes::HasDeployStages);
+        let s_destroy = self.get_object_neighbour(&project_ci.id, EdgeTypes::HasDestroyStages);
 
-        for _stage in self.get_neighbour_objects_by_identifier(&s_deploy, VertexTypes::StageDeploy).iter() {
-            let _p = &self.get_object_properties(&_stage).unwrap().props;
-            let p = &_p.get(PropertyType::Base.index()).unwrap().value;
-            deploy_stages.push(p.as_str().unwrap().to_string());
+        for stage in self.get_object_neighbours_with_properties(&s_deploy.id, EdgeTypes::NextStage).iter() {
+            deploy_stages.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
         }
 
-        for _stage in self.get_neighbour_objects_by_identifier(&s_destroy, VertexTypes::StageDestroy).iter() {
-            let _p = &self.get_object_properties(&_stage).unwrap().props;
-            let p = &_p.get(PropertyType::Base.index()).unwrap().value;
-            destroy_stages.push(p.as_str().unwrap().to_string());
+        for stage in self.get_object_neighbours_with_properties(&s_destroy.id, EdgeTypes::NextStage).iter() {
+            destroy_stages.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
         }
 
         stages.append(&mut deploy_stages);
         stages.append(&mut destroy_stages);
 
-
-        let eut_p = EutRenderContext {
-            base: eut_p_base.clone(),
-            module: eut_p_module.clone(),
-            provider: eut_provider,
-        };
-
         let mut context = Context::new();
-        //context.insert(RTES, &rtes);
-        context.insert(EUT, &eut_p);
-        context.insert("config", &self.config);
+        context.insert(KEY_RTES, &rtes_p);
+        context.insert(KEY_EUT, &eut_p);
+        context.insert(KEY_CONFIG, &self.config);
         context.insert("stages", &stages);
-        context.insert(FEATURES, &features_p);
-        context.insert(PROJECT, &project_p_base);
+        context.insert(KEY_FEATURES, &features_p);
+        context.insert(KEY_PROJECT, &project_p_base);
 
-        //error!("{:#?}", context);
+        // error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }
@@ -1434,7 +1368,7 @@ impl Regression {
     #[allow(dead_code)]
     pub fn to_json(&self) -> String {
         let j = json!({
-                "config": &self.config,
+                KEY_CONFIG: &self.config,
             });
         j.to_string()
     }
@@ -1466,8 +1400,8 @@ impl Regression {
                     let n_p = self.get_object_properties(&self.get_object(&n.id));
                     match n_p {
                         Some(p) => {
-                            let gv_id = p.props.get(PropertyType::Gv.index()).unwrap().value[GVID].as_str();
-                            let gv_label = p.props.get(PropertyType::Gv.index()).unwrap().value[GV_LABEL].as_str();
+                            let gv_id = p.props.get(PropertyType::Gv.index()).unwrap().value[KEY_GVID].as_str();
+                            let gv_label = p.props.get(PropertyType::Gv.index()).unwrap().value[KEY_GV_LABEL].as_str();
                             match gv_id {
                                 Some(_) => items.push(json!({"id": &gv_id.unwrap(), "label": &gv_label, "shape": "circle"})),
                                 None => items.push(json!({"id": &n.t.as_str(), "label": &n.t.as_str(), "shape": "circle"}))
@@ -1504,8 +1438,8 @@ impl Regression {
                         Some(ap) => {
                             match b_p {
                                 Some(bp) => {
-                                    let a_p_name = &ap.props.get(PropertyType::Gv.index()).unwrap().value[GVID].as_str();
-                                    let b_p_name = &bp.props.get(PropertyType::Gv.index()).unwrap().value[GVID].as_str();
+                                    let a_p_name = &ap.props.get(PropertyType::Gv.index()).unwrap().value[KEY_GVID].as_str();
+                                    let b_p_name = &bp.props.get(PropertyType::Gv.index()).unwrap().value[KEY_GVID].as_str();
 
                                     match a_p_name {
                                         Some(ap) => {
@@ -1523,7 +1457,7 @@ impl Regression {
                                     }
                                 }
                                 None => {
-                                    let a_p_name = &ap.props.get(PropertyType::Gv.index()).unwrap().value[GVID].as_str();
+                                    let a_p_name = &ap.props.get(PropertyType::Gv.index()).unwrap().value[KEY_GVID].as_str();
                                     match a_p_name {
                                         Some(ap) => items.push(json!({"src": &ap, "dst": &b_id})),
                                         None => items.push(json!({"src": &a_id, "dst": &b_id}))
@@ -1534,7 +1468,7 @@ impl Regression {
                         None => {
                             match b_p {
                                 Some(bp) => {
-                                    let b_p_name = &bp.props.get(PropertyType::Gv.index()).unwrap().value[GVID].as_str();
+                                    let b_p_name = &bp.props.get(PropertyType::Gv.index()).unwrap().value[KEY_GVID].as_str();
                                     match b_p_name {
                                         Some(bp) => items.push(json!({"src": &a_id, "dst": &bp})),
                                         None => items.push(json!({"src": &a_id, "dst": &b_id}))
