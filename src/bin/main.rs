@@ -18,8 +18,6 @@ use std::string::ToString;
 use std::vec;
 
 use clap::Parser;
-//use clap::builder::Resettable::Value;
-// use clap::error::ErrorKind::Format as clap_format;
 use indradb;
 use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, QueryExt, Vertex, VertexProperties};
 use lazy_static::lazy_static;
@@ -370,16 +368,16 @@ struct Cli {
     #[arg(short, long)]
     config: String,
     /// Write CI pipeline file
-    #[arg(short, long)]
+    #[arg(long)]
     write_ci: bool,
     /// Export data to json file
-    #[arg(short, long)]
+    #[arg(long)]
     write_json: bool,
     /// Render CI pipline file
     #[arg(short, long)]
     render_ci: bool,
     /// Write to GraphViz file
-    #[arg(short, long)]
+    #[arg(long)]
     write_gv: bool,
 }
 
@@ -1164,7 +1162,6 @@ impl Regression {
             Some(s) => stage_destroy = self.add_ci_stages(&s, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy),
             None => stage_destroy = self.add_ci_stages(&ci, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy)
         }
-
         //Eut Stages Destroy
         self.add_ci_stages(&stage_destroy.unwrap(), &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy);
 
@@ -1703,7 +1700,7 @@ fn main() {
          info!("{}", r.to_json());
     }
     if cli.render_ci {
-         info!("{}", r.render());
+         info!("{}", r.render(&r.build_context(p)));
     }
     if cli.write_gv {
          r.to_file(&r.to_gv(), &"graph.gv");
