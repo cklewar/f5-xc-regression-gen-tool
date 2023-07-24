@@ -17,8 +17,9 @@ use std::option::Option;
 use std::string::ToString;
 use std::vec;
 
-// use clap::error::ErrorKind::Format as clap_format;
 use clap::Parser;
+//use clap::builder::Resettable::Value;
+// use clap::error::ErrorKind::Format as clap_format;
 use indradb;
 use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, QueryExt, Vertex, VertexProperties};
 use lazy_static::lazy_static;
@@ -28,8 +29,6 @@ use serde_json::{json, Map, to_value, Value};
 use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
-
-//use clap::builder::Resettable::Value;
 
 const CONFIG_FILE_NAME: &str = "config.json";
 
@@ -372,16 +371,16 @@ struct Cli {
     config: String,
     /// Write CI pipeline file
     #[arg(short, long)]
-    write: bool,
-    /// Write CI pipeline file
+    write_ci: bool,
+    /// Export data to json file
     #[arg(short, long)]
-    json: bool,
+    write_json: bool,
     /// Render CI pipline file
     #[arg(short, long)]
-    render: bool,
-    /// Debug internal data structure
+    render_ci: bool,
+    /// Write to GraphViz file
     #[arg(short, long)]
-    debug: bool,
+    write_gv: bool,
 }
 
 #[derive(Hash, Eq, PartialEq, Debug)]
@@ -1559,7 +1558,6 @@ impl Regression {
     pub fn render(&self, context: &Context) -> String {
         info!("Render regression pipeline file first step...");
         let mut _tera = Tera::new(&self.config.project.templates).unwrap();
-        //_tera.register_function("script_for", make_script_for(script));
         let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
         info!("Render regression pipeline file first step -> Done.");
         rendered
@@ -1696,21 +1694,18 @@ fn main() {
     let cli = Cli::parse();
     let r = Regression::new(&cli.config);
     let p = r.init();
-    r.to_file(&r.render(&r.build_context(p)), PIPELINE_FILE_NAME);
-    r.to_file(&r.to_gv(), &"graph.gv");
 
-    /*if cli.write {
-        r.to_file(&PIPELINE_FILE_NAME.to_string());
+    if cli.write_ci {
+        r.to_file(&r.render(&r.build_context(p)), PIPELINE_FILE_NAME);
     }
-    if cli.json {
+    if cli.write_json {
         r.to_json();
          info!("{}", r.to_json());
-    }*/
-    /*if cli.render {
+    }
+    if cli.render_ci {
          info!("{}", r.render());
-    }*/
-
-    /*if cli.debug {
-         info!("{:#?}", r);
-    }*/
+    }
+    if cli.write_gv {
+         r.to_file(&r.to_gv(), &"graph.gv");
+    }
 }
