@@ -79,6 +79,47 @@ regression_test_verify_rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
+
+.regression_test_client_server_east_west_traffic_a:
+  rules:
+    - if: $ACTION == "test-client-server-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-client-server-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_test_client_server_east_west_traffic_b:
+  rules:
+    - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_test_client_server1_east_west_traffic_a:
+  rules:
+    - if: $ACTION == "test-client-server1-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-client-server1-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_test_client_server1_east_west_traffic_b:
+  rules:
+    - if: $ACTION == "test-client-server1-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-client-server1-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a:
+  rules:
+    - if: $ACTION == "verification-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verification-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b:
+  rules:
+    - if: $ACTION == "verification-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verification-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a:
+  rules:
+    - if: $ACTION == "verification-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verification-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_verification_client_server1_east_west_traffic_b_east_west_traffic_verify_b:
+  rules:
+    - if: $ACTION == "verification-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verification-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .base: &base
   tags:
     - blue
@@ -326,7 +367,7 @@ test-client-server-aws-east-west-traffic-a-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
   stage: regression-test
   script:
       - |
@@ -347,7 +388,7 @@ test-client-server-aws-east-west-traffic-b-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
   stage: regression-test
   script:
       - |
@@ -368,7 +409,7 @@ test-client-server1-aws-east-west-traffic-a-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
   stage: regression-test
   script:
       - |
@@ -389,7 +430,7 @@ test-client-server1-aws-east-west-traffic-b-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
   stage: regression-test
   script:
       - |
@@ -411,7 +452,7 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_east_west_traffic_verify_a, rules ]
+    - !reference [ .regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a, rules ]
   stage: regression-test
   script:
       - |
@@ -433,7 +474,7 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_east_west_traffic_verify_b, rules ]
+    - !reference [ .regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b, rules ]
   stage: regression-test
   script:
       - |
@@ -455,7 +496,7 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_east_west_traffic_verify_a, rules ]
+    - !reference [ .regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a, rules ]
   stage: regression-test
   script:
       - |
@@ -477,7 +518,7 @@ verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-a
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_east_west_traffic_verify_b, rules ]
+    - !reference [ .regression_verification_client_server1_east_west_traffic_b_east_west_traffic_verify_b, rules ]
   stage: regression-test
   script:
       - |

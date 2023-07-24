@@ -63,6 +63,24 @@ regression_test_verify_rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
+{% for rte in rtes -%}
+{% for test in rte.tests %}
+.regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}:
+  rules:
+    - if: $ACTION == "test-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% endfor -%}
+{% for rte in rtes -%}
+{% for test in rte.tests -%}
+{%for verification in test.verifications %}
+.regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
+  rules:
+    - if: $ACTION == "verification-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verification-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% endfor -%}
+{% endfor %}
 .base: &base
   tags:
     {% for tag in config.ci.tags -%}
@@ -183,7 +201,7 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_{{ test.name | replace(from="-", to="_") }}, rules ]
+    - !reference [ .regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}, rules ]
   stage: regression-test
   script:
       - |
@@ -208,7 +226,7 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_{{ verification.name | replace(from="-", to="_") }}, rules ]
+    - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
   stage: regression-test
   script:
       - |
