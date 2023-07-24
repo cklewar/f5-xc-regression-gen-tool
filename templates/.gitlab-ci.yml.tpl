@@ -207,7 +207,7 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
-        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}/"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/artifacts.tfvars -auto-approve
   timeout: {{ test.ci.timeout }}
   retry:
@@ -232,7 +232,7 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ config.verifications.path }}/{{ verification.module }}
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/{{ verification.module }}/"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/{{ verification.module }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ verification.module }}/artifacts.tfvars -auto-approve
   timeout: {{ verification.ci.timeout }}
   retry:
