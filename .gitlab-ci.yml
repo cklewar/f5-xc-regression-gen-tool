@@ -3,7 +3,13 @@
 #############################################
 
 stages:
+  - eut-apply
   - rte-collect
+  - rte-apply
+  - rte-artifacts
+  - feature-apply
+  - feature-destroy
+  - rte-destroy
   - eut-destroy
   
 variables:

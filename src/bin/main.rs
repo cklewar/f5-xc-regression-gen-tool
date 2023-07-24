@@ -1108,14 +1108,16 @@ impl Regression {
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
-        let features = self.get_object_neighbours(&eut.id, EdgeTypes::HasFeature);
+        let _features = self.get_object_neighbour(&eut.id, EdgeTypes::HasFeatures);
+        let features = self.get_object_neighbours(&_features.id, EdgeTypes::HasFeature);
+
         if features.len() > 0 {
             stage_destroy = self.add_ci_stages(&ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
         }
 
         //Rte Stages Destroy
         match stage_destroy {
-            Some(p) => stage_destroy = self.add_ci_stages(&p, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy),
+            Some(s) => stage_destroy = self.add_ci_stages(&s, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy),
             None => stage_destroy = self.add_ci_stages(&ci, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy)
         }
 
@@ -1478,19 +1480,16 @@ impl Regression {
         let mut destroy_stages: Vec<String> = Vec::new();
 
         let project_ci = self.get_object_neighbour(&project.vertex.id, EdgeTypes::HasCi);
-        let s_deploy = self.get_object_neighbour(&project_ci.id, EdgeTypes::HasDeployStages);
-        let s_destroy = self.get_object_neighbour(&project_ci.id, EdgeTypes::HasDestroyStages);
-
-        for stage in self.get_object_neighbours_with_properties(&s_deploy.id, EdgeTypes::NextStage).iter() {
-            deploy_stages.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
-        }
-
-        for stage in self.get_object_neighbours_with_properties(&s_destroy.id, EdgeTypes::NextStage).iter() {
-            destroy_stages.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
-        }
+        let s_deploy = self.get_object_neighbour_with_properties(&project_ci.id, EdgeTypes::HasDeployStages);
+        let s_destroy = self.get_object_neighbour_with_properties(&project_ci.id, EdgeTypes::HasDestroyStages);
+        deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
+        self.get_next_stage(&s_deploy.vertex.id, &mut deploy_stages);
+        deploy_stages.push(s_destroy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
+        self.get_next_stage(&s_destroy.vertex.id, &mut destroy_stages);
 
         stages.append(&mut deploy_stages);
         stages.append(&mut destroy_stages);
+        error!("STAGES: {:?}", &stages);
 
         let mut context = Context::new();
         context.insert(KEY_RTES, &rtes_rc);
@@ -1503,6 +1502,13 @@ impl Regression {
         //error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
+    }
+
+    fn get_next_stage(&self, id: &Uuid, data: &mut Vec<String>) {
+        for stage in self.get_object_neighbours_with_properties(&id, EdgeTypes::NextStage).iter() {
+            data.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
+            self.get_next_stage(&stage.vertex.id, data);
+        }
     }
 
     pub fn render(&self, context: &Context) -> String {
