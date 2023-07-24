@@ -131,6 +131,15 @@ eut-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        {% for script in connection.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "apply" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -166,4 +175,54 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+{% endfor -%}
+{% for rte in rtes -%}
+{% for test in rte.tests %}
+# test - {{ test.job }} - apply
+{{ test.job }}-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .regression_test_{{ test.name | replace(from="-", to="_") }}, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
+        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/artifacts.tfvars -auto-approve
+  timeout: {{ test.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% endfor -%}
+{% for rte in rtes -%}
+{% for test in rte.tests %}
+{% for verification in test.verifications %}
+# verification - {{ verification.job }} - apply
+{{ verification.job }}-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_verification_rules, rules ]
+    - !reference [ .regression_verification_{{ verification.name | replace(from="-", to="_") }}, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/{{ config.verifications.path }}/{{ verification.module }}
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/{{ verification.module }}/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ verification.module }}/artifacts.tfvars -auto-approve
+  timeout: {{ verification.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% endfor -%}
 {% endfor -%}

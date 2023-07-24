@@ -11,8 +11,8 @@ variables:
   S3_EUT_ROOT: "$S3_ROOT/regression/eut"
   S3_EUT_BASE: "$S3_ROOT/$S3_EUT_ROOT/mcn"
   S3_RTE_ROOT: "$S3_ROOT/regression/eut/base/regression/rte"
-  S3_TESTS_ROOT: "$S3_ROOT/regression/eut/base/regression/tests"
-  S3_VERIFICATIONS_ROOT: "$S3_ROOT/regression/eut/base/regression/verification"
+  S3_TESTS_ROOT: "$S3_EUT_BASE/tests"
+  S3_VERIFICATIONS_ROOT: "$S3_EUT_BASE/verifications"
   KEYS_DIR: "${CI_PROJECT_DIR}/keys"
   ARTIFACTS_ROOT_DIR: "${CI_PROJECT_DIR}/artifacts"
   EUT_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/base"
@@ -136,6 +136,15 @@ rte-client-server-aws-client-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
+        terraform apply -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
+        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER_AWS_DESTINATION_IPS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -157,6 +166,15 @@ rte-client-server-aws-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
+        terraform apply -var-file=$RTE_CLIENT_SERVER_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AWS_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
+        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER_AWS_DESTINATION_IPS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -178,6 +196,14 @@ rte-client-server-azure-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        cd $RTE_CLIENT_SERVER_AZURE_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure"
+        terraform apply -var-file=$RTE_CLIENT_SERVER_AZURE_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER_AZURE_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/azure
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AZURE_CONNECTION_ARTIFACTS_FILE
+        echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER_AZURE_DESTINATION_IPS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -199,6 +225,15 @@ rte-client-server1-aws-client-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
+        terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
+        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -220,6 +255,15 @@ rte-client-server1-aws-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
+        terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
+        terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE
+        terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE
+        echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -270,6 +314,178 @@ feature-mcn-loadbalancer-apply:
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $FEATURES_ROOT_DIR/loadbalancer/feature.tfvars
   timeout:
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# test - test-client-server-aws-east-west-traffic-a - apply
+test-client-server-aws-east-west-traffic-a-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .regression_test_east_west_traffic_a, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/tests/fortio
+        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# test - test-client-server-aws-east-west-traffic-b - apply
+test-client-server-aws-east-west-traffic-b-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .regression_test_east_west_traffic_b, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/tests/iperf
+        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# test - test-client-server1-aws-east-west-traffic-a - apply
+test-client-server1-aws-east-west-traffic-a-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .regression_test_east_west_traffic_a, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/tests/fortio
+        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# test - test-client-server1-aws-east-west-traffic-b - apply
+test-client-server1-aws-east-west-traffic-b-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .regression_test_east_west_traffic_b, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/tests/iperf
+        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+
+# verification - verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a - apply
+verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_verification_rules, rules ]
+    - !reference [ .regression_verification_east_west_traffic_verify_a, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/verification/bandwidth
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+
+# verification - verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b - apply
+verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_verification_rules, rules ]
+    - !reference [ .regression_verification_east_west_traffic_verify_b, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/verification/bandwidth
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+
+# verification - verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a - apply
+verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_verification_rules, rules ]
+    - !reference [ .regression_verification_east_west_traffic_verify_a, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/verification/bandwidth
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+
+# verification - verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b - apply
+verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-apply:
+  <<: *base
+  rules:
+    - !reference [ .regression_verification_rules, rules ]
+    - !reference [ .regression_verification_east_west_traffic_verify_b, rules ]
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $CI_PROJECT_DIR/regression/verification/bandwidth
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+  timeout: 15m
   retry:
     max: 1
     when:
