@@ -219,7 +219,7 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
 {% endfor -%}
 {% endfor -%}
 {% for rte in rtes -%}
-{% for test in rte.tests %}
+{% for test in rte.tests -%}
 {% for verification in test.verifications %}
 # verification - {{ verification.job }} - apply
 {{ verification.job }}-apply:

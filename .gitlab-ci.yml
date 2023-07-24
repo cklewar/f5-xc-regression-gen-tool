@@ -446,7 +446,6 @@ test-client-server1-aws-east-west-traffic-b-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-
 # verification - verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a - apply
 verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-apply:
   <<: *base
@@ -467,7 +466,6 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
 
 # verification - verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b - apply
 verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-apply:
@@ -490,7 +488,6 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
       - stuck_or_timeout_failure
       - runner_system_failure
 
-
 # verification - verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a - apply
 verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-apply:
   <<: *base
@@ -511,7 +508,6 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
 
 # verification - verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b - apply
 verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-apply:
