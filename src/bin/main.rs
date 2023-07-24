@@ -1500,7 +1500,7 @@ impl Regression {
         context.insert(KEY_FEATURES, &features_p);
         context.insert(KEY_PROJECT, &project_p_base);
 
-        error!("{:#?}", context);
+        //error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }
