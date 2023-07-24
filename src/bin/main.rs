@@ -105,7 +105,6 @@ const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
 const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
 const EDGE_TYPE_HAS_FEATURES: &str = "has_features";
 const EDGE_TYPE_PROVIDES_RTE: &str = "provides_rte";
-const EDGE_TYPE_USES_PROVIDER: &str = "uses_provider";
 const EDGE_TYPE_HAS_PROVIDERS: &str = "has_providers";
 const EDGE_TYPE_NEEDS_PROVIDER: &str = "needs_provider";
 const EDGE_TYPE_HAS_COMPONENTS: &str = "has_components";
@@ -163,7 +162,6 @@ enum EdgeTypes {
     HasProviders,
     NeedsProvider,
     ProvidesProvider,
-    UsesProvider,
     HasFeatures,
     HasFeature,
     NextStage,
@@ -279,24 +277,23 @@ impl EdgeTypes {
             EdgeTypes::Needs => EDGE_TYPE_NEEDS,
             EdgeTypes::HasCi => EDGE_TYPE_HAS_CI,
             EdgeTypes::HasEut => EDGE_TYPE_HAS_EUT,
-            EdgeTypes::UsesProvider => EDGE_TYPE_USES_PROVIDER,
-            EdgeTypes::HasProviders => EDGE_TYPE_HAS_PROVIDERS,
-            EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
-            EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
-            EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::UsesRtes => EDGE_TYPE_USES_RTES,
+            EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
+            EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
+            EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
             EdgeTypes::ProvidesRte => EDGE_TYPE_PROVIDES_RTE,
+            EdgeTypes::HasProviders => EDGE_TYPE_HAS_PROVIDERS,
+            EdgeTypes::NeedsProvider => EDGE_TYPE_NEEDS_PROVIDER,
+            EdgeTypes::HasComponents => EDGE_TYPE_HAS_COMPONENTS,
             EdgeTypes::HasConnection => EDGE_TYPE_HAS_CONNECTION,
             EdgeTypes::HasConnections => EDGE_TYPE_HAS_CONNECTIONS,
-            EdgeTypes::NeedsProvider => EDGE_TYPE_NEEDS_PROVIDER,
+            EdgeTypes::HasComponentSrc => EDGE_TYPE_HAS_COMPONENT_SRC,
+            EdgeTypes::HasComponentDst => EDGE_TYPE_HAS_COMPONENT_DST,
+            EdgeTypes::HasDeployStages => EDGE_TYPE_HAS_DEPLOY_STAGES,
+            EdgeTypes::HasDestroyStages => EDGE_TYPE_HAS_DESTROY_STAGES,
             EdgeTypes::ProvidesProvider => EDGE_TYPE_PROVIDES_PROVIDER,
             EdgeTypes::HasConnectionSrc => EDGE_TYPE_HAS_CONNECTION_SRC,
             EdgeTypes::HasConnectionDst => EDGE_TYPE_HAS_CONNECTION_DST,
-            EdgeTypes::HasComponentSrc => EDGE_TYPE_HAS_COMPONENT_SRC,
-            EdgeTypes::HasComponentDst => EDGE_TYPE_HAS_COMPONENT_DST,
-            EdgeTypes::HasComponents => EDGE_TYPE_HAS_COMPONENTS,
-            EdgeTypes::HasDeployStages => EDGE_TYPE_HAS_DEPLOY_STAGES,
-            EdgeTypes::HasDestroyStages => EDGE_TYPE_HAS_DESTROY_STAGES,
         }
     }
 }
@@ -483,8 +480,9 @@ struct FeatureRenderContext {
 #[derive(Serialize, Debug)]
 struct EutRenderContext {
     base: Map<String, Value>,
-    provider: Vec<String>,
     module: Map<String, Value>,
+    provider: Vec<String>,
+    scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -540,6 +538,33 @@ struct EutFeatureRenderContext {
     name: String,
     release: String,
     scripts: HashMap<String, String>,
+}
+
+#[derive(Serialize, Debug)]
+struct ScriptEutRenderContext {
+    name: Option<String>,
+    project: String,
+    release: Option<String>,
+    provider: Option<Vec<String>>,
+}
+
+impl ScriptEutRenderContext {
+    pub fn new(project: String) -> Self {
+        Self {
+            project,
+            name: None,
+            release: None,
+            provider: None,
+        }
+    }
+
+    pub fn render_script(&self, context: &ScriptEutRenderContext, input: &String) -> String {
+        info!("Render regression pipeline file eut script section...");
+        let ctx = Context::from_serialize(context);
+        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        info!("Render regression pipeline file eut script section -> Done.");
+        rendered
+    }
 }
 
 #[derive(Serialize, Debug)]
@@ -1373,19 +1398,45 @@ impl Regression {
         let eut = self.get_object_neighbour_with_properties(&project.vertex.id, EdgeTypes::HasEut);
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+        let eut_name = eut_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
 
         let _eut_providers = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasProviders);
-        let eut_provider = self.get_object_neighbours_with_properties(&_eut_providers.id, EdgeTypes::UsesProvider);
+        let eut_provider = self.get_object_neighbours_with_properties(&_eut_providers.id, EdgeTypes::ProvidesProvider);
+
         let mut eut_provider_p_base = Vec::new();
         for p in eut_provider.iter() {
             let name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             eut_provider_p_base.push(String::from(name));
         }
+        //Process eut scripts
+        let scripts_path = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+        for script in eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+            let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, eut_name.to_string(), scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+            let contents = std::fs::read_to_string(path).expect("panic while opening eut script file");
+            let mut ctx: ScriptEutRenderContext = ScriptEutRenderContext::new(project_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+            ctx.name = Option::from(eut_name.to_string());
+            ctx.release = Option::from(eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
+            ctx.provider = Option::from(eut_provider_p_base.clone());
+            let mut commands: Vec<String> = Vec::new();
+
+            for command in ctx.render_script(&ctx, &contents).lines() {
+                commands.push(format!("{:indent$}{}", "", command, indent = 0));
+            }
+
+            let data: HashMap<String, Vec<String>> = [
+                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+            ].into_iter().collect();
+            scripts.push(data);
+        }
+
+        error!("EUT_PROVIDER: {:?}", &eut_provider_p_base);
 
         let eut_p = EutRenderContext {
             base: eut_p_base.clone(),
             module: eut_p_module.clone(),
             provider: eut_provider_p_base,
+            scripts,
         };
 
         let _features = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasFeatures);
@@ -1396,7 +1447,6 @@ impl Regression {
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
             let f_name = feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
             let scripts_path = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-            let eut_name = eut_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
 
             //Process feature scripts
             for script in feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1419,7 +1469,7 @@ impl Regression {
 
             let frc = FeatureRenderContext {
                 ci: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
-                eut: eut_name,
+                eut: eut_name.to_string(),
                 name: f_name,
                 release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 scripts,

@@ -121,6 +121,15 @@ eut-apply:
     - !reference [ .deploy_eut_rules, rules ]
   script:
       - |
+        {% for script in eut.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "apply" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
   timeout: {{ eut.module.ci.timeout }}
   retry:
     max: 1

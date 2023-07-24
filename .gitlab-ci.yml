@@ -175,6 +175,15 @@ eut-apply:
   script:
       - |
         #!/usr/bin/env bash
+        cd $EUT_ROOT_DIR/mcn/aws
+        terraform init --backend-config="key=$S3_EUT_ROOT/project-a/mcn/aws/1.0"
+        #terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/project-a/mcn/aws/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE -auto-approve
+        #terraform output > $EUT_ROOT_DIR/mcn/aws/site.tfvars
+        cd $EUT_ROOT_DIR/mcn/azure
+        terraform init --backend-config="key=$S3_EUT_ROOT/project-a/mcn/azure/1.0"
+        #terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/project-a/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
+        #terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/project-a/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE -auto-approve
+        #terraform output > $EUT_ROOT_DIR/mcn/azure/site.tfvars
         
   timeout: 1h 30m
   retry:
@@ -391,7 +400,7 @@ test-client-server-aws-east-west-traffic-a-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        # terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
+        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -412,7 +421,7 @@ test-client-server-aws-east-west-traffic-b-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        # terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
+        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -433,7 +442,7 @@ test-client-server1-aws-east-west-traffic-a-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        # terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
+        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -454,7 +463,7 @@ test-client-server1-aws-east-west-traffic-b-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        # terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
+        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
