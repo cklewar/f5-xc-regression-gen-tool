@@ -160,7 +160,7 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
   stage: feature-apply
   rules:
     - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_features_rules, rules ]
+    - !reference [ .deploy_feature_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
