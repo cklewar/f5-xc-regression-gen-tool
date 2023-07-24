@@ -545,6 +545,7 @@ struct EutFeatureRenderContext {
 #[derive(Serialize, Debug)]
 struct ScriptFeatureRenderContext {
     eut: String,
+    name: Option<String>,
     release: Option<String>,
 }
 
@@ -552,6 +553,7 @@ impl ScriptFeatureRenderContext {
     pub fn new(eut: String) -> Self {
         Self {
             eut,
+            name: None,
             release: None,
         }
     }
@@ -596,7 +598,7 @@ struct Regression {
 }
 
 
-fn convert_vertex_properties_to_vec(properties: Vec<VertexProperties>) -> Vec<HashMap<String, Map<String, Value>>> {
+/*fn convert_vertex_properties_to_vec(properties: Vec<VertexProperties>) -> Vec<HashMap<String, Map<String, Value>>> {
     let mut data: Vec<HashMap<String, Map<String, Value>>> = Vec::new();
     for p in properties.iter() {
         let p_base = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
@@ -607,7 +609,7 @@ fn convert_vertex_properties_to_vec(properties: Vec<VertexProperties>) -> Vec<Ha
         data.push(h);
     }
     data
-}
+}*/
 
 impl Regression {
     fn new(file: &str) -> Self {
@@ -1396,10 +1398,13 @@ impl Regression {
             let scripts_path = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             let eut_name = eut_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
 
+            //Process feature scripts
             for script in feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                 let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                 let mut ctx: ScriptFeatureRenderContext = ScriptFeatureRenderContext::new(eut_name.to_string());
+                ctx.name = Option::from(f_name.to_string());
+                ctx.release = Option::from(feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
                 let mut commands: Vec<String> = Vec::new();
 
                 for command in ctx.render_script(&ctx, &contents).lines() {
@@ -1452,7 +1457,7 @@ impl Regression {
                     let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &src_name, &comp_src_name);
 
-                    //Process scripts
+                    //Process rte scripts
                     let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 

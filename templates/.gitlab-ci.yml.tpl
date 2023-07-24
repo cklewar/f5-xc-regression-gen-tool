@@ -181,11 +181,15 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
     - !reference [ .deploy_feature_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/{{ feature.name }}
-        terraform init --backend-config="key=$S3_EUT_ROOT/{{ eut.base.module }}/features/{{ feature.name }}/{{ feature.release }}"  
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $FEATURES_ROOT_DIR/{{ feature.name }}/feature.tfvars
+        {% for script in feature.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "apply" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
   timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
@@ -208,7 +212,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
         terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/artifacts.tfvars -auto-approve
+        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/artifacts.tfvars -auto-approve
   timeout: {{ test.ci.timeout }}
   retry:
     max: 1
