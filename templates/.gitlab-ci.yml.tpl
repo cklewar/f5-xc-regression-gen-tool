@@ -11,7 +11,7 @@ variables:
   {{ variable.name | upper }}: "{{ variable.value }}"
   {% endfor -%}
   {% for feature in features -%}
-  FEATURE_{{ feature.base.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/{{ feature.base.name }}/terraform.tfvars"
+  FEATURE_{{ feature.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/{{ feature.name }}/terraform.tfvars"
   {% endfor %}
 .deploy_rules:
   rules:
@@ -170,10 +170,10 @@ eut-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% endfor %}
+{% endfor -%}
 {% for feature in features %}
-# feature - {{ eut.base.module }} - {{ feature.base.name }} - apply
-feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
+# feature - {{ eut.base.module }} - {{ feature.name }} - apply
+feature-{{ eut.base.module }}-{{ feature.name }}-apply:
   <<: *base
   stage: feature-apply
   rules:
@@ -182,11 +182,11 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/{{ feature.base.name }}
-        terraform init --backend-config="key=$S3_EUT_ROOT/{{ eut.base.module }}/features/{{ feature.base.name }}/{{ feature.module.release }}"  
+        cd $FEATURES_ROOT_DIR/{{ feature.name }}
+        terraform init --backend-config="key=$S3_EUT_ROOT/{{ eut.base.module }}/features/{{ feature.name }}/{{ feature.release }}"  
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $FEATURES_ROOT_DIR/{{ feature.base.name }}/feature.tfvars
-  timeout:
+        terraform output > $FEATURES_ROOT_DIR/{{ feature.name }}/feature.tfvars
+  timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
     when:

@@ -42,6 +42,7 @@ const KEY_NAME: &str = "name";
 const KEY_APPLY: &str = "apply";
 const KEY_CONFIG: &str = "config";
 const KEY_MODULE: &str = "module";
+const KEY_SCRIPT: &str = "script";
 const KEY_RELEASE: &str = "release";
 const KEY_SCRIPTS: &str = "scripts";
 const KEY_SOURCES: &str = "sources";
@@ -471,6 +472,15 @@ pub struct RegressionConfig {
 }
 
 #[derive(Serialize, Debug)]
+struct FeatureRenderContext {
+    ci: Map<String, Value>,
+    eut: String,
+    name: String,
+    release: String,
+    scripts: Vec<HashMap<String, Vec<String>>>,
+}
+
+#[derive(Serialize, Debug)]
 struct EutRenderContext {
     base: Map<String, Value>,
     provider: Vec<String>,
@@ -533,19 +543,50 @@ struct EutFeatureRenderContext {
 }
 
 #[derive(Serialize, Debug)]
-struct ScriptRenderContext {
+struct ScriptFeatureRenderContext {
+    eut: String,
+    release: Option<String>,
+}
+
+impl ScriptFeatureRenderContext {
+    pub fn new(eut: String) -> Self {
+        Self {
+            eut,
+            release: None,
+        }
+    }
+
+    pub fn render_script(&self, context: &ScriptFeatureRenderContext, input: &String) -> String {
+        info!("Render regression pipeline file feature script section...");
+        let ctx = Context::from_serialize(context);
+        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        info!("Render regression pipeline file feature script section -> Done.");
+        rendered
+    }
+}
+
+#[derive(Serialize, Debug)]
+struct ScriptRteRenderContext {
     rte: Option<String>,
     release: Option<String>,
     provider: String,
 }
 
-impl ScriptRenderContext {
+impl ScriptRteRenderContext {
     pub fn new(provider: String) -> Self {
         Self {
             provider,
             rte: None,
             release: None,
         }
+    }
+
+    pub fn render_script(&self, context: &ScriptRteRenderContext, input: &String) -> String {
+        info!("Render regression pipeline file rte script section...");
+        let ctx = Context::from_serialize(context);
+        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        info!("Render regression pipeline file rte script section -> Done.");
+        rendered
     }
 }
 
@@ -554,13 +595,6 @@ struct Regression {
     config: RegressionConfig,
 }
 
-fn render_script(context: &ScriptRenderContext, input: &String) -> String {
-    info!("Render regression pipeline file script section...");
-    let ctx = Context::from_serialize(context);
-    let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
-    info!("Render regression pipeline file script section -> Done.");
-    rendered
-}
 
 fn convert_vertex_properties_to_vec(properties: Vec<VertexProperties>) -> Vec<HashMap<String, Map<String, Value>>> {
     let mut data: Vec<HashMap<String, Map<String, Value>>> = Vec::new();
@@ -1354,7 +1388,39 @@ impl Regression {
 
         let _features = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasFeatures);
         let features = self.get_object_neighbours_with_properties(&_features.id, EdgeTypes::HasFeature);
-        let features_p = convert_vertex_properties_to_vec(features);
+        let mut features_rc: Vec<FeatureRenderContext> = Vec::new();
+
+        for feature in features.iter() {
+            let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+            let f_name = feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+            let scripts_path = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+            let eut_name = eut_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+
+            for script in feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+                let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
+                let mut ctx: ScriptFeatureRenderContext = ScriptFeatureRenderContext::new(eut_name.to_string());
+                let mut commands: Vec<String> = Vec::new();
+
+                for command in ctx.render_script(&ctx, &contents).lines() {
+                    commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                }
+
+                let data: HashMap<String, Vec<String>> = [
+                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                ].into_iter().collect();
+                scripts.push(data);
+            }
+
+            let frc = FeatureRenderContext {
+                ci: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                eut: eut_name,
+                name: f_name,
+                release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
+                scripts,
+            };
+            features_rc.push(frc);
+        }
 
         let _rtes = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::UsesRtes);
         let rtes = self.get_object_neighbours_with_properties(&_rtes.id, EdgeTypes::ProvidesRte);
@@ -1398,16 +1464,16 @@ impl Regression {
                                 let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                                 let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
 
-                                let mut ctx: ScriptRenderContext = ScriptRenderContext::new(p_name.to_string());
+                                let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
                                 ctx.rte = Option::from(rte_name.to_string());
                                 let mut commands: Vec<String> = Vec::new();
 
-                                for command in render_script(&ctx, &contents).lines() {
+                                for command in ctx.render_script(&ctx, &contents).lines() {
                                     commands.push(format!("{:indent$}{}", "", command, indent = 0));
                                 }
 
                                 let data: HashMap<String, Vec<String>> = [
-                                    (script.as_object().unwrap().get("script").unwrap().as_str().unwrap().to_string(), commands),
+                                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
                                 ].into_iter().collect();
                                 scripts.push(data);
                             }
@@ -1430,7 +1496,7 @@ impl Regression {
                         let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                         let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &dst_name, &comp_dst_name);
 
-                        //Process scripts
+                        //Process rte component scripts
                         let scripts_path = comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
@@ -1441,11 +1507,11 @@ impl Regression {
                                 if dst_name == p_name {
                                     let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                                     let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
-                                    let mut ctx: ScriptRenderContext = ScriptRenderContext::new(p_name.to_string());
+                                    let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
                                     ctx.rte = Option::from(rte_name.to_string());
                                     let mut commands: Vec<String> = Vec::new();
 
-                                    for command in render_script(&ctx, &contents).lines() {
+                                    for command in ctx.render_script(&ctx, &contents).lines() {
                                         commands.push(format!("{:indent$}{}", "", command, indent = 0));
                                     }
 
@@ -1469,7 +1535,6 @@ impl Regression {
 
                     //Tests
                     let tests_p = self.get_object_neighbours_with_properties(&src.vertex.id, EdgeTypes::Runs);
-
                     for t in tests_p.iter() {
                         let t_job_name = format!("{}_{}_{}_{}",
                                                  KEY_TEST,
@@ -1530,14 +1595,13 @@ impl Regression {
 
         stages.append(&mut deploy_stages);
         stages.append(&mut destroy_stages);
-        error!("STAGES: {:?}", &stages);
 
         let mut context = Context::new();
         context.insert(KEY_RTES, &rtes_rc);
         context.insert(KEY_EUT, &eut_p);
         context.insert(KEY_CONFIG, &self.config);
         context.insert("stages", &stages);
-        context.insert(KEY_FEATURES, &features_p);
+        context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
         //error!("{:#?}", context);
@@ -1697,12 +1761,12 @@ fn main() {
     }
     if cli.write_json {
         r.to_json();
-         info!("{}", r.to_json());
+        info!("{}", r.to_json());
     }
     if cli.render_ci {
-         info!("{}", r.render(&r.build_context(p)));
+        info!("{}", r.render(&r.build_context(p)));
     }
     if cli.write_gv {
-         r.to_file(&r.to_gv(), &"graph.gv");
+        r.to_file(&r.to_gv(), &"graph.gv");
     }
 }

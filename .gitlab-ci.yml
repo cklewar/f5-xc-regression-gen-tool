@@ -333,7 +333,6 @@ rte-client-server1-aws-server-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-
 # feature - mcn - firewall - apply
 feature-mcn-firewall-apply:
   <<: *base
@@ -348,7 +347,7 @@ feature-mcn-firewall-apply:
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/firewall/1.0"  
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $FEATURES_ROOT_DIR/firewall/feature.tfvars
-  timeout:
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -370,7 +369,7 @@ feature-mcn-loadbalancer-apply:
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/loadbalancer/1.0"  
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $FEATURES_ROOT_DIR/loadbalancer/feature.tfvars
-  timeout:
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -389,7 +388,7 @@ test-client-server-aws-east-west-traffic-a-apply:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio/"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -410,7 +409,7 @@ test-client-server-aws-east-west-traffic-b-apply:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf/"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -431,7 +430,7 @@ test-client-server1-aws-east-west-traffic-a-apply:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio/"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -452,7 +451,7 @@ test-client-server1-aws-east-west-traffic-b-apply:
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf/"
+        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -473,7 +472,7 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -494,7 +493,7 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -515,7 +514,7 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -536,7 +535,7 @@ verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-a
       - |
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth/"
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
   timeout: 15m
   retry:
