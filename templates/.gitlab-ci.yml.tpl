@@ -121,16 +121,6 @@ eut-apply:
     - !reference [ .deploy_eut_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        {% for provider in eut.provider -%}
-        cd $EUT_ROOT_DIR/{{ eut.base.module }}/{{ provider }}
-        terraform init --backend-config="key=$S3_EUT_ROOT/{{ project.name }}/{{ eut.base.module }}/{{ provider }}/{{ eut.module.release }}"
-        {% if provider == "azure" -%}
-        # terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/{{ project.name }}/{{ eut.base.module }}/{{ provider }}/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
-        {% endif -%}  
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/{{ project.name }}/{{ eut.base.module }}/{{ provider }}/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE -auto-approve
-        terraform output > $EUT_ROOT_DIR/{{ eut.base.module }}/{{ provider }}/site.tfvars
-        {% endfor %}
   timeout: {{ eut.module.ci.timeout }}
   retry:
     max: 1
