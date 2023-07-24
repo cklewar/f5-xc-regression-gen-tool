@@ -1430,8 +1430,6 @@ impl Regression {
             scripts.push(data);
         }
 
-        error!("EUT_PROVIDER: {:?}", &eut_provider_p_base);
-
         let eut_p = EutRenderContext {
             base: eut_p_base.clone(),
             module: eut_p_module.clone(),
