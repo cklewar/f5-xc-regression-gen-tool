@@ -1099,14 +1099,16 @@ impl Regression {
 
         //Eut Stages Deploy
         let eut_stage_deploy = self.add_ci_stages(&ci, &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
-
         //Rte Stages Deploy
         let rte_stage_deploy = self.add_ci_stages(&eut_stage_deploy.unwrap(), &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
-
         //Feature Stages Deploy
         let feature_stage_deploy = self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
-
         //Test Stages Deploy
+        let mut test_stage_deploy = self.add_ci_stages(&feature_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
+        //Verification  Stages Deploy
+        let verification_stage_deploy = self.add_ci_stages(&test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+
+        //Test and Verification single job stages
         let _rtes = self.get_object_neighbour(&eut.id, EdgeTypes::UsesRtes);
         let rtes = self.get_object_neighbours_with_properties(&_rtes.id, EdgeTypes::ProvidesRte);
         let mut _test_stages: Vec<String> = Vec::new();
@@ -1146,8 +1148,8 @@ impl Regression {
             }
         }
 
-        let test_stages_deploy = self.add_ci_stages(&feature_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
-        self.add_ci_stages(&test_stages_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
+        test_stage_deploy = self.add_ci_stages(&verification_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
+        self.add_ci_stages(&test_stage_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;

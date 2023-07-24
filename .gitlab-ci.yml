@@ -8,6 +8,8 @@ stages:
   - rte-apply
   - rte-artifacts
   - feature-apply
+  - regression-test
+  - regression-test-verify
   - test-client-server-aws-east-west-traffic-a-apply
   - test-client-server-aws-east-west-traffic-b-apply
   - test-client-server1-aws-east-west-traffic-a-apply
@@ -466,7 +468,7 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
   rules:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a, rules ]
-  stage: regression-test
+  stage: regression-test-verify
   script:
       - |
         #!/usr/bin/env bash
@@ -487,7 +489,7 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
   rules:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test
+  stage: regression-test-verify
   script:
       - |
         #!/usr/bin/env bash
@@ -508,7 +510,7 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
   rules:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a, rules ]
-  stage: regression-test
+  stage: regression-test-verify
   script:
       - |
         #!/usr/bin/env bash
@@ -529,7 +531,7 @@ verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-a
   rules:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_verification_client_server1_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test
+  stage: regression-test-verify
   script:
       - |
         #!/usr/bin/env bash

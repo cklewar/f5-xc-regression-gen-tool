@@ -227,7 +227,7 @@ feature-{{ eut.base.module }}-{{ feature.base.name }}-apply:
   rules:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
-  stage: regression-test
+  stage: regression-test-verify
   script:
       - |
         #!/usr/bin/env bash
