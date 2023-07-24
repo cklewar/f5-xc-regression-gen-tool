@@ -42,6 +42,7 @@ const KEY_TEST: &str = "test";
 const KEY_TESTS: &str = "tests";
 const KEY_GVID: &str = "id";
 const KEY_NAME: &str = "name";
+const KEY_APPLY: &str = "apply";
 const KEY_CONFIG: &str = "config";
 const KEY_MODULE: &str = "module";
 const KEY_RELEASE: &str = "release";
@@ -998,7 +999,6 @@ impl Regression {
                                                                         KEY_GV_LABEL: k
                                                                     }), PropertyType::Gv);
 
-
                                                                 for (k, v) in v.as_object().unwrap().iter() {
                                                                     let c_src_o_p = self.get_object_properties(&c_src_o).unwrap().props;
                                                                     match k {
@@ -1104,7 +1104,50 @@ impl Regression {
         let rte_stage_deploy = self.add_ci_stages(&eut_stage_deploy.unwrap(), &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Feature Stages Deploy
-        self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let feature_stage_deploy = self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
+
+        //Test Stages Deploy
+        let _rtes = self.get_object_neighbour(&eut.id, EdgeTypes::UsesRtes);
+        let rtes = self.get_object_neighbours_with_properties(&_rtes.id, EdgeTypes::ProvidesRte);
+        let mut _test_stages: Vec<String> = Vec::new();
+        let mut _verification_stages: Vec<String> = Vec::new();
+
+        for rte in rtes.iter() {
+            let _c = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::HasConnections);
+            let _conns = self.get_object_neighbours(&_c.id, EdgeTypes::HasConnection);
+            for conn in _conns.iter() {
+                let c_srcs = self.get_object_neighbours_with_properties(&conn.id, EdgeTypes::HasConnectionSrc);
+                for c_src in c_srcs.iter() {
+                    let tests = self.get_object_neighbours_with_properties(&c_src.vertex.id, EdgeTypes::Runs);
+                    for t in tests.iter() {
+                        let t_stage_name = format!("{}-{}-{}-{}-{}",
+                                                   KEY_TEST,
+                                                   rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   KEY_APPLY
+                        ).replace("_", "-");
+                        _test_stages.push(t_stage_name);
+
+                        //Verification stages
+                        let verifications = self.get_object_neighbours_with_properties(&t.vertex.id, EdgeTypes::Needs);
+                        for v in verifications.iter() {
+                            let v_stage_name = format!("{}-{}-{}-{}-{}",
+                                                       KEY_VERIFICATION,
+                                                       rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                       c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                       &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                       KEY_APPLY
+                            ).replace("_", "-");
+                            _verification_stages.push(v_stage_name);
+                        }
+                    }
+                }
+            }
+        }
+
+        let test_stages_deploy = self.add_ci_stages(&feature_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
+        self.add_ci_stages(&test_stages_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;

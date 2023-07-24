@@ -8,6 +8,14 @@ stages:
   - rte-apply
   - rte-artifacts
   - feature-apply
+  - test-client-server-aws-east-west-traffic-a-apply
+  - test-client-server-aws-east-west-traffic-b-apply
+  - test-client-server1-aws-east-west-traffic-a-apply
+  - test-client-server1-aws-east-west-traffic-b-apply
+  - verification-client-server-aws-east-west-traffic-verify-a-apply
+  - verification-client-server-aws-east-west-traffic-verify-b-apply
+  - verification-client-server1-aws-east-west-traffic-verify-a-apply
+  - verification-client-server1-aws-east-west-traffic-verify-b-apply
   - feature-destroy
   - rte-destroy
   - eut-destroy
