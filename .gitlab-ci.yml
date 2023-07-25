@@ -327,7 +327,7 @@ rte-client-server1-aws-server-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
         cd $RTE_ROOT_DIR/client_server1/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
         terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
