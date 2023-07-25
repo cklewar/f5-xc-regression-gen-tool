@@ -33,7 +33,7 @@ variables:
   ARTIFACTS_ROOT_DIR: "${CI_PROJECT_DIR}/artifacts"
   EUT_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/base"
   FEATURES_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/features"
-  EUT_ROOT_TF_VAR_FILE: "${EUT_ROOT_DIR}/terraform.tfvars.json"
+  EUT_ROOT_TF_VAR_FILE: "${EUT_ROOT_DIR}/mcn/terraform.tfvars.json"
   RTE_ROOT_DIR: "${CI_PROJECT_DIR}/regression/rte"
   SSH_PUBLIC_KEY_FILE: "key.pub"
   SSH_PUBLIC_KEY_FILE_PATH: "s3://acmecorp-model/production/volterra"
@@ -177,7 +177,7 @@ eut-apply:
         #!/usr/bin/env bash
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_ROOT/project-a/mcn/aws/1.0"
-        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/project-a/mcn/aws/terraform.tfvars.json -auto-approve
+        terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/mcn/aws/site.tfvars
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_ROOT/project-a/mcn/azure/1.0"
