@@ -176,17 +176,17 @@ eut-apply:
       - |
         #!/usr/bin/env bash
         cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_ROOT/project-a/mcn/aws/1.0"
+        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/aws/1.0"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $EUT_ROOT_DIR/mcn/aws/site.tfvars
         cd $EUT_ROOT_DIR/mcn/azure
-        terraform init --backend-config="key=$S3_EUT_ROOT/project-a/mcn/azure/1.0"
-        #terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/project-a/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
+        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/azure/1.0"
+        #terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
+    expire_in: 3h
   timeout: 1h 30m
   retry:
     max: 1
