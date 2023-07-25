@@ -25,10 +25,10 @@ stages:
 variables:
   S3_ROOT: "features/$FEATURE/$ENVIRONMENT/project-a"
   S3_EUT_ROOT: "$S3_ROOT/regression/eut"
-  S3_EUT_BASE: "$S3_ROOT/$S3_EUT_ROOT/mcn"
-  S3_RTE_ROOT: "$S3_ROOT/regression/eut/base/regression/rte"
-  S3_TESTS_ROOT: "$S3_EUT_BASE/tests"
-  S3_VERIFICATIONS_ROOT: "$S3_EUT_BASE/verifications"
+  S3_EUT_BASE: "$S3_EUT_ROOT/base/mcn"
+  S3_RTE_ROOT: "$S3_ROOT/regression/rte"
+  S3_TESTS_ROOT: "$S3_ROOT/regression/tests"
+  S3_VERIFICATIONS_ROOT: "$S3_ROOT/regression/verification"
   KEYS_DIR: "${CI_PROJECT_DIR}/keys"
   ARTIFACTS_ROOT_DIR: "${CI_PROJECT_DIR}/artifacts"
   EUT_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/base"
@@ -239,8 +239,8 @@ rte-client-server-aws-server-apply:
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws
         cd $RTE_ROOT_DIR/client_server/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
-        # terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut//aws/site.tfvars -auto-approve
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut//aws/site.tfvars -auto-approve
         
   artifacts:
     paths:
