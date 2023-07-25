@@ -473,10 +473,10 @@ rte-client-server1-aws-server-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
-        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
-        terraform output -json > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
+        cd $RTE_ROOT_DIR/client_server1/aws/server
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -546,9 +546,15 @@ test-client-server-aws-east-west-traffic-a-apply:
   script:
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-a
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -auto-approve
+        cp /tmp/fortio.data $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-a/fortio.data
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: { { config.ci.artifacts.expire_in } }
   timeout: 15m
   retry:
     max: 1
@@ -567,9 +573,15 @@ test-client-server-aws-east-west-traffic-b-apply:
   script:
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-b
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -auto-approve
+        cp /tmp/iperf.data $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-b/iperf.data
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: { { config.ci.artifacts.expire_in } }
   timeout: 15m
   retry:
     max: 1
@@ -588,9 +600,15 @@ test-client-server1-aws-east-west-traffic-a-apply:
   script:
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-a
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -auto-approve
+        cp /tmp/fortio.data $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-a/fortio.data
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: { { config.ci.artifacts.expire_in } }
   timeout: 15m
   retry:
     max: 1
@@ -609,9 +627,15 @@ test-client-server1-aws-east-west-traffic-b-apply:
   script:
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-b
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -auto-approve
+        cp /tmp/iperf.data $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-b/iperf.data
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: { { config.ci.artifacts.expire_in } }
   timeout: 15m
   retry:
     max: 1
