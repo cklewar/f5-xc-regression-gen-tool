@@ -508,6 +508,7 @@ struct RteTestRenderContext {
     job: String,
     name: String,
     module: String,
+    provider: String,
     verifications: Vec<RteVerificationRenderContext>,
 }
 
@@ -1629,6 +1630,7 @@ impl Regression {
                             job: t_job_name,
                             name: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                             module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                            provider: src_name.to_string(),
                             verifications,
                         };
                         rte_crcs.tests.push(rterc);
@@ -1661,7 +1663,7 @@ impl Regression {
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
-        //error!("{:#?}", context);
+        error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }

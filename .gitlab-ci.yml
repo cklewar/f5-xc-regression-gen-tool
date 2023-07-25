@@ -403,7 +403,7 @@ test-client-server-aws-east-west-traffic-a-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -424,7 +424,7 @@ test-client-server-aws-east-west-traffic-b-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -445,7 +445,7 @@ test-client-server1-aws-east-west-traffic-a-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/fortio/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -466,7 +466,7 @@ test-client-server1-aws-east-west-traffic-b-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/iperf/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1

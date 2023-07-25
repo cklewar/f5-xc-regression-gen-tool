@@ -215,7 +215,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
         terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}"
-        #terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ test.module }}/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/server/server.tfvars -auto-approve
   timeout: {{ test.ci.timeout }}
   retry:
     max: 1
