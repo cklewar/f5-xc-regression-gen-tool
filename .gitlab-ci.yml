@@ -95,7 +95,6 @@ variables:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-
 .regression_test_client_server_east_west_traffic_a:
   rules:
     - if: $ACTION == "test-client-server-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -229,6 +228,35 @@ rte-client-server-aws-client-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
+# rte-client-server-aws-client - artifacts
+rte-client-server-aws-client-artifacts:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+  stage: rte-artifacts
+  script:
+      - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
+        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
+        # terraform output -json > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
+        
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: 5m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
 # rte-client-server-aws-server - apply
 rte-client-server-aws-server-apply:
   <<: *base
@@ -250,6 +278,35 @@ rte-client-server-aws-server-apply:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
   timeout: 30m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# rte-client-server-aws-server - artifacts
+rte-client-server-aws-server-artifacts:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+  stage: rte-artifacts
+  script:
+      - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/aws
+        cd $RTE_CLIENT_SERVER_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
+        terraform output -json > $RTE_CLIENT_SERVER_AWS_ARTIFACTS_FILE
+        
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: 5m
   retry:
     max: 1
     when:
@@ -279,6 +336,35 @@ rte-client-server-azure-server-apply:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
   timeout: 30m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# rte-client-server-azure-server - artifacts
+rte-client-server-azure-server-artifacts:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+  stage: rte-artifacts
+  script:
+      - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server/azure
+        cd $RTE_CLIENT_SERVER_AZURE_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure"
+        terraform output -json > $RTE_CLIENT_SERVER_AZURE_ARTIFACTS_FILE
+        
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: 5m
   retry:
     max: 1
     when:
@@ -317,6 +403,35 @@ rte-client-server1-aws-client-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
+# rte-client-server1-aws-client - artifacts
+rte-client-server1-aws-client-artifacts:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
+  stage: rte-artifacts
+  script:
+      - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
+        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
+        terraform output -json > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
+        
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: 5m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
 # rte-client-server1-aws-server - apply
 rte-client-server1-aws-server-apply:
   <<: *base
@@ -338,6 +453,35 @@ rte-client-server1-aws-server-apply:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
   timeout: 30m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# rte-client-server1-aws-server - artifacts
+rte-client-server1-aws-server-artifacts:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
+  stage: rte-artifacts
+  script:
+      - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
+        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
+        terraform output -json > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
+        
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: 5m
   retry:
     max: 1
     when:

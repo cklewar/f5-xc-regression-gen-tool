@@ -62,7 +62,6 @@ variables:
   rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
 {% for rte in rtes -%}
 {% for test in rte.tests %}
 .regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}:
@@ -166,6 +165,39 @@ eut-apply:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ rte.ci[component.provider].timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# {{ component.job | replace(from="_", to="-") }} - artifacts
+{{ component.job | replace(from="_", to="-") }}-artifacts:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    {%- for test in rte.tests %}
+    - !reference [ .regression_test_{{ component.rte }}_{{ test.name | replace(from="-", to="_") }}, rules ]
+    {%- endfor %}
+  stage: rte-artifacts
+  script:
+      - |
+        {% for script in component.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "artifacts" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: 5m
   retry:
     max: 1
     when:
