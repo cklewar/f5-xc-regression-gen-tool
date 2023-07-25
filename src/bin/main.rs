@@ -594,6 +594,7 @@ impl ScriptFeatureRenderContext {
 
 #[derive(Serialize, Debug)]
 struct ScriptRteRenderContext {
+    eut: Option<String>,
     rte: Option<String>,
     release: Option<String>,
     provider: String,
@@ -603,6 +604,7 @@ impl ScriptRteRenderContext {
     pub fn new(provider: String) -> Self {
         Self {
             provider,
+            eut: None,
             rte: None,
             release: None,
         }
@@ -1519,6 +1521,7 @@ impl Regression {
 
                                 let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
                                 ctx.rte = Option::from(rte_name.to_string());
+                                ctx.eut = Option::from(eut_name.to_string());
                                 let mut commands: Vec<String> = Vec::new();
 
                                 for command in ctx.render_script(&ctx, &contents).lines() {
