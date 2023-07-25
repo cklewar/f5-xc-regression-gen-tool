@@ -130,6 +130,10 @@ eut-apply:
         {% endif -%}
         {% endfor -%}
         {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: { { config.ci.artifacts.expire_in } }
   timeout: {{ eut.module.ci.timeout }}
   retry:
     max: 1
