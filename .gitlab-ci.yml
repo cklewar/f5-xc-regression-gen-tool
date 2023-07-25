@@ -175,10 +175,15 @@ eut-apply:
   script:
       - |
         #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/mcn/aws
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/aws/1.0"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $EUT_ROOT_DIR/mcn/aws/site.tfvars
+        terraform output -json > $ARTIFACTS_ROOT_DIR/mcn/aws/site.tfvars.json
+        ls -la $ARTIFACTS_ROOT_DIR/
+        ls -la $ARTIFACTS_ROOT_DIR/mcn
+        ls -la $ARTIFACTS_ROOT_DIR/mcn/aws
+        mkdir -p $ARTIFACTS_ROOT_DIR/mcn/azure
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/azure/1.0"
         #terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
