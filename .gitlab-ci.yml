@@ -210,7 +210,7 @@ rte-client-server-aws-client-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws
         cd $RTE_ROOT_DIR/client_server/aws
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/aws/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars.json -auto-approve
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars.json -auto-approve
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
         #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server_aws_DESTINATION_IPS_ARTIFACTS_FILE
