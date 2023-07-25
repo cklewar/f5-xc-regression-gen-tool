@@ -179,7 +179,7 @@ eut-apply:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/aws/1.0"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output -json > $ARTIFACTS_ROOT_DIR/mcn/aws/site.tfvars.json
+        terraform output -json > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars.json
         mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/azure/1.0"
