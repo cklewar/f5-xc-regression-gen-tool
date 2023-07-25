@@ -512,19 +512,19 @@ struct RteTestRenderContext {
 }
 
 #[derive(Serialize, Debug)]
-struct RteConnectionRenderContext {
+struct RteComponentRenderContext {
     job: String,
     rte: String,
+    name: String,
     scripts: Vec<HashMap<String, Vec<String>>>,
     provider: String,
-    component: String,
 }
 
 #[derive(Serialize, Debug)]
 struct RteRenderContext {
     ci: HashMap<String, RteCiRenderContext>,
     tests: Vec<RteTestRenderContext>,
-    connections: Vec<RteConnectionRenderContext>,
+    components: Vec<RteComponentRenderContext>,
 }
 
 #[derive(Serialize, Debug)]
@@ -1485,7 +1485,7 @@ impl Regression {
             let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
             let _c = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::HasConnections);
             let connections = self.get_object_neighbours_with_properties(&_c.id, EdgeTypes::HasConnection);
-            let mut rte_crcs = RteRenderContext { connections: Default::default(), ci: HashMap::new(), tests: vec![] };
+            let mut rte_crcs = RteRenderContext { components: Default::default(), ci: HashMap::new(), tests: vec![] };
             let _provider = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::NeedsProvider);
             let provider = self.get_object_neighbours_with_properties(&_provider.id, EdgeTypes::ProvidesProvider);
 
@@ -1507,7 +1507,7 @@ impl Regression {
                     let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &src_name, &comp_src_name);
 
-                    //Process rte scripts
+                    //Process rte src component scripts
                     let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
@@ -1536,14 +1536,14 @@ impl Regression {
                         }
                     }
 
-                    let rte_crc = RteConnectionRenderContext {
+                    let rte_crc = RteComponentRenderContext {
                         job: rte_job_name.clone(),
                         rte: rte_name.to_string(),
-                        component: comp_src_name.to_string(),
+                        name: comp_src_name.to_string(),
                         provider: src_name.to_string(),
                         scripts,
                     };
-                    rte_crcs.connections.push(rte_crc);
+                    rte_crcs.components.push(rte_crc);
 
                     let dsts = self.get_object_neighbours_with_properties(&src.vertex.id, EdgeTypes::HasConnectionDst);
                     for dst in dsts.iter() {
@@ -1552,7 +1552,7 @@ impl Regression {
                         let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                         let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &dst_name, &comp_dst_name);
 
-                        //Process rte component scripts
+                        //Process rte dst component scripts
                         let scripts_path = comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
@@ -1565,6 +1565,7 @@ impl Regression {
                                     let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                                     let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
                                     ctx.rte = Option::from(rte_name.to_string());
+                                    ctx.eut = Option::from(eut_name.to_string());
                                     let mut commands: Vec<String> = Vec::new();
 
                                     for command in ctx.render_script(&ctx, &contents).lines() {
@@ -1579,14 +1580,14 @@ impl Regression {
                             }
                         }
 
-                        let rte_crc = RteConnectionRenderContext {
+                        let rte_crc = RteComponentRenderContext {
                             job: rte_job_name.clone(),
                             rte: rte_name.to_string(),
-                            component: comp_dst_name.to_string(),
+                            name: comp_dst_name.to_string(),
                             provider: dst_name.to_string(),
                             scripts,
                         };
-                        rte_crcs.connections.push(rte_crc);
+                        rte_crcs.components.push(rte_crc);
                     }
 
                     //Tests

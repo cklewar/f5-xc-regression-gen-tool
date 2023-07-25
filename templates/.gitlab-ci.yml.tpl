@@ -142,9 +142,9 @@ eut-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% for rte in rtes -%}
-{% for connection in rte.connections %}
-# {{ connection.job | replace(from="_", to="-") }} - apply
-{{ connection.job | replace(from="_", to="-") }}-apply:
+{% for component in rte.components %}
+# {{ component.job | replace(from="_", to="-") }} - apply
+{{ component.job | replace(from="_", to="-") }}-apply:
   <<: *base
   stage: rte-apply
   rules:
@@ -152,7 +152,7 @@ eut-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        {% for script in connection.scripts -%}
+        {% for script in component.scripts -%}
         {% for k, v in script -%}
         {% if k == "apply" -%}
         {% for command in v -%}
@@ -165,7 +165,7 @@ eut-apply:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[connection.provider].timeout }}
+  timeout: {{ rte.ci[component.provider].timeout }}
   retry:
     max: 1
     when:
