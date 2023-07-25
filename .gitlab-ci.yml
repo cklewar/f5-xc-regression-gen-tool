@@ -179,7 +179,7 @@ eut-apply:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/aws/1.0"
         terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output -json > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars.json
+        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars
         mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/azure/1.0"
@@ -210,7 +210,7 @@ rte-client-server-aws-client-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars.json -auto-approve
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
         #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server_aws_DESTINATION_IPS_ARTIFACTS_FILE
@@ -240,7 +240,7 @@ rte-client-server-aws-server-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws"
-        # terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut//aws/site.tfvars.json -auto-approve
+        # terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut//aws/site.tfvars -auto-approve
         
   artifacts:
     paths:
@@ -293,13 +293,13 @@ rte-client-server1-aws-client-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws
+        cd $RTE_ROOT_DIR/client_server1/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
-        #terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
-        #mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE
-        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE
+        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server1_aws_DESTINATION_IPS_ARTIFACTS_FILE
         
   artifacts:
     paths:
@@ -323,13 +323,10 @@ rte-client-server1-aws-server-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws
+        cd $RTE_ROOT_DIR/client_server1/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
-        #terraform apply -var-file=$RTE_CLIENT_SERVER1_AWS_ROOT_TF_VAR_FILE -var-file=$RTE_CLIENT_SERVER1_AWS_TF_VAR_FILE -auto-approve
-        #mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
-        #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE
-        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER1_AWS_DESTINATION_IPS_ARTIFACTS_FILE
+        # terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut//aws/site.tfvars -auto-approve
         
   artifacts:
     paths:
