@@ -275,10 +275,12 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name }}
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}
+        ls -la $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}
+        ls -la $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name }}
         cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
         terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/server/server.tfvars -var='data_file=$ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name }}/{{ test.module }}.data' -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/server/server.tfvars -var="data_file=$ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}/{{ test.module }}.data" -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/

@@ -577,10 +577,12 @@ test-client-server-aws-east-west-traffic-a-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-a
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-a
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var='data_file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-a/fortio.data' -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var="data_file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.data" -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -603,10 +605,12 @@ test-client-server-aws-east-west-traffic-b-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-b
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-b
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var='data_file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-b/iperf.data' -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var="data_file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.data" -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -629,10 +633,12 @@ test-client-server1-aws-east-west-traffic-a-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-a
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-a
         cd $CI_PROJECT_DIR/regression/tests/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var='data_file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-a/fortio.data' -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var="data_file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.data" -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -655,10 +661,12 @@ test-client-server1-aws-east-west-traffic-b-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-b
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws
+        ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-b
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var='data_file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east-west-traffic-b/iperf.data' -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var="data_file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.data" -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
