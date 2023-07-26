@@ -206,6 +206,14 @@ eut-artifacts:
     - !reference [ .deploy_eut_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws
+        cd $EUT_ROOT_DIR/mcn/aws
+        terraform init --backend-config="key=$S3_EUT_BASE/aws/1.0"
+        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars
+        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure
+        cd $EUT_ROOT_DIR/mcn/azure
+        terraform init --backend-config="key=$S3_EUT_BASE/azure/1.0"
         
   artifacts:
     paths:
