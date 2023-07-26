@@ -300,12 +300,16 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
   script:
-      - |
-        #!/usr/bin/env bash
-        cd $RTE_ROOT_DIR/{{ rte }}/{{ provider }}/client
-
-        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
-        terraform destroy -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
+    - |
+      {% for script in component.scripts -%}
+      {% for k, v in script -%}
+      {% if k == "destroy" -%}
+      {% for command in v -%}
+      {{ command }}
+      {% endfor -%}
+      {% endif -%}
+      {% endfor -%}
+      {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
