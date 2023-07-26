@@ -583,6 +583,7 @@ test-client-server-aws-east-west-traffic-a-apply:
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var="data_file=client_server_aws_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a" -auto-approve
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -611,6 +612,7 @@ test-client-server-aws-east-west-traffic-b-apply:
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var="data_file=client_server_aws_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b" -auto-approve
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -639,6 +641,7 @@ test-client-server1-aws-east-west-traffic-a-apply:
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var="data_file=client_server1_aws_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a" -auto-approve
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -667,6 +670,7 @@ test-client-server1-aws-east-west-traffic-b-apply:
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var="data_file=client_server1_aws_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b" -auto-approve
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws
         ls -la $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -691,7 +695,7 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -712,7 +716,7 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -733,7 +737,7 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
@@ -754,7 +758,7 @@ verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-a
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/regression/verification/bandwidth
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/bandwidth/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars -auto-approve
   timeout: 15m
   retry:
     max: 1
