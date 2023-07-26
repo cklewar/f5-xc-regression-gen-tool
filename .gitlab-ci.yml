@@ -416,10 +416,8 @@ rte-client-server1-aws-client-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client
         cd $RTE_ROOT_DIR/client_server1/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars
         
   artifacts:
     paths:
@@ -766,7 +764,7 @@ rte-client-server-aws-server-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
