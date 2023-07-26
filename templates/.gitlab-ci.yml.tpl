@@ -300,7 +300,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
     {%- for verification in test.verifications %}
     - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
     {%- endfor %}
-  stage: regression-test
+  stage: regression-test-artifacts
   script:
       - |
         #!/usr/bin/env bash
