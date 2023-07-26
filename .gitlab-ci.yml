@@ -416,10 +416,10 @@ rte-client-server1-aws-client-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/client_server1/aws
-        cd $RTE_CLIENT_SERVER1_AWS_ROOT_DIR
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws"
-        terraform output -json > $RTE_CLIENT_SERVER1_AWS_ARTIFACTS_FILE
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client
+        cd $RTE_ROOT_DIR/client_server1/aws/client
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars
         
   artifacts:
     paths:
