@@ -608,6 +608,7 @@ test-client-server-aws-east-west-traffic-b-apply:
         cd $CI_PROJECT_DIR/regression/tests/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -auto-approve
+        ls -la /tmp
         cp /tmp/iperf.data $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east-west-traffic-b/iperf.data
   artifacts:
     paths:
