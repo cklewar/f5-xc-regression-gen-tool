@@ -281,6 +281,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/{{ test.rte }}/{{ test.provider }}/server/server.tfvars -var="data_file={{ test.rte }}_{{ test.provider }}_{{ test.name | replace(from="-", to="_") }}_{{ test.module }}.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}" -auto-approve
         ls -la $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}
         ls -la $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}/{{ test.module }}.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -309,7 +310,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
         #!/usr/bin/env bash
         cd $CI_PROJECT_DIR/{{ config.verifications.path }}/{{ verification.module }}
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/{{ verification.module }}"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/{{ verification.module }}/artifacts.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}/{{ test.module }}.tfvars -auto-approve
   timeout: {{ verification.ci.timeout }}
   retry:
     max: 1
