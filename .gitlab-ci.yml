@@ -37,6 +37,7 @@ variables:
   FEATURES_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/features"
   EUT_ROOT_TF_VAR_FILE: "${EUT_ROOT_DIR}/mcn/terraform.tfvars.json"
   RTE_ROOT_DIR: "${CI_PROJECT_DIR}/regression/rte"
+  TESTS_ROOT_DIR: "${CI_PROJECT_DIR}/regression/tests"
   SSH_PUBLIC_KEY_FILE: "key.pub"
   SSH_PUBLIC_KEY_FILE_PATH: "s3://acmecorp-model/production/volterra"
   SSH_PRIVATE_KEY_FILE: "key"
