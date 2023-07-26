@@ -1563,7 +1563,6 @@ impl Regression {
                             for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                                 if dst_name == p_name {
                                     let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
-                                    error!("PATH; {:?}", &path);
                                     let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                                     let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
                                     ctx.rte = Option::from(rte_name.to_string());
