@@ -289,3 +289,33 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
+
+{% for rte in rtes -%}
+{% for component in rte.components %}
+# {{ component.job | replace(from="_", to="-") }} - destroy
+{{ component.job | replace(from="_", to="-") }}-destroy:
+  <<: *base
+  stage: rte-destroy
+  rules:
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
+  script:
+      - |
+        #!/usr/bin/env bash
+        cd $RTE_ROOT_DIR/{{ rte }}/{{ provider }}/client
+
+        terraform init --backend-config="key=$S3_RTE_ROOT/{{ rte.name }}/{{ provider }}"
+        terraform destroy -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_ROOT_TF_VAR_FILE -var-file=$RTE_{{ rte.name | upper }}_{{ provider | upper }}_TF_VAR_FILE -auto-approve
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[component.provider].timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% endfor -%}
