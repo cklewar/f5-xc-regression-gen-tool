@@ -334,6 +334,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
   script:
       - |
         #!/usr/bin/env bash
+        echo $CI_PROJECT_DIR/{{ config.verifications.path }}/{{ verification.module }} 
         cd $CI_PROJECT_DIR/{{ config.verifications.path }}/{{ verification.module }}
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/{{ verification.module }}"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}/{{ test.module }}.tfvars -auto-approve

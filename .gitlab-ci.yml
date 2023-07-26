@@ -790,8 +790,9 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
   script:
       - |
         #!/usr/bin/env bash
-        cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
+        echo $CI_PROJECT_DIR/regression/verification/fortio 
+        cd $CI_PROJECT_DIR/regression/verification/fortio
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -811,8 +812,9 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
   script:
       - |
         #!/usr/bin/env bash
-        cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
+        echo $CI_PROJECT_DIR/regression/verification/iperf 
+        cd $CI_PROJECT_DIR/regression/verification/iperf
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -832,8 +834,9 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
   script:
       - |
         #!/usr/bin/env bash
-        cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
+        echo $CI_PROJECT_DIR/regression/verification/fortio 
+        cd $CI_PROJECT_DIR/regression/verification/fortio
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars -auto-approve
   timeout: 15m
   retry:
@@ -853,8 +856,9 @@ verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-a
   script:
       - |
         #!/usr/bin/env bash
-        cd $CI_PROJECT_DIR/regression/verification/bandwidth
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/bandwidth"
+        echo $CI_PROJECT_DIR/regression/verification/iperf 
+        cd $CI_PROJECT_DIR/regression/verification/iperf
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars -auto-approve
   timeout: 15m
   retry:
