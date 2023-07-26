@@ -146,8 +146,8 @@ eut-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
   script:
       - |
         {% for script in eut.scripts -%}
