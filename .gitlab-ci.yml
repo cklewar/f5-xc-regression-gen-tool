@@ -182,7 +182,7 @@ eut-apply:
         mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_BASE/azure/1.0"
-        terraform plan -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
+        terraform plan -var-file=$EUT_ROOT_TF_VAR_FILE
         #terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         
   artifacts:
