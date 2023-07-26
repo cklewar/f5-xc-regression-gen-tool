@@ -291,6 +291,34 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+
+# test - {{ test.job }} - artifacts
+{{ test.job }}-artifacts:
+  <<: *base
+  rules:
+    - !reference [ .regression_verification_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
+    {%- endfor %}
+  stage: regression-test
+  script:
+      - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}
+        cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
+        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}"
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}/{{ test.module }}.tfvars
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ test.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
 {% endfor -%}
 {% endfor -%}
 {% for rte in rtes -%}
