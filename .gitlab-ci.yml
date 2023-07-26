@@ -4,6 +4,7 @@
 
 stages:
   - eut-apply
+  - eut-artifacts
   - rte-collect
   - rte-apply
   - rte-artifacts
@@ -183,6 +184,28 @@ eut-apply:
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_BASE/azure/1.0"
         #terraform import -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
+        
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: 1h 30m
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# eut - artifacts
+eut-artifacts:
+  <<: *base
+  stage: eut-artifacts
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_eut_rules, rules ]
+  script:
+      - |
         
   artifacts:
     paths:
@@ -740,7 +763,7 @@ rte-client-server-aws-client-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:

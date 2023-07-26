@@ -140,6 +140,36 @@ eut-apply:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+
+# eut - artifacts
+eut-artifacts:
+  <<: *base
+  stage: eut-artifacts
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_eut_rules, rules ]
+  script:
+      - |
+        {% for script in eut.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "artifacts" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
 {% for rte in rtes -%}
 {% for component in rte.components %}
 # {{ component.job | replace(from="_", to="-") }} - apply
