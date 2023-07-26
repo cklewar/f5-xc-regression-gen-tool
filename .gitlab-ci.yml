@@ -38,6 +38,7 @@ variables:
   EUT_ROOT_TF_VAR_FILE: "${EUT_ROOT_DIR}/mcn/terraform.tfvars.json"
   RTE_ROOT_DIR: "${CI_PROJECT_DIR}/regression/rte"
   TESTS_ROOT_DIR: "${CI_PROJECT_DIR}/regression/tests"
+  VERIFICATIONS_ROOT_DIR: "${CI_PROJECT_DIR}/regression/verification"
   SSH_PUBLIC_KEY_FILE: "key.pub"
   SSH_PUBLIC_KEY_FILE_PATH: "s3://acmecorp-model/production/volterra"
   SSH_PRIVATE_KEY_FILE: "key"
@@ -795,10 +796,10 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
   script:
       - |
         #!/usr/bin/env bash
-        echo $CI_PROJECT_DIR/regression/verification/fortio 
-        cd $CI_PROJECT_DIR/regression/verification/fortio
+        cd $VERIFICATIONS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars -auto-approve
+        
   timeout: 15m
   retry:
     max: 1
@@ -817,10 +818,10 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
   script:
       - |
         #!/usr/bin/env bash
-        echo $CI_PROJECT_DIR/regression/verification/iperf 
-        cd $CI_PROJECT_DIR/regression/verification/iperf
+        cd $VERIFICATIONS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars -auto-approve
+        
   timeout: 15m
   retry:
     max: 1
@@ -839,10 +840,10 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
   script:
       - |
         #!/usr/bin/env bash
-        echo $CI_PROJECT_DIR/regression/verification/fortio 
-        cd $CI_PROJECT_DIR/regression/verification/fortio
+        cd $VERIFICATIONS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars -auto-approve
+        
   timeout: 15m
   retry:
     max: 1
@@ -861,10 +862,10 @@ verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-a
   script:
       - |
         #!/usr/bin/env bash
-        echo $CI_PROJECT_DIR/regression/verification/iperf 
-        cd $CI_PROJECT_DIR/regression/verification/iperf
+        cd $VERIFICATIONS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars -auto-approve
+        
   timeout: 15m
   retry:
     max: 1

@@ -499,6 +499,7 @@ struct RteVerificationRenderContext {
     job: String,
     name: String,
     module: String,
+    scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -590,6 +591,37 @@ impl ScriptFeatureRenderContext {
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
         info!("Render regression pipeline file feature script section -> Done.");
+        rendered
+    }
+}
+
+#[derive(Serialize, Debug)]
+struct ScriptVerificationRenderContext {
+    rte: Option<String>,
+    name: Option<String>,
+    module: Option<String>,
+    provider: String,
+    test_name: Option<String>,
+    test_module: Option<String>,
+}
+
+impl ScriptVerificationRenderContext {
+    pub fn new(provider: String) -> Self {
+        Self {
+            provider,
+            rte: None,
+            name: None,
+            module: None,
+            test_name: None,
+            test_module: None,
+        }
+    }
+
+    pub fn render_script(&self, context: &ScriptVerificationRenderContext, input: &String) -> String {
+        info!("Render regression pipeline file verification script section...");
+        let ctx = Context::from_serialize(context);
+        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        info!("Render regression pipeline file verification script section -> Done.");
         rendered
     }
 }
@@ -1017,6 +1049,7 @@ impl Regression {
                                                         k if k == KEY_VERIFICATIONS => {
                                                             for v in v.as_array().unwrap().iter() {
                                                                 let v_o = self.create_object(VertexTypes::Verification);
+                                                                self.create_relationship(&t_o, &v_o);
                                                                 let v_name = v.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                                                                 let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                                                                 self.add_object_properties(&v_o, v, PropertyType::Base);
@@ -1024,7 +1057,31 @@ impl Regression {
                                                                                  KEY_GVID: format!("{}_{}_{}", v_o.t.as_str(), v_name.replace("-", "_"), &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                                                  KEY_GV_LABEL: v_module
                                                                              }), PropertyType::Gv);
-                                                                self.create_relationship(&t_o, &v_o);
+                                                                // Verification module cfg
+                                                                let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&v_o), &v_module);
+                                                                for (k, v) in cfg.as_object().unwrap().iter() {
+                                                                    match k {
+                                                                        k if k == KEY_NAME => {
+                                                                            let v_o_p = self.get_object_properties(&v_o).unwrap().props;
+                                                                            let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.add_object_properties(&v_o, &p, PropertyType::Module);
+                                                                        }
+                                                                        k if k == KEY_SCRIPTS => {
+                                                                            let v_o_p = self.get_object_properties(&v_o).unwrap().props;
+                                                                            let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.add_object_properties(&v_o, &p, PropertyType::Module);
+                                                                        }
+                                                                        k if k == KEY_SCRIPTS_PATH => {
+                                                                            let v_o_p = self.get_object_properties(&v_o).unwrap().props;
+                                                                            let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.add_object_properties(&v_o, &p, PropertyType::Module);
+                                                                        }
+                                                                        _ => {}
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         _ => {}
@@ -1660,13 +1717,10 @@ impl Regression {
                         //Process test scripts
                         let t_name = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                         let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                        error!("PROPS_BASE: {:?}", &t.props.get(PropertyType::Base.index()).unwrap().value);
-                        error!("PROPS_MODULE: {:?}", &t.props.get(PropertyType::Module.index()).unwrap().value);
                         let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                         for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                             let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
-                            error!("PATH: {:?}", &path);
                             let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                             let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
                             ctx.rte = Option::from(rte_name.to_string());
@@ -1695,6 +1749,31 @@ impl Regression {
                                                      &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                      v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                             ).replace("_", "-");
+                            //Process test scripts
+                            let v_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                            let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                            let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                            let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                            for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+                                let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
+                                let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
+                                ctx.rte = Option::from(rte_name.to_string());
+                                ctx.name = Option::from(v_name.to_string());
+                                ctx.module = Option::from(v_module.to_string());
+                                ctx.test_name = Option::from(t_name.to_string());
+                                ctx.test_module = Option::from(t_module.to_string());
+                                let mut commands: Vec<String> = Vec::new();
+
+                                for command in ctx.render_script(&ctx, &contents).lines() {
+                                    commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                                }
+
+                                let data: HashMap<String, Vec<String>> = [
+                                    (script.as_object().unwrap().get("script").unwrap().as_str().unwrap().to_string(), commands),
+                                ].into_iter().collect();
+                                scripts.push(data);
+                            }
 
                             let rte_vrc = RteVerificationRenderContext {
                                 ci: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
@@ -1703,6 +1782,7 @@ impl Regression {
                                 job: v_job_name,
                                 name: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                                 module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                                scripts,
                             };
                             verifications.push(rte_vrc);
                         }
