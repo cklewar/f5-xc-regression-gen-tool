@@ -608,9 +608,10 @@ test-client-server-aws-east-west-traffic-a-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a
-        cd $CI_PROJECT_DIR/regression/tests/fortio
+        cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -662,9 +663,10 @@ test-client-server-aws-east-west-traffic-b-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b
-        cd $CI_PROJECT_DIR/regression/tests/iperf
+        cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -716,9 +718,10 @@ test-client-server1-aws-east-west-traffic-a-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a
-        cd $CI_PROJECT_DIR/regression/tests/fortio
+        cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -770,9 +773,10 @@ test-client-server1-aws-east-west-traffic-b-artifacts:
       - |
         #!/usr/bin/env bash
         mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b
-        cd $CI_PROJECT_DIR/regression/tests/iperf
+        cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars
+        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/

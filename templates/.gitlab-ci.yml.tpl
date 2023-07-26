@@ -306,11 +306,15 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
   stage: regression-test-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}
-        cd $CI_PROJECT_DIR/{{ config.tests.path }}/{{ test.module }}
-        terraform init --backend-config="key=$S3_TESTS_ROOT/{{ test.module }}"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/{{ test.rte }}/{{ test.provider }}/{{ test.name | replace(from="-", to="_") }}/{{ test.module }}.tfvars
+        {% for script in test.scripts -%}
+        {% for k, v in script -%}
+        {%- if k == "artifacts" -%}
+        {%- for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
