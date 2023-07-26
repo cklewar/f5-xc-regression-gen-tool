@@ -46,8 +46,8 @@ variables:
   P12_FILE: "acmecorp.console.ves.volterra.io.api-creds.p12"
   P12_FILE_PATH: "s3://acmecorp-model/production/volterra"
   GIT_SUBMODULE_STRATEGY: "recursive"
-  FEATURE_FIREWALL_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/firewall/terraform.tfvars"
-  FEATURE_LOADBALANCER_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/loadbalancer/terraform.tfvars"
+  FEATURE_NETWORK_POLICY_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/network_policy/terraform.tfvars"
+  FEATURE_FORWARD_PROXY_POLICY_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/forward_proxy_policy/terraform.tfvars"
   
 .deploy_rules:
   rules:
@@ -521,8 +521,8 @@ rte-client-server1-aws-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# feature - mcn - firewall - apply
-feature-mcn-firewall-apply:
+# feature - mcn - network_policy - apply
+feature-mcn-network_policy-apply:
   <<: *base
   stage: feature-apply
   rules:
@@ -531,10 +531,10 @@ feature-mcn-firewall-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/firewall
-        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/firewall/1.0"
+        cd $FEATURES_ROOT_DIR/network_policy
+        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/network_policy/1.0"
         #terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        #terraform output > $FEATURES_ROOT_DIR/firewall/feature.tfvars
+        #terraform output > $FEATURES_ROOT_DIR/network_policy/feature.tfvars
         
   timeout: 30m
   retry:
@@ -544,8 +544,8 @@ feature-mcn-firewall-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# feature - mcn - loadbalancer - apply
-feature-mcn-loadbalancer-apply:
+# feature - mcn - forward_proxy_policy - apply
+feature-mcn-forward_proxy_policy-apply:
   <<: *base
   stage: feature-apply
   rules:
@@ -554,10 +554,10 @@ feature-mcn-loadbalancer-apply:
   script:
       - |
         #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/loadbalancer
-        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/loadbalancer/1.0"
+        cd $FEATURES_ROOT_DIR/forward_proxy_policy
+        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/forward_proxy_policy/1.0"
         #terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        #terraform output > $FEATURES_ROOT_DIR/loadbalancer/feature.tfvars
+        #terraform output > $FEATURES_ROOT_DIR/forward_proxy_policy/feature.tfvars
         
   timeout: 30m
   retry:
