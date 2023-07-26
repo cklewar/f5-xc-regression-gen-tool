@@ -253,7 +253,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ test.ci.timeout }}
   retry:
     max: 1

@@ -554,7 +554,7 @@ test-client-server-aws-east-west-traffic-a-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
+    expire_in: 3h
   timeout: 15m
   retry:
     max: 1
@@ -581,7 +581,7 @@ test-client-server-aws-east-west-traffic-b-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
+    expire_in: 3h
   timeout: 15m
   retry:
     max: 1
@@ -608,7 +608,7 @@ test-client-server1-aws-east-west-traffic-a-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
+    expire_in: 3h
   timeout: 15m
   retry:
     max: 1
@@ -635,7 +635,7 @@ test-client-server1-aws-east-west-traffic-b-apply:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
+    expire_in: 3h
   timeout: 15m
   retry:
     max: 1
