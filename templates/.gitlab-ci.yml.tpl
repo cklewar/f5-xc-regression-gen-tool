@@ -356,6 +356,34 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
 {% endfor -%}
 {% endfor -%}
 
+{% for feature in features %}
+# feature - {{ eut.base.module }} - {{ feature.name }} - destroy
+feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
+  <<: *base
+  stage: feature-destroy
+  rules:
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_feature_rules, rules ]
+  script:
+      - |
+        {% for script in feature.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "destroy" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
+  timeout: {{ feature.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+
 {% for rte in rtes -%}
 {% for component in rte.components %}
 # {{ component.job | replace(from="_", to="-") }} - destroy
