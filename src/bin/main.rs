@@ -575,6 +575,7 @@ struct ScriptFeatureRenderContext {
     eut: String,
     name: Option<String>,
     release: Option<String>,
+    provider: Option<Vec<String>>,
 }
 
 impl ScriptFeatureRenderContext {
@@ -583,6 +584,7 @@ impl ScriptFeatureRenderContext {
             eut,
             name: None,
             release: None,
+            provider: None,
         }
     }
 
@@ -1549,7 +1551,7 @@ impl Regression {
         let eut_p = EutRenderContext {
             base: eut_p_base.clone(),
             module: eut_p_module.clone(),
-            provider: eut_provider_p_base,
+            provider: eut_provider_p_base.clone(),
             scripts,
         };
 
@@ -1569,6 +1571,7 @@ impl Regression {
                 let mut ctx: ScriptFeatureRenderContext = ScriptFeatureRenderContext::new(eut_name.to_string());
                 ctx.name = Option::from(f_name.to_string());
                 ctx.release = Option::from(feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
+                ctx.provider = Option::from(eut_provider_p_base.clone());
                 let mut commands: Vec<String> = Vec::new();
 
                 for command in ctx.render_script(&ctx, &contents).lines() {
