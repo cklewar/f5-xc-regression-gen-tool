@@ -557,8 +557,6 @@ feature-mcn-forward_proxy_policy-apply:
         cd $FEATURES_ROOT_DIR/forward_proxy_policy
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/forward_proxy_policy/1.0"
         
-        
-        
   timeout: 30m
   retry:
     max: 1
