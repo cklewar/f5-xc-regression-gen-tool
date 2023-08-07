@@ -556,8 +556,8 @@ feature-mcn-forward_proxy_policy-apply:
         #!/usr/bin/env bash
         cd $FEATURES_ROOT_DIR/forward_proxy_policy
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/forward_proxy_policy/1.0"
-        terraform apply -compact-warnings -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-        terraform apply -compact-warnings -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
+        
+        
         
   timeout: 30m
   retry:
