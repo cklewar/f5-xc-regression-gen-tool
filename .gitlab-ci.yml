@@ -25,6 +25,7 @@ stages:
   - eut-destroy
   
 variables:
+  F5XC_API_TOKEN: "${$ENVIRONMENT^^}_API_TOKEN"
   S3_ROOT: "features/$FEATURE/$ENVIRONMENT/project-a"
   S3_EUT_ROOT: "$S3_ROOT/regression/eut"
   S3_EUT_BASE: "$S3_EUT_ROOT/base/mcn"
