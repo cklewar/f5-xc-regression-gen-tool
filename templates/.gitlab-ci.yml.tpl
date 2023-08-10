@@ -102,7 +102,7 @@ variables:
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
       aws s3 cp $P12_FILE_PATH/$P12_FILE $KEYS_DIR
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/${P12_FILE}"
-      export TF_VAR_f5xc_api_token="${ENVIRONMENT}_api_token"
+      export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN^^}"
     - terraform version
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
