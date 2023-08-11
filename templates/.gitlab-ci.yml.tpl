@@ -416,8 +416,7 @@ feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% endfor -%}
-
+{% endfor %}
 # eut - destroy
 eut-destroy:
   <<: *base
