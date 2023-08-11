@@ -40,6 +40,7 @@ const KEY_TESTS: &str = "tests";
 const KEY_GVID: &str = "id";
 const KEY_NAME: &str = "name";
 const KEY_APPLY: &str = "apply";
+const KEY_SITES: &str = "sites";
 const KEY_CONFIG: &str = "config";
 const KEY_MODULE: &str = "module";
 const KEY_SCRIPT: &str = "script";
@@ -856,6 +857,18 @@ impl Regression {
                     p.insert(k.clone(), v.clone());
                     self.add_object_properties(&eut, &p, PropertyType::Module);
                 }
+                k if k == KEY_SITES => {
+                    let o = self.create_object(VertexTypes::get_type_by_key(k));
+                    self.create_relationship(&eut, &o);
+                    self.add_object_properties(&o, &json!({
+                        KEY_GVID: format!("{}_{}", self.config.eut.module, k),
+                        KEY_GV_LABEL: k
+                    }), PropertyType::Gv);
+
+                    for s in v.as_array().unwrap().iter() {
+                        error!("K: {:?} --> V: {:?}", k, s);
+                    }
+                }
                 k if k == KEY_FEATURES => {
                     let o = self.create_object(VertexTypes::get_type_by_key(k));
                     self.create_relationship(&eut, &o);
@@ -988,7 +1001,7 @@ impl Regression {
                                                 KEY_GV_LABEL: KEY_CONNECTION
                                             }), PropertyType::Gv);
 
-                                        //Sources
+                                        //Source
                                         let sources = item.as_object().unwrap().get(KEY_SOURCES).unwrap().as_array().unwrap();
                                         for s in sources.iter() {
                                             let src_o = self.create_object(VertexTypes::ConnectionSrc);
