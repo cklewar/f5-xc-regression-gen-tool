@@ -417,3 +417,33 @@ feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
       - runner_system_failure
 {% endfor -%}
 {% endfor -%}
+
+# eut - destroy
+eut-destroy:
+  <<: *base
+  stage: eut-destroy
+  rules:
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_eut_rules, rules ]
+  script:
+      - |
+        {% for script in eut.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "destroy" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
