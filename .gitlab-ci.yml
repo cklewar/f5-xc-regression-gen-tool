@@ -12,14 +12,14 @@ stages:
   - regression-test
   - regression-test-artifacts
   - regression-test-verify
-  - test-client-server-aws-east-west-traffic-a-apply
-  - test-client-server-aws-east-west-traffic-b-apply
-  - test-client-server1-aws-east-west-traffic-a-apply
-  - test-client-server1-aws-east-west-traffic-b-apply
-  - verification-client-server-aws-east-west-traffic-verify-a-apply
-  - verification-client-server-aws-east-west-traffic-verify-b-apply
-  - verification-client-server1-aws-east-west-traffic-verify-a-apply
-  - verification-client-server1-aws-east-west-traffic-verify-b-apply
+  - test-client-server-site-a-1-east-west-traffic-a-apply
+  - test-client-server-site-a-1-east-west-traffic-b-apply
+  - test-client-server1-site-b-1-east-west-traffic-a-apply
+  - test-client-server1-site-b-1-east-west-traffic-b-apply
+  - verification-client-server-site-a-1-east-west-traffic-verify-a-apply
+  - verification-client-server-site-a-1-east-west-traffic-verify-b-apply
+  - verification-client-server1-site-b-1-east-west-traffic-verify-a-apply
+  - verification-client-server1-site-b-1-east-west-traffic-verify-b-apply
   - feature-destroy
   - rte-destroy
   - eut-destroy
@@ -203,6 +203,7 @@ eut-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:
+    - !reference [ .deploy_rte_rules, rules ]
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
   script:
@@ -228,8 +229,8 @@ eut-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-client - apply
-rte-client-server-aws-client-apply:
+# rte-client-server-site-a-1-client - apply
+rte-client-server-site-a-1-client-apply:
   <<: *base
   stage: rte-apply
   rules:
@@ -237,16 +238,6 @@ rte-client-server-aws-client-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client
-        cd $RTE_ROOT_DIR/client_server/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars
-        #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
-        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server_aws_DESTINATION_IPS_ARTIFACTS_FILE
         
   artifacts:
     paths:
@@ -260,8 +251,8 @@ rte-client-server-aws-client-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-client - artifacts
-rte-client-server-aws-client-artifacts:
+# rte-client-server-site-a-1-client - artifacts
+rte-client-server-site-a-1-client-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -271,11 +262,6 @@ rte-client-server-aws-client-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client
-        cd $RTE_ROOT_DIR/client_server/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars
         
   artifacts:
     paths:
@@ -289,8 +275,8 @@ rte-client-server-aws-client-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-server - apply
-rte-client-server-aws-server-apply:
+# rte-client-server-site-b-1-server - apply
+rte-client-server-site-b-1-server-apply:
   <<: *base
   stage: rte-apply
   rules:
@@ -298,12 +284,6 @@ rte-client-server-aws-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -317,8 +297,8 @@ rte-client-server-aws-server-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-server - artifacts
-rte-client-server-aws-server-artifacts:
+# rte-client-server-site-b-1-server - artifacts
+rte-client-server-site-b-1-server-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -328,11 +308,6 @@ rte-client-server-aws-server-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -346,8 +321,8 @@ rte-client-server-aws-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-azure-server - apply
-rte-client-server-azure-server-apply:
+# rte-client-server-site-c-1-server - apply
+rte-client-server-site-c-1-server-apply:
   <<: *base
   stage: rte-apply
   rules:
@@ -355,14 +330,6 @@ rte-client-server-azure-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/azure/server
-        cd $RTE_ROOT_DIR/client_server/azure/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/server"
-        #terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
-        #terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/azure/server/server.tfvars
-        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AZURE_CONNECTION_ARTIFACTS_FILE
-        #echo "azure_destination_ip=$(terraform output destination_ip)" >> $RTE_CLIENT_SERVER_AZURE_DESTINATION_IPS_ARTIFACTS_FILE
         
   artifacts:
     paths:
@@ -376,8 +343,8 @@ rte-client-server-azure-server-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-azure-server - artifacts
-rte-client-server-azure-server-artifacts:
+# rte-client-server-site-c-1-server - artifacts
+rte-client-server-site-c-1-server-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -387,11 +354,6 @@ rte-client-server-azure-server-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/azure/server
-        cd $RTE_ROOT_DIR/client_server/azure/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/azure/server/server.tfvars
         
   artifacts:
     paths:
@@ -405,8 +367,8 @@ rte-client-server-azure-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-aws-client - apply
-rte-client-server1-aws-client-apply:
+# rte-client-server1-site-b-1-client - apply
+rte-client-server1-site-b-1-client-apply:
   <<: *base
   stage: rte-apply
   rules:
@@ -414,15 +376,6 @@ rte-client-server1-aws-client-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client
-        cd $RTE_ROOT_DIR/client_server1/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars
-        #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE
-        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server1_aws_DESTINATION_IPS_ARTIFACTS_FILE
         
   artifacts:
     paths:
@@ -436,8 +389,8 @@ rte-client-server1-aws-client-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-aws-client - artifacts
-rte-client-server1-aws-client-artifacts:
+# rte-client-server1-site-b-1-client - artifacts
+rte-client-server1-site-b-1-client-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -447,11 +400,6 @@ rte-client-server1-aws-client-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client
-        cd $RTE_ROOT_DIR/client_server1/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars
         
   artifacts:
     paths:
@@ -465,8 +413,8 @@ rte-client-server1-aws-client-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-aws-server - apply
-rte-client-server1-aws-server-apply:
+# rte-client-server1-site-c-1-server - apply
+rte-client-server1-site-c-1-server-apply:
   <<: *base
   stage: rte-apply
   rules:
@@ -474,12 +422,6 @@ rte-client-server1-aws-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
-        cd $RTE_ROOT_DIR/client_server1/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -493,8 +435,8 @@ rte-client-server1-aws-server-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-aws-server - artifacts
-rte-client-server1-aws-server-artifacts:
+# rte-client-server1-site-c-1-server - artifacts
+rte-client-server1-site-c-1-server-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -504,11 +446,6 @@ rte-client-server1-aws-server-artifacts:
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
-        cd $RTE_ROOT_DIR/client_server1/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -567,8 +504,8 @@ feature-mcn-forward_proxy_policy-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server-aws-east-west-traffic-a - apply
-test-client-server-aws-east-west-traffic-a-apply:
+# test - test-client-server-site-a-1-east-west-traffic-a - apply
+test-client-server-site-a-1-east-west-traffic-a-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -577,11 +514,11 @@ test-client-server-aws-east-west-traffic-a-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a
         cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var="data_file=client_server_aws_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/server/server.tfvars -var="data_file=client_server_site_a_1_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a" -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars
         
   artifacts:
     paths:
@@ -595,8 +532,8 @@ test-client-server-aws-east-west-traffic-a-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server-aws-east-west-traffic-a - artifacts
-test-client-server-aws-east-west-traffic-a-artifacts:
+# test - test-client-server-site-a-1-east-west-traffic-a - artifacts
+test-client-server-site-a-1-east-west-traffic-a-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -605,10 +542,10 @@ test-client-server-aws-east-west-traffic-a-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a
         cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars
         
   artifacts:
     paths:
@@ -622,8 +559,8 @@ test-client-server-aws-east-west-traffic-a-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server-aws-east-west-traffic-b - apply
-test-client-server-aws-east-west-traffic-b-apply:
+# test - test-client-server-site-a-1-east-west-traffic-b - apply
+test-client-server-site-a-1-east-west-traffic-b-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -632,11 +569,11 @@ test-client-server-aws-east-west-traffic-b-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b
         cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars -var="data_file=client_server_aws_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/server/server.tfvars -var="data_file=client_server_site_a_1_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b" -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars
         
   artifacts:
     paths:
@@ -650,8 +587,8 @@ test-client-server-aws-east-west-traffic-b-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server-aws-east-west-traffic-b - artifacts
-test-client-server-aws-east-west-traffic-b-artifacts:
+# test - test-client-server-site-a-1-east-west-traffic-b - artifacts
+test-client-server-site-a-1-east-west-traffic-b-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -660,10 +597,10 @@ test-client-server-aws-east-west-traffic-b-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b
         cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars
         
   artifacts:
     paths:
@@ -677,8 +614,8 @@ test-client-server-aws-east-west-traffic-b-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server1-aws-east-west-traffic-a - apply
-test-client-server1-aws-east-west-traffic-a-apply:
+# test - test-client-server1-site-b-1-east-west-traffic-a - apply
+test-client-server1-site-b-1-east-west-traffic-a-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -687,11 +624,11 @@ test-client-server1-aws-east-west-traffic-a-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a
         cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var="data_file=client_server1_aws_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/server/server.tfvars -var="data_file=client_server1_site_b_1_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a" -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars
         
   artifacts:
     paths:
@@ -705,8 +642,8 @@ test-client-server1-aws-east-west-traffic-a-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server1-aws-east-west-traffic-a - artifacts
-test-client-server1-aws-east-west-traffic-a-artifacts:
+# test - test-client-server1-site-b-1-east-west-traffic-a - artifacts
+test-client-server1-site-b-1-east-west-traffic-a-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -715,10 +652,10 @@ test-client-server1-aws-east-west-traffic-a-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a
         cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars
         
   artifacts:
     paths:
@@ -732,8 +669,8 @@ test-client-server1-aws-east-west-traffic-a-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server1-aws-east-west-traffic-b - apply
-test-client-server1-aws-east-west-traffic-b-apply:
+# test - test-client-server1-site-b-1-east-west-traffic-b - apply
+test-client-server1-site-b-1-east-west-traffic-b-apply:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -742,11 +679,11 @@ test-client-server1-aws-east-west-traffic-b-apply:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b
         cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars -var="data_file=client_server1_aws_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/server/server.tfvars -var="data_file=client_server1_site_b_1_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b" -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars
         
   artifacts:
     paths:
@@ -760,8 +697,8 @@ test-client-server1-aws-east-west-traffic-b-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server1-aws-east-west-traffic-b - artifacts
-test-client-server1-aws-east-west-traffic-b-artifacts:
+# test - test-client-server1-site-b-1-east-west-traffic-b - artifacts
+test-client-server1-site-b-1-east-west-traffic-b-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -770,10 +707,10 @@ test-client-server1-aws-east-west-traffic-b-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b
+        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b
         cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars
+        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars
         
   artifacts:
     paths:
@@ -787,8 +724,8 @@ test-client-server1-aws-east-west-traffic-b-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a - apply
-verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-apply:
+# verification - verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a - apply
+verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a-apply:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -799,7 +736,7 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
         #!/usr/bin/env bash
         cd $VERIFICATIONS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_a/fortio.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars -auto-approve
         
   timeout: 15m
   retry:
@@ -809,8 +746,8 @@ verification-client-server-aws-east-west-traffic-a-east-west-traffic-verify-a-ap
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b - apply
-verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-apply:
+# verification - verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b - apply
+verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b-apply:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -821,7 +758,7 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
         #!/usr/bin/env bash
         cd $VERIFICATIONS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/aws/east_west_traffic_b/iperf.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars -auto-approve
         
   timeout: 15m
   retry:
@@ -831,8 +768,8 @@ verification-client-server-aws-east-west-traffic-b-east-west-traffic-verify-b-ap
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a - apply
-verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-apply:
+# verification - verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a - apply
+verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a-apply:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -843,7 +780,7 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
         #!/usr/bin/env bash
         cd $VERIFICATIONS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_a/fortio.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars -auto-approve
         
   timeout: 15m
   retry:
@@ -853,8 +790,8 @@ verification-client-server1-aws-east-west-traffic-a-east-west-traffic-verify-a-a
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b - apply
-verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-apply:
+# verification - verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b - apply
+verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b-apply:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -865,7 +802,7 @@ verification-client-server1-aws-east-west-traffic-b-east-west-traffic-verify-b-a
         #!/usr/bin/env bash
         cd $VERIFICATIONS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/aws/east_west_traffic_b/iperf.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars -auto-approve
         
   timeout: 15m
   retry:
@@ -919,8 +856,8 @@ feature-mcn-forward_proxy_policy-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-client - destroy
-rte-client-server-aws-client-destroy:
+# rte-client-server-site-a-1-client - destroy
+rte-client-server-site-a-1-client-destroy:
   <<: *base
   stage: rte-destroy
   rules:
@@ -928,10 +865,6 @@ rte-client-server-aws-client-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/client
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -945,8 +878,8 @@ rte-client-server-aws-client-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-server - destroy
-rte-client-server-aws-server-destroy:
+# rte-client-server-site-b-1-server - destroy
+rte-client-server-site-b-1-server-destroy:
   <<: *base
   stage: rte-destroy
   rules:
@@ -954,10 +887,6 @@ rte-client-server-aws-server-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/server
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -971,8 +900,8 @@ rte-client-server-aws-server-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-azure-server - destroy
-rte-client-server-azure-server-destroy:
+# rte-client-server-site-c-1-server - destroy
+rte-client-server-site-c-1-server-destroy:
   <<: *base
   stage: rte-destroy
   rules:
@@ -980,10 +909,6 @@ rte-client-server-azure-server-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/azure/server
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/server"
-      # terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -997,8 +922,8 @@ rte-client-server-azure-server-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-aws-client - destroy
-rte-client-server1-aws-client-destroy:
+# rte-client-server1-site-b-1-client - destroy
+rte-client-server1-site-b-1-client-destroy:
   <<: *base
   stage: rte-destroy
   rules:
@@ -1006,10 +931,6 @@ rte-client-server1-aws-client-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/client
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -1023,8 +944,8 @@ rte-client-server1-aws-client-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-aws-server - destroy
-rte-client-server1-aws-server-destroy:
+# rte-client-server1-site-c-1-server - destroy
+rte-client-server1-site-c-1-server-destroy:
   <<: *base
   stage: rte-destroy
   rules:
@@ -1032,10 +953,6 @@ rte-client-server1-aws-server-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/server
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:

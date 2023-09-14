@@ -45,6 +45,7 @@ const KEY_APPLY: &str = "apply";
 const KEY_SITES: &str = "sites";
 const KEY_COUNT: &str = "count";
 const KEY_CONFIG: &str = "config";
+const KEY_STAGES: &str = "stages";
 const KEY_MODULE: &str = "module";
 const KEY_SCRIPT: &str = "script";
 const KEY_RELEASE: &str = "release";
@@ -718,20 +719,6 @@ struct Regression {
     config: RegressionConfig,
 }
 
-
-/*fn convert_vertex_properties_to_vec(properties: Vec<VertexProperties>) -> Vec<HashMap<String, Map<String, Value>>> {
-    let mut data: Vec<HashMap<String, Map<String, Value>>> = Vec::new();
-    for p in properties.iter() {
-        let p_base = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
-        let p_module = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
-        let mut h = HashMap::new();
-        h.insert(PropertyType::Base.name().to_string(), p_base.clone());
-        h.insert(PropertyType::Module.name().to_string(), p_module.clone());
-        data.push(h);
-    }
-    data
-}*/
-
 impl Regression {
     fn new(file: &str) -> Self {
         Regression { regression: indradb::MemoryDatastore::new_db(), config: Regression::load_regression_config(&file) }
@@ -753,7 +740,7 @@ impl Regression {
         context.insert(KEY_PROJECT, &cfg.project);
         context.insert(KEY_FEATURES, &cfg.features);
         context.insert("collector", &cfg.collector);
-        context.insert("verifications", &cfg.verifications);
+        context.insert(KEY_VERIFICATIONS, &cfg.verifications);
 
         let eutc = _tera.render("regression.json", &context).unwrap();
         info!("Render regression configuration file -> Done.");
@@ -1727,6 +1714,10 @@ impl Regression {
             for conn in connections.iter() {
                 let src = self.get_object_neighbour_with_properties(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
                 let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let src_site = self.get_object_neighbour(&src.vertex.id, EdgeTypes::HasSite);
+                let src_provider = self.get_object_neighbour_with_properties(&src_site.id, EdgeTypes::UsesProvider);
+                let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                error!("CONNECTION_SRC_NAME: {:?}", &src_name);
                 let comp_src = self.get_object_neighbour_with_properties(&src.vertex.id, EdgeTypes::HasComponentSrc);
                 let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &src_name, &comp_src_name);
@@ -1764,7 +1755,7 @@ impl Regression {
                     job: rte_job_name.clone(),
                     rte: rte_name.to_string(),
                     name: comp_src_name.to_string(),
-                    provider: src_name.to_string(),
+                    provider: src_p_name.to_string(),
                     scripts,
                 };
                 rte_crcs.components.push(rte_crc);
@@ -1772,6 +1763,10 @@ impl Regression {
                 let dsts = self.get_object_neighbours_with_properties(&src.vertex.id, EdgeTypes::HasConnectionDst);
                 for dst in dsts.iter() {
                     let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let dst_site = self.get_object_neighbour(&src.vertex.id, EdgeTypes::HasSite);
+                    let dst_provider = self.get_object_neighbour_with_properties(&dst_site.id, EdgeTypes::UsesProvider);
+                    let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    error!("CONNECTION_DST_NAME: {:?}", &dst_name);
                     let comp_dst = self.get_object_neighbour_with_properties(&dst.vertex.id, EdgeTypes::HasComponentDst);
                     let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &dst_name, &comp_dst_name);
@@ -1808,7 +1803,7 @@ impl Regression {
                         job: rte_job_name.clone(),
                         rte: rte_name.to_string(),
                         name: comp_dst_name.to_string(),
-                        provider: dst_name.to_string(),
+                        provider: dst_p_name.to_string(),
                         scripts,
                     };
                     rte_crcs.components.push(rte_crc);
@@ -1929,10 +1924,10 @@ impl Regression {
         stages.append(&mut destroy_stages);
 
         let mut context = Context::new();
-        //context.insert(KEY_RTES, &rtes_rc);
+        context.insert(KEY_RTES, &rtes_rc);
         context.insert(KEY_EUT, &eut_p);
         context.insert(KEY_CONFIG, &self.config);
-        context.insert("stages", &stages);
+        context.insert(KEY_STAGES, &stages);
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
