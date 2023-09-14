@@ -1,8 +1,8 @@
 [package]
 name = "sense8-gen"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["cklewar <c.klewar@f5.com>"]
-description = "F5 XC Regression Test CI pipeline file generator"
+description = "F5 XC Regression CI pipeline file generator"
 edition = "2021"
 license = "Apache-2.0"
 
