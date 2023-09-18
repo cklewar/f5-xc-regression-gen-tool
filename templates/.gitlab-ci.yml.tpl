@@ -514,12 +514,12 @@ eut-destroy:
 {% endfor -%}
 {% for k, share in rte.share %}
 # {{ share.job | replace(from="_", to="-") }} - destroy
-{{ share.job | replace(from="_", to="-") }}:
+{{ share.job | replace(from="_", to="-") }}-destroy:
   <<: *base
   stage: rte-share-destroy
   rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
       {% for script in share.scripts -%}

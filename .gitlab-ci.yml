@@ -1266,12 +1266,12 @@ rte-client-server-site-c-1-server-destroy:
       - runner_system_failure
 
 # rte-client-server-aws-share - destroy
-rte-client-server-aws-share:
+rte-client-server-aws-share-destroy:
   <<: *base
   stage: rte-share-destroy
   rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1292,12 +1292,12 @@ rte-client-server-aws-share:
       - runner_system_failure
 
 # rte-client-server-azure-share - destroy
-rte-client-server-azure-share:
+rte-client-server-azure-share-destroy:
   <<: *base
   stage: rte-share-destroy
   rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1370,12 +1370,12 @@ rte-client-server1-site-c-1-server-destroy:
       - runner_system_failure
 
 # rte-client-server1-aws-share - destroy
-rte-client-server1-aws-share:
+rte-client-server1-aws-share-destroy:
   <<: *base
   stage: rte-share-destroy
   rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1396,12 +1396,12 @@ rte-client-server1-aws-share:
       - runner_system_failure
 
 # rte-client-server1-azure-share - destroy
-rte-client-server1-azure-share:
+rte-client-server1-azure-share-destroy:
   <<: *base
   stage: rte-share-destroy
   rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
