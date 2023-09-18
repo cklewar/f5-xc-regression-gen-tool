@@ -534,6 +534,7 @@ struct EutRenderContext {
 struct RteProviderShareRenderContext {
     job: String,
     rte: String,
+    site: String,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
@@ -742,6 +743,7 @@ impl ScriptRteRenderContext {
 struct ScriptRteProviderShareRenderContext {
     eut: Option<String>,
     rte: Option<String>,
+    site: Option<String>,
     project: String,
     provider: Option<String>,
 }
@@ -752,6 +754,7 @@ impl ScriptRteProviderShareRenderContext {
             project,
             eut: None,
             rte: None,
+            site: None,
             provider: None,
         }
     }
@@ -1494,7 +1497,7 @@ impl Regression {
         }
 
         //Eut Stages Destroy
-         match stage_destroy {
+        match stage_destroy {
             Some(f) => stage_destroy = self.add_ci_stages(&f, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy),
             None => stage_destroy = self.add_ci_stages(&ci, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy)
         }
@@ -1795,37 +1798,43 @@ impl Regression {
                 );
 
                 let share_p = self.get_object_neighbour_with_properties(&p.vertex.id, EdgeTypes::NeedsShare);
-                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
                 //Process provider share scripts
-                for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                    let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                    let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
-                    let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
-                    ctx.rte = Option::from(rte_name.to_string());
-                    ctx.eut = Option::from(eut_name.to_string());
-                    ctx.provider = Option::from(p_name.to_string());
-                    let mut commands: Vec<String> = Vec::new();
+                for site in s_objs.iter() {
+                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                    error!("SITE: {:?}", site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap());
+                    let site_name = site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                        let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
+                        let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
+                        ctx.rte = Option::from(rte_name.to_string());
+                        ctx.eut = Option::from(eut_name.to_string());
+                        ctx.provider = Option::from(p_name.to_string());
+                        ctx.site = Option::from(site_name.to_string());
+                        let mut commands: Vec<String> = Vec::new();
 
-                    for command in ctx.render_script(&ctx, &contents).lines() {
-                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        for command in ctx.render_script(&ctx, &contents).lines() {
+                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        }
+
+                        let data: HashMap<String, Vec<String>> = [
+                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                        ].into_iter().collect();
+
+                        scripts.push(data);
                     }
 
-                    let data: HashMap<String, Vec<String>> = [
-                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                    ].into_iter().collect();
-
-                    scripts.push(data);
+                    rte_crcs.share.insert(p_name.to_string(),
+                                          RteProviderShareRenderContext {
+                                              job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
+                                              rte: rte_name.to_string(),
+                                              site: eut_name.to_string(),
+                                              scripts,
+                                          },
+                    );
                 }
-
-                rte_crcs.share.insert(p_name.to_string(),
-                                      RteProviderShareRenderContext {
-                                          job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
-                                          rte: rte_name.to_string(),
-                                          scripts,
-                                      },
-                );
             }
 
             for conn in connections.iter() {

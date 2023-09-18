@@ -198,11 +198,11 @@ rte-client-server-aws-share:
   script:
     - |
       #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared
+      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared/site_c_2
       cd $RTE_ROOT_DIR/client_server/aws/shared
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/shared"
       terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared/shared.tfvars
+      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared/site_c_2shared.tfvars
       
   artifacts:
     paths:
@@ -216,7 +216,7 @@ rte-client-server-aws-share:
       - stuck_or_timeout_failure
       - runner_system_failure
 # rte-client-server-aws-share - artifacts
-rte-client-server-aws-share:
+rte-client-server-aws-share-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
@@ -270,7 +270,7 @@ rte-client-server-azure-share:
       - stuck_or_timeout_failure
       - runner_system_failure
 # rte-client-server-azure-share - artifacts
-rte-client-server-azure-share:
+rte-client-server-azure-share-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
@@ -499,7 +499,7 @@ rte-client-server1-aws-share:
       - stuck_or_timeout_failure
       - runner_system_failure
 # rte-client-server1-aws-share - artifacts
-rte-client-server1-aws-share:
+rte-client-server1-aws-share-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
@@ -553,7 +553,7 @@ rte-client-server1-azure-share:
       - stuck_or_timeout_failure
       - runner_system_failure
 # rte-client-server1-azure-share - artifacts
-rte-client-server1-azure-share:
+rte-client-server1-azure-share-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:

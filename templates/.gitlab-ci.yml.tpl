@@ -144,7 +144,7 @@ variables:
       - stuck_or_timeout_failure
       - runner_system_failure
 # {{ share.job | replace(from="_", to="-") }} - artifacts
-{{ share.job | replace(from="_", to="-") }}:
+{{ share.job | replace(from="_", to="-") }}-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
