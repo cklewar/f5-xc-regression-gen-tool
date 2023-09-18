@@ -63,6 +63,12 @@ variables:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% for rte in rtes -%}
+{% for k, share in rte.share %}
+.regression_{{ share.job | replace(from="-", to="_") }}:
+  rules:
+    - if: $ACTION == "{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
 {% for test in rte.tests %}
 .regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}:
   rules:
@@ -106,71 +112,70 @@ variables:
     - terraform version
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
-
-# eut - apply
-{{ eut.module.name }}-apply:
+{% for rte in rtes -%}
+{% for k, share in rte.share %}
+# {{ share.job | replace(from="_", to="-") }} - apply
+{{ share.job | replace(from="_", to="-") }}:
   <<: *base
-  stage: eut-apply
+  stage: rte-share-apply
   rules:
     - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
-  script:
-      - |
-        {% for script in eut.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "apply" -%}
-        {% for command in v -%}
-        {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ eut.module.ci.timeout }}
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut - artifacts
-{{ eut.module.name }}-artifacts:
-  <<: *base
-  stage: eut-artifacts
-  rules:
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
   script:
-      - |
-        {% for script in eut.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "artifacts" -%}
-        {% for command in v -%}
-        {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+    - |
+      {% for script in share.scripts -%}
+      {% for k, v in script -%}
+      {% if k == "apply" -%}
+      {% for command in v -%}
+      {{ command }}
+      {% endfor -%}
+      {% endif -%}
+      {% endfor -%}
+      {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ eut.module.ci.timeout }}
+    expire_in: { { config.ci.artifacts.expire_in } }
+  timeout: { { rte.ci[ share.provider ].timeout } }
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-{% for rte in rtes -%}
+# {{ share.job | replace(from="_", to="-") }} - artifacts
+{{ share.job | replace(from="_", to="-") }}:
+  <<: *base
+  stage: rte-share-artifacts
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
+  script:
+    - |
+      {% for script in share.scripts -%}
+      {% for k, v in script -%}
+      {% if k == "artifacts" -%}
+      {% for command in v -%}
+      {{ command }}
+      {% endfor -%}
+      {% endif -%}
+      {% endfor -%}
+      {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: { { config.ci.artifacts.expire_in } }
+  timeout: { { rte.ci[ share.provider ].timeout } }
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
 {% for component in rte.components %}
 # {{ component.job | replace(from="_", to="-") }} - apply
-{{ component.job | replace(from="_", to="-") }}-apply:
+{{ component.job | replace(from="_", to="-") }}:
   <<: *base
   stage: rte-apply
   rules:
@@ -232,7 +237,68 @@ variables:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% endfor -%}
+{% endfor %}
+# eut - apply
+{{ eut.module.name }}-apply:
+  <<: *base
+  stage: eut-apply
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_eut_rules, rules ]
+  script:
+      - |
+        {% for script in eut.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "apply" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# eut - artifacts
+{{ eut.module.name }}-artifacts:
+  <<: *base
+  stage: eut-artifacts
+  rules:
+    - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
+  script:
+      - |
+        {% for script in eut.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "artifacts" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
 {% for feature in features %}
 # feature - {{ eut.base.module }} - {{ feature.name }} - apply
 feature-{{ eut.base.module }}-{{ feature.name }}-apply:
@@ -384,6 +450,35 @@ feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
+# eut - destroy
+eut-destroy:
+  <<: *base
+  stage: eut-destroy
+  rules:
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_eut_rules, rules ]
+  script:
+      - |
+        {% for script in eut.scripts -%}
+        {% for k, v in script -%}
+        {% if k == "destroy" -%}
+        {% for command in v -%}
+        {{ command }}
+        {% endfor -%}
+        {% endif -%}
+        {% endfor -%}
+        {% endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
 
 {% for rte in rtes -%}
 {% for component in rte.components %}
@@ -417,33 +512,35 @@ feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% endfor %}
-# eut - destroy
-eut-destroy:
+{% for k, share in rte.share %}
+# {{ share.job | replace(from="_", to="-") }} - destroy
+{{ share.job | replace(from="_", to="-") }}:
   <<: *base
-  stage: eut-destroy
+  stage: rte-share-destroy
   rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
   script:
-      - |
-        {% for script in eut.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "destroy" -%}
-        {% for command in v -%}
-        {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+    - |
+      {% for script in share.scripts -%}
+      {% for k, v in script -%}
+      {% if k == "destroy" -%}
+      {% for command in v -%}
+      {{ command }}
+      {% endfor -%}
+      {% endif -%}
+      {% endfor -%}
+      {% endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ eut.module.ci.timeout }}
+    expire_in: { { config.ci.artifacts.expire_in } }
+  timeout: { { rte.ci[ share.provider ].timeout } }
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+{% endfor -%}
+{% endfor -%}

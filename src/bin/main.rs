@@ -36,6 +36,7 @@ const KEY_EUT: &str = "eut";
 const KEY_RTE: &str = "rte";
 const KEY_SRC: &str = "src";
 const KEY_DST: &str = "dst";
+const KEY_FILE: &str = "file";
 const KEY_RTES: &str = "rtes";
 const KEY_TEST: &str = "test";
 const KEY_TESTS: &str = "tests";
@@ -43,6 +44,7 @@ const KEY_GVID: &str = "id";
 const KEY_NAME: &str = "name";
 const KEY_APPLY: &str = "apply";
 const KEY_SITES: &str = "sites";
+const KEY_SHARE: &str = "share";
 const KEY_COUNT: &str = "count";
 const KEY_CONFIG: &str = "config";
 const KEY_STAGES: &str = "stages";
@@ -85,6 +87,7 @@ const VERTEX_TYPE_TEST: &str = "test";
 const VERTEX_TYPE_NONE: &str = "none";
 const VERTEX_TYPE_SITE: &str = "site";
 const VERTEX_TYPE_SITES: &str = "sites";
+const VERTEX_TYPE_SHARE: &str = "share";
 const VERTEX_TYPE_SCRIPT: &str = "script";
 const VERTEX_TYPE_SCRIPTS: &str = "scripts";
 const VERTEX_TYPE_PROJECT: &str = "project";
@@ -113,6 +116,7 @@ const EDGE_TYPE_HAS_CI: &str = "has_ci";
 const EDGE_TYPE_HAS_EUT: &str = "has_eut";
 const EDGE_TYPE_HAS_SITE: &str = "has_site";
 const EDGE_TYPE_HAS_SITES: &str = "has_sites";
+const EDGE_TYPE_NEEDS_SHARE: &str = "needs_share";
 const EDGE_TYPE_USES_RTES: &str = "uses_rtes";
 const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
 const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
@@ -147,6 +151,7 @@ enum VertexTypes {
     Test,
     Site,
     Sites,
+    Share,
     Script,
     Project,
     Scripts,
@@ -179,6 +184,7 @@ enum EdgeTypes {
     HasSites,
     UsesRtes,
     NextStage,
+    NeedsShare,
     HasFeature,
     HasFeatures,
     ProvidesRte,
@@ -207,6 +213,7 @@ impl VertexTypes {
             VertexTypes::Test => VERTEX_TYPE_TEST,
             VertexTypes::Site => VERTEX_TYPE_SITE,
             VertexTypes::Sites => VERTEX_TYPE_SITES,
+            VertexTypes::Share => VERTEX_TYPE_SHARE,
             VertexTypes::Script => VERTEX_TYPE_SCRIPT,
             VertexTypes::Scripts => VERTEX_TYPE_SCRIPTS,
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
@@ -239,19 +246,20 @@ impl VertexTypes {
             VERTEX_TYPE_SITE => VertexTypes::Site.name(),
             VERTEX_TYPE_TEST => VertexTypes::Test.name(),
             VERTEX_TYPE_SITES => VertexTypes::Sites.name(),
+            VERTEX_TYPE_SHARE => VertexTypes::Share.name(),
             VERTEX_TYPE_SCRIPT => VertexTypes::Script.name(),
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts.name(),
             VERTEX_TYPE_PROJECT => VertexTypes::Project.name(),
             VERTEX_TYPE_FEATURE => VertexTypes::Feature.name(),
-            VERTEX_TYPE_EUT_PROVIDER => VertexTypes::EutProvider.name(),
-            VERTEX_TYPE_RTE_PROVIDER => VertexTypes::RteProvider.name(),
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers.name(),
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector.name(),
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection.name(),
-            VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections.name(),
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components.name(),
+            VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections.name(),
             VERTEX_TYPE_VERIFICATION => VertexTypes::Verification.name(),
             VERTEX_TYPE_STAGE_DEPLOY => VertexTypes::StageDeploy.name(),
+            VERTEX_TYPE_EUT_PROVIDER => VertexTypes::EutProvider.name(),
+            VERTEX_TYPE_RTE_PROVIDER => VertexTypes::RteProvider.name(),
             VERTEX_TYPE_STAGE_DESTROY => VertexTypes::StageDestroy.name(),
             VERTEX_TYPE_COMPONENT_SRC => VertexTypes::ComponentSrc.name(),
             VERTEX_TYPE_COMPONENT_DST => VertexTypes::ComponentDst.name(),
@@ -270,25 +278,26 @@ impl VertexTypes {
             VERTEX_TYPE_TEST => VertexTypes::Test,
             VERTEX_TYPE_SITE => VertexTypes::Site,
             VERTEX_TYPE_SITES => VertexTypes::Sites,
+            VERTEX_TYPE_SHARE => VertexTypes::Share,
             VERTEX_TYPE_SCRIPT => VertexTypes::Script,
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts,
             VERTEX_TYPE_PROJECT => VertexTypes::Project,
             VERTEX_TYPE_FEATURE => VertexTypes::Feature,
             VERTEX_TYPE_FEATURES => VertexTypes::Features,
+            VERTEX_TYPE_PROVIDERS => VertexTypes::Providers,
+            VERTEX_TYPE_COLLECTOR => VertexTypes::Collector,
+            VERTEX_TYPE_CONNECTION => VertexTypes::Connection,
+            VERTEX_TYPE_COMPONENTS => VertexTypes::Components,
+            VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections,
+            VERTEX_TYPE_VERIFICATION => VertexTypes::Verification,
             VERTEX_TYPE_EUT_PROVIDER => VertexTypes::EutProvider,
             VERTEX_TYPE_RTE_PROVIDER => VertexTypes::RteProvider,
-            VERTEX_TYPE_PROVIDERS => VertexTypes::Providers,
-            VERTEX_TYPE_CONNECTION => VertexTypes::Connection,
-            VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections,
-            VERTEX_TYPE_COMPONENTS => VertexTypes::Components,
-            VERTEX_TYPE_COLLECTOR => VertexTypes::Collector,
-            VERTEX_TYPE_CONNECTION_SRC => VertexTypes::ConnectionSrc,
-            VERTEX_TYPE_CONNECTION_DST => VertexTypes::ConnectionDst,
-            VERTEX_TYPE_VERIFICATION => VertexTypes::Verification,
             VERTEX_TYPE_STAGE_DEPLOY => VertexTypes::StageDeploy,
             VERTEX_TYPE_STAGE_DESTROY => VertexTypes::StageDestroy,
             VERTEX_TYPE_COMPONENT_SRC => VertexTypes::ComponentSrc,
             VERTEX_TYPE_COMPONENT_DST => VertexTypes::ComponentDst,
+            VERTEX_TYPE_CONNECTION_SRC => VertexTypes::ConnectionSrc,
+            VERTEX_TYPE_CONNECTION_DST => VertexTypes::ConnectionDst,
             _ => VertexTypes::None
         }
     }
@@ -307,6 +316,7 @@ impl EdgeTypes {
             EdgeTypes::UsesRtes => EDGE_TYPE_USES_RTES,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
+            EdgeTypes::NeedsShare => EDGE_TYPE_NEEDS_SHARE,
             EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
             EdgeTypes::ProvidesRte => EDGE_TYPE_PROVIDES_RTE,
             EdgeTypes::HasProviders => EDGE_TYPE_HAS_PROVIDERS,
@@ -367,6 +377,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::RteProvider.name().to_string()), EdgeTypes::ProvidesProvider.name());
         map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
         map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
+        map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Share.name().to_string()), EdgeTypes::NeedsShare.name());
         map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::HasComponentSrc.name());
         map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::HasComponentDst.name());
         map.insert(VertexTuple(VertexTypes::Connections.name().to_string(), VertexTypes::Connection.name().to_string()), EdgeTypes::HasConnection.name());
@@ -480,11 +491,12 @@ struct RegressionConfigVerifications {
     ci: RegressionConfigGenericCi,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
     name: String,
     templates: String,
     root_path: String,
+    vars_path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -514,7 +526,15 @@ struct EutRenderContext {
     sites: Vec<Map<String, Value>>,
     module: Map<String, Value>,
     scripts: Vec<HashMap<String, Vec<String>>>,
+    project: RegressionConfigProject,
     provider: Vec<String>,
+}
+
+#[derive(Serialize, Debug)]
+struct RteProviderShareRenderContext {
+    job: String,
+    rte: String,
+    scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -559,6 +579,7 @@ struct RteComponentRenderContext {
 struct RteRenderContext {
     ci: HashMap<String, RteCiRenderContext>,
     tests: Vec<RteTestRenderContext>,
+    share: HashMap<String, RteProviderShareRenderContext>,
     components: Vec<RteComponentRenderContext>,
 }
 
@@ -693,6 +714,7 @@ struct ScriptRteRenderContext {
     eut: Option<String>,
     rte: Option<String>,
     release: Option<String>,
+    project: Option<RegressionConfigProject>,
     provider: String,
 }
 
@@ -700,6 +722,7 @@ impl ScriptRteRenderContext {
     pub fn new(provider: String) -> Self {
         Self {
             provider,
+            project: None,
             eut: None,
             rte: None,
             release: None,
@@ -711,6 +734,33 @@ impl ScriptRteRenderContext {
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
         info!("Render regression pipeline file rte script section -> Done.");
+        rendered
+    }
+}
+
+#[derive(Serialize, Debug)]
+struct ScriptRteProviderShareRenderContext {
+    eut: Option<String>,
+    rte: Option<String>,
+    project: String,
+    provider: Option<String>,
+}
+
+impl ScriptRteProviderShareRenderContext {
+    pub fn new(project: String) -> Self {
+        Self {
+            project,
+            eut: None,
+            rte: None,
+            provider: None,
+        }
+    }
+
+    pub fn render_script(&self, context: &ScriptRteProviderShareRenderContext, input: &String) -> String {
+        info!("Render regression pipeline file rte provider share script section...");
+        let ctx = Context::from_serialize(context);
+        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        info!("Render regression pipeline file rte provider share script section -> Done.");
         rendered
     }
 }
@@ -1252,6 +1302,15 @@ impl Regression {
                                                         }), PropertyType::Gv);
                                                     self.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
+                                                k if k == KEY_SHARE => {
+                                                    let s_o = self.create_object(VertexTypes::Share);
+                                                    self.create_relationship(&o, &s_o);
+                                                    self.add_object_properties(&s_o, &json!({
+                                                        KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &r.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                        KEY_GV_LABEL: k
+                                                    }), PropertyType::Gv);
+                                                    self.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
+                                                }
                                                 k if k == KEY_COMPONENTS => {
                                                     let c_o = self.create_object(VertexTypes::Components);
                                                     self.create_relationship(&o, &c_o);
@@ -1349,6 +1408,7 @@ impl Regression {
 
                             let _c_d_s: Vec<VertexProperties> = self.get_object_neighbours_with_properties(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
                             for p in rte_provider.iter() {
+                                error!("RTE: {:#?}", r_p);
                                 let _components = self.get_object_neighbour(&p.vertex.id, EdgeTypes::HasComponents);
                                 let component_src = self.get_object_neighbour(&_components.id, EdgeTypes::HasComponentSrc);
                                 let r_p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().
@@ -1372,15 +1432,15 @@ impl Regression {
             }
         }
 
-        //Eut Stages Deploy
-        let eut_stage_deploy = self.add_ci_stages(&ci, &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Rte Stages Deploy
-        let rte_stage_deploy = self.add_ci_stages(&eut_stage_deploy.unwrap(), &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let rte_stage_deploy = self.add_ci_stages(&ci, &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
+        //Eut Stages Deploy
+        let eut_stage_deploy = self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Feature Stages Deploy
-        let feature_stage_deploy = self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let feature_stage_deploy = self.add_ci_stages(&eut_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Test Stages Deploy
         let mut test_stage_deploy = self.add_ci_stages(&feature_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
-        //Verification  Stages Deploy
+        //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Test and Verification single job stages
@@ -1433,13 +1493,14 @@ impl Regression {
             stage_destroy = self.add_ci_stages(&ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
         }
 
-        //Rte Stages Destroy
-        match stage_destroy {
-            Some(s) => stage_destroy = self.add_ci_stages(&s, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy),
-            None => stage_destroy = self.add_ci_stages(&ci, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy)
-        }
         //Eut Stages Destroy
-        self.add_ci_stages(&stage_destroy.unwrap(), &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy);
+         match stage_destroy {
+            Some(f) => stage_destroy = self.add_ci_stages(&f, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy),
+            None => stage_destroy = self.add_ci_stages(&ci, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy)
+        }
+
+        //Rte Stages Destroy
+        self.add_ci_stages(&stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         project.id
     }
@@ -1662,6 +1723,7 @@ impl Regression {
             base: eut_p_base.clone(),
             module: eut_p_module.clone(),
             provider: eut_provider_p_base.clone(),
+            project: self.config.project.clone(),
             sites,
             scripts,
         };
@@ -1713,17 +1775,57 @@ impl Regression {
             let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
             let _c = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::HasConnections);
             let connections = self.get_object_neighbours_with_properties(&_c.id, EdgeTypes::HasConnection);
-            let mut rte_crcs = RteRenderContext { components: Default::default(), ci: HashMap::new(), tests: vec![] };
+            let mut rte_crcs = RteRenderContext {
+                components: Default::default(),
+                ci: HashMap::new(),
+                tests: vec![],
+                share: HashMap::new(),
+            };
             let _provider = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::NeedsProvider);
             let provider = self.get_object_neighbours_with_properties(&_provider.id, EdgeTypes::ProvidesProvider);
 
             for p in provider.iter() {
                 let ci_p = self.get_object_neighbour_with_properties(&p.vertex.id, EdgeTypes::HasCi);
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                rte_crcs.ci.insert(p_name.to_string(), RteCiRenderContext {
-                    timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
-                    variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
-                });
+                rte_crcs.ci.insert(p_name.to_string(),
+                                   RteCiRenderContext {
+                                       timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
+                                       variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
+                                   },
+                );
+
+                let share_p = self.get_object_neighbour_with_properties(&p.vertex.id, EdgeTypes::NeedsShare);
+                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+
+                //Process provider share scripts
+                for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
+                    let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
+                    ctx.rte = Option::from(rte_name.to_string());
+                    ctx.eut = Option::from(eut_name.to_string());
+                    ctx.provider = Option::from(p_name.to_string());
+                    let mut commands: Vec<String> = Vec::new();
+
+                    for command in ctx.render_script(&ctx, &contents).lines() {
+                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    }
+
+                    let data: HashMap<String, Vec<String>> = [
+                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                    ].into_iter().collect();
+
+                    scripts.push(data);
+                }
+
+                rte_crcs.share.insert(p_name.to_string(),
+                                      RteProviderShareRenderContext {
+                                          job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
+                                          rte: rte_name.to_string(),
+                                          scripts,
+                                      },
+                );
             }
 
             for conn in connections.iter() {
@@ -1751,6 +1853,7 @@ impl Regression {
                             let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
                             ctx.rte = Option::from(rte_name.to_string());
                             ctx.eut = Option::from(eut_name.to_string());
+                            ctx.project = Option::from(self.config.project.clone());
                             let mut commands: Vec<String> = Vec::new();
 
                             for command in ctx.render_script(&ctx, &contents).lines() {
@@ -1798,6 +1901,7 @@ impl Regression {
                                 let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
                                 ctx.rte = Option::from(rte_name.to_string());
                                 ctx.eut = Option::from(eut_name.to_string());
+                                ctx.project = Option::from(self.config.project.clone());
                                 let mut commands: Vec<String> = Vec::new();
 
                                 for command in ctx.render_script(&ctx, &contents).lines() {
