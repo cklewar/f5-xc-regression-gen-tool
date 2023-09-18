@@ -511,9 +511,10 @@ struct FeatureRenderContext {
 #[derive(Serialize, Debug)]
 struct EutRenderContext {
     base: Map<String, Value>,
+    sites: Vec<Map<String, Value>>,
     module: Map<String, Value>,
-    provider: Vec<String>,
     scripts: Vec<HashMap<String, Vec<String>>>,
+    provider: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -1622,6 +1623,19 @@ impl Regression {
             let name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             eut_provider_p_base.push(String::from(name));
         }
+        //Process eut sites
+        let mut sites: Vec<Map<String, Value>> = Vec::new();
+        let _sites = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasSites);
+        let s_objs = self.get_object_neighbours_with_properties(&_sites.id, EdgeTypes::HasSite);
+
+        for s in s_objs.iter() {
+            let s_p = self.get_object_neighbour_with_properties(&s.vertex.id, EdgeTypes::UsesProvider);
+            let s_p_n = s_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let mut p = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+            p.append(&mut json!({KEY_PROVIDER: s_p_n.clone()}).as_object().unwrap().clone());
+            sites.push(p);
+        }
+
         //Process eut scripts
         let scripts_path = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
@@ -1648,6 +1662,7 @@ impl Regression {
             base: eut_p_base.clone(),
             module: eut_p_module.clone(),
             provider: eut_provider_p_base.clone(),
+            sites,
             scripts,
         };
 
@@ -1717,7 +1732,6 @@ impl Regression {
                 let src_site = self.get_object_neighbour(&src.vertex.id, EdgeTypes::HasSite);
                 let src_provider = self.get_object_neighbour_with_properties(&src_site.id, EdgeTypes::UsesProvider);
                 let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                error!("CONNECTION_SRC_NAME: {:?}", &src_name);
                 let comp_src = self.get_object_neighbour_with_properties(&src.vertex.id, EdgeTypes::HasComponentSrc);
                 let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &src_name, &comp_src_name);
@@ -1730,7 +1744,7 @@ impl Regression {
                     let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                     for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        if src_name == p_name {
+                        if src_p_name == p_name {
                             let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
 
@@ -1766,7 +1780,6 @@ impl Regression {
                     let dst_site = self.get_object_neighbour(&src.vertex.id, EdgeTypes::HasSite);
                     let dst_provider = self.get_object_neighbour_with_properties(&dst_site.id, EdgeTypes::UsesProvider);
                     let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    error!("CONNECTION_DST_NAME: {:?}", &dst_name);
                     let comp_dst = self.get_object_neighbour_with_properties(&dst.vertex.id, EdgeTypes::HasComponentDst);
                     let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &dst_name, &comp_dst_name);
@@ -1779,7 +1792,7 @@ impl Regression {
                         let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                         for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                            if dst_name == p_name {
+                            if dst_p_name == p_name {
                                 let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                                 let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                                 let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());

@@ -108,7 +108,7 @@ variables:
     - cd $CI_PROJECT_DIR
 
 # eut - apply
-eut-apply:
+{{ eut.module.name }}-apply:
   <<: *base
   stage: eut-apply
   rules:
@@ -138,7 +138,7 @@ eut-apply:
       - runner_system_failure
 
 # eut - artifacts
-eut-artifacts:
+{{ eut.module.name }}-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:

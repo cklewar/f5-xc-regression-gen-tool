@@ -166,7 +166,7 @@ variables:
     - cd $CI_PROJECT_DIR
 
 # eut - apply
-eut-apply:
+mcn-apply:
   <<: *base
   stage: eut-apply
   rules:
@@ -199,7 +199,7 @@ eut-apply:
       - runner_system_failure
 
 # eut - artifacts
-eut-artifacts:
+mcn-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:
@@ -238,6 +238,16 @@ rte-client-server-site-a-1-client-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client
+        cd $RTE_ROOT_DIR/client_server/aws/client
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client"
+        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars
+        #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
+        #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
+        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
+        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server_aws_DESTINATION_IPS_ARTIFACTS_FILE
         
   artifacts:
     paths:
@@ -262,6 +272,11 @@ rte-client-server-site-a-1-client-artifacts:
   stage: rte-artifacts
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client
+        cd $RTE_ROOT_DIR/client_server/aws/client
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/client.tfvars
         
   artifacts:
     paths:
@@ -284,6 +299,12 @@ rte-client-server-site-b-1-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
+        cd $RTE_ROOT_DIR/client_server/aws/server
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -308,6 +329,11 @@ rte-client-server-site-b-1-server-artifacts:
   stage: rte-artifacts
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
+        cd $RTE_ROOT_DIR/client_server/aws/server
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -330,6 +356,12 @@ rte-client-server-site-c-1-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
+        cd $RTE_ROOT_DIR/client_server/aws/server
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -354,6 +386,11 @@ rte-client-server-site-c-1-server-artifacts:
   stage: rte-artifacts
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
+        cd $RTE_ROOT_DIR/client_server/aws/server
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -376,6 +413,15 @@ rte-client-server1-site-b-1-client-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client
+        cd $RTE_ROOT_DIR/client_server1/aws/client
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
+        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars
+        #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER1_AWS_VPC_IDS_ARTIFACTS_FILE
+        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER1_AWS_CONNECTION_ARTIFACTS_FILE
+        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server1_aws_DESTINATION_IPS_ARTIFACTS_FILE
         
   artifacts:
     paths:
@@ -400,6 +446,11 @@ rte-client-server1-site-b-1-client-artifacts:
   stage: rte-artifacts
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client
+        cd $RTE_ROOT_DIR/client_server1/aws/client
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/client.tfvars
         
   artifacts:
     paths:
@@ -422,6 +473,12 @@ rte-client-server1-site-c-1-server-apply:
     - !reference [ .deploy_rte_rules, rules ]
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
+        cd $RTE_ROOT_DIR/client_server1/aws/server
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -446,6 +503,11 @@ rte-client-server1-site-c-1-server-artifacts:
   stage: rte-artifacts
   script:
       - |
+        #!/usr/bin/env bash
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
+        cd $RTE_ROOT_DIR/client_server1/aws/server
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
         
   artifacts:
     paths:
@@ -865,6 +927,10 @@ rte-client-server-site-a-1-client-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
+      #!/usr/bin/env bash
+      cd $RTE_ROOT_DIR/client_server/aws/client
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client"
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -887,6 +953,10 @@ rte-client-server-site-b-1-server-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
+      #!/usr/bin/env bash
+      cd $RTE_ROOT_DIR/client_server/aws/server
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -909,6 +979,10 @@ rte-client-server-site-c-1-server-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
+      #!/usr/bin/env bash
+      cd $RTE_ROOT_DIR/client_server/aws/server
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -931,6 +1005,10 @@ rte-client-server1-site-b-1-client-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
+      #!/usr/bin/env bash
+      cd $RTE_ROOT_DIR/client_server1/aws/client
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client"
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
@@ -953,6 +1031,10 @@ rte-client-server1-site-c-1-server-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
+      #!/usr/bin/env bash
+      cd $RTE_ROOT_DIR/client_server1/aws/server
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
       
   artifacts:
     paths:
