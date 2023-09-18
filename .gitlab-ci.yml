@@ -207,8 +207,8 @@ rte-client-server-aws-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -233,8 +233,8 @@ rte-client-server-aws-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -261,8 +261,8 @@ rte-client-server-azure-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -287,8 +287,8 @@ rte-client-server-azure-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -490,8 +490,8 @@ rte-client-server1-aws-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -516,8 +516,8 @@ rte-client-server1-aws-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -544,8 +544,8 @@ rte-client-server1-azure-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -570,8 +570,8 @@ rte-client-server1-azure-share:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -1282,8 +1282,8 @@ rte-client-server-aws-share-destroy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -1308,8 +1308,8 @@ rte-client-server-azure-share-destroy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -1386,8 +1386,8 @@ rte-client-server1-aws-share-destroy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:
@@ -1412,8 +1412,8 @@ rte-client-server1-azure-share-destroy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: 3h
+  timeout: 30m
   retry:
     max: 1
     when:

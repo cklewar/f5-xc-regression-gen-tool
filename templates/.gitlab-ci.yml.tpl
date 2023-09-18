@@ -113,7 +113,7 @@ variables:
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
 {% for rte in rtes -%}
-{% for k, share in rte.share %}
+{% for provider, share in rte.share %}
 # {{ share.job | replace(from="_", to="-") }} - apply
 {{ share.job | replace(from="_", to="-") }}:
   <<: *base
@@ -136,7 +136,7 @@ variables:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[ share.provider ].timeout }}
+  timeout: {{ rte.ci[provider].timeout }}
   retry:
     max: 1
     when:
@@ -165,7 +165,7 @@ variables:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[ share.provider ].timeout }}
+  timeout: {{ rte.ci[provider].timeout }}
   retry:
     max: 1
     when:
@@ -512,7 +512,7 @@ eut-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% for k, share in rte.share %}
+{% for provider, share in rte.share %}
 # {{ share.job | replace(from="_", to="-") }} - destroy
 {{ share.job | replace(from="_", to="-") }}-destroy:
   <<: *base
@@ -535,7 +535,7 @@ eut-destroy:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[ share.provider ].timeout }}
+  timeout: {{ rte.ci[provider].timeout }}
   retry:
     max: 1
     when:
