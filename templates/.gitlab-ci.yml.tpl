@@ -534,8 +534,8 @@ eut-destroy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: { { config.ci.artifacts.expire_in } }
-  timeout: { { rte.ci[ share.provider ].timeout } }
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[ share.provider ].timeout }}
   retry:
     max: 1
     when:
