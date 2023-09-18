@@ -492,11 +492,17 @@ struct RegressionConfigVerifications {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
+struct RegressionConfigProjectVars {
+    file: String,
+    path: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
     name: String,
     templates: String,
     root_path: String,
-    vars_path: String,
+    vars: RegressionConfigProjectVars,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

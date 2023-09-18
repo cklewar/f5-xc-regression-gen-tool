@@ -198,11 +198,11 @@ rte-client-server-aws-share:
   script:
     - |
       #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared/site_c_2
-      cd $RTE_ROOT_DIR/client_server/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/shared"
+      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/site_c_2
+      cd $RTE_ROOT_DIR/client_server/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_c_2"
       terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared/site_c_2shared.tfvars
+      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/site_c_2/share.tfvars
       
   artifacts:
     paths:
@@ -225,10 +225,10 @@ rte-client-server-aws-share-artifacts:
   script:
     - |
       #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared
-      cd $RTE_ROOT_DIR/client_server/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/shared"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/shared/shared.tfvars
+      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/site_c_2
+      cd $RTE_ROOT_DIR/client_server/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_c_2"
+      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/site_c_2/share.tfvars
       
   artifacts:
     paths:
@@ -481,11 +481,11 @@ rte-client-server1-aws-share:
   script:
     - |
       #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/shared
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/shared/shared.tfvars
+      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_c_2
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_c_2"
+      terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
+      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_c_2/share.tfvars
       
   artifacts:
     paths:
@@ -508,10 +508,10 @@ rte-client-server1-aws-share-artifacts:
   script:
     - |
       #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/shared
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/shared/shared.tfvars
+      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_c_2
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_c_2"
+      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_c_2/share.tfvars
       
   artifacts:
     paths:
@@ -1275,9 +1275,9 @@ rte-client-server-aws-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_c_2"
+      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
