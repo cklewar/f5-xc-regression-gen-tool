@@ -1907,8 +1907,6 @@ impl Regression {
                     scripts.push(data);
                 }
 
-                error!("SCRIPTS: {:#?}", &scripts);
-
                 rte_crcs.shares.push(RteProviderShareRenderContext {
                     job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
                     rte: rte_name.to_string(),
