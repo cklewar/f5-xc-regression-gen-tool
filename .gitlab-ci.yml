@@ -506,7 +506,7 @@ rte-client-server-aws-site-a-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_site_a_1_share, rules ]
+    - !reference [ .deploy_rte_client_server_aws_site_a_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -562,7 +562,7 @@ rte-client-server-aws-site-a-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_site_a_2_share, rules ]
+    - !reference [ .deploy_rte_client_server_aws_site_a_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -618,7 +618,7 @@ rte-client-server-aws-site-a-3-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_site_a_3_share, rules ]
+    - !reference [ .deploy_rte_client_server_aws_site_a_3_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -674,7 +674,7 @@ rte-client-server-aws-site-b-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_site_b_1_share, rules ]
+    - !reference [ .deploy_rte_client_server_aws_site_b_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -730,7 +730,7 @@ rte-client-server-aws-site-b-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_site_b_2_share, rules ]
+    - !reference [ .deploy_rte_client_server_aws_site_b_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -786,7 +786,7 @@ rte-client-server-aws-site-c-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_site_c_1_share, rules ]
+    - !reference [ .deploy_rte_client_server_aws_site_c_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -842,7 +842,7 @@ rte-client-server-aws-site-c-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_site_c_2_share, rules ]
+    - !reference [ .deploy_rte_client_server_aws_site_c_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -898,7 +898,7 @@ rte-client-server-azure-site-a-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_site_a_1_share, rules ]
+    - !reference [ .deploy_rte_client_server_azure_site_a_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -954,7 +954,7 @@ rte-client-server-azure-site-a-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_site_a_2_share, rules ]
+    - !reference [ .deploy_rte_client_server_azure_site_a_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1010,7 +1010,7 @@ rte-client-server-azure-site-a-3-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_site_a_3_share, rules ]
+    - !reference [ .deploy_rte_client_server_azure_site_a_3_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1066,7 +1066,7 @@ rte-client-server-azure-site-b-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_site_b_1_share, rules ]
+    - !reference [ .deploy_rte_client_server_azure_site_b_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1122,7 +1122,7 @@ rte-client-server-azure-site-b-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_site_b_2_share, rules ]
+    - !reference [ .deploy_rte_client_server_azure_site_b_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1178,7 +1178,7 @@ rte-client-server-azure-site-c-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_site_c_1_share, rules ]
+    - !reference [ .deploy_rte_client_server_azure_site_c_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1234,7 +1234,7 @@ rte-client-server-azure-site-c-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_site_c_2_share, rules ]
+    - !reference [ .deploy_rte_client_server_azure_site_c_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1468,7 +1468,7 @@ rte-client-server1-aws-site-a-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_site_a_1_share, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_site_a_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1524,7 +1524,7 @@ rte-client-server1-aws-site-a-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_site_a_2_share, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_site_a_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1580,7 +1580,7 @@ rte-client-server1-aws-site-a-3-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_site_a_3_share, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_site_a_3_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1636,7 +1636,7 @@ rte-client-server1-aws-site-b-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_site_b_1_share, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_site_b_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1692,7 +1692,7 @@ rte-client-server1-aws-site-b-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_site_b_2_share, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_site_b_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1748,7 +1748,7 @@ rte-client-server1-aws-site-c-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_site_c_1_share, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_site_c_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1804,7 +1804,7 @@ rte-client-server1-aws-site-c-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_site_c_2_share, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_site_c_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1860,7 +1860,7 @@ rte-client-server1-azure-site-a-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_site_a_1_share, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_site_a_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1916,7 +1916,7 @@ rte-client-server1-azure-site-a-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_site_a_2_share, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_site_a_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1972,7 +1972,7 @@ rte-client-server1-azure-site-a-3-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_site_a_3_share, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_site_a_3_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -2028,7 +2028,7 @@ rte-client-server1-azure-site-b-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_site_b_1_share, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_site_b_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -2084,7 +2084,7 @@ rte-client-server1-azure-site-b-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_site_b_2_share, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_site_b_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -2140,7 +2140,7 @@ rte-client-server1-azure-site-c-1-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_site_c_1_share, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_site_c_1_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -2196,7 +2196,7 @@ rte-client-server1-azure-site-c-2-share-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_site_c_2_share, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_site_c_2_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash

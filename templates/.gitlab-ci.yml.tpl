@@ -135,7 +135,7 @@ variables:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}, rules ]
+    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
       {% for script in share.scripts -%}
