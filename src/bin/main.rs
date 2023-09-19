@@ -777,8 +777,8 @@ struct ScriptRteProviderShareRenderContext {
     eut: Option<String>,
     rte: Option<String>,
     data: Option<String>,
-    //Option<Vec<ScriptRteProviderShareDataRenderContext>>,
     vars: Option<RegressionConfigProjectVars>,
+    counter: Option<usize>,
     project: String,
     provider: Option<String>,
 }
@@ -791,6 +791,7 @@ impl ScriptRteProviderShareRenderContext {
             rte: None,
             vars: None,
             data: None,
+            counter: None,
             provider: None,
         }
     }
@@ -1892,6 +1893,7 @@ impl Regression {
                     ctx.eut = Option::from(eut_name.to_string());
                     ctx.vars = Option::from(self.config.project.vars.clone());
                     ctx.data = Option::from(serde_json::to_string(&data_rc).unwrap());
+                    ctx.counter = Option::from(data_rc.len());
                     ctx.provider = Option::from(p_name.to_string());
 
                     let mut commands: Vec<String> = Vec::new();
