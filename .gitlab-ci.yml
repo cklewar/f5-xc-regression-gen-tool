@@ -3,14 +3,14 @@
 #############################################
 
 stages:
-  - rte-share-apply
+  - rte-share-deploy
   - rte-share-artifacts
   - rte-collect
-  - rte-apply
+  - rte-deploy
   - rte-artifacts
-  - eut-apply
+  - eut-deploy
   - eut-artifacts
-  - feature-apply
+  - feature-deploy
   - regression-test
   - regression-test-artifacts
   - regression-test-verify
@@ -208,10 +208,10 @@ variables:
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
 
-# rte-client-server-aws-share - apply
+# rte-client-server-aws-share - deploy
 rte-client-server-aws-share:
   <<: *base
-  stage: rte-share-apply
+  stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -263,10 +263,10 @@ rte-client-server-aws-share-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-azure-share - apply
+# rte-client-server-azure-share - deploy
 rte-client-server-azure-share:
   <<: *base
-  stage: rte-share-apply
+  stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -318,10 +318,10 @@ rte-client-server-azure-share-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-site-a-1-client - apply
+# rte-client-server-site-a-1-client - deploy
 rte-client-server-site-a-1-client:
   <<: *base
-  stage: rte-apply
+  stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -379,10 +379,10 @@ rte-client-server-site-a-1-client-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-site-b-1-server - apply
+# rte-client-server-site-b-1-server - deploy
 rte-client-server-site-b-1-server:
   <<: *base
-  stage: rte-apply
+  stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -436,10 +436,10 @@ rte-client-server-site-b-1-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-site-c-1-server - apply
+# rte-client-server-site-c-1-server - deploy
 rte-client-server-site-c-1-server:
   <<: *base
-  stage: rte-apply
+  stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -493,10 +493,10 @@ rte-client-server-site-c-1-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-aws-share - apply
+# rte-client-server1-aws-share - deploy
 rte-client-server1-aws-share:
   <<: *base
-  stage: rte-share-apply
+  stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -548,10 +548,10 @@ rte-client-server1-aws-share-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-azure-share - apply
+# rte-client-server1-azure-share - deploy
 rte-client-server1-azure-share:
   <<: *base
-  stage: rte-share-apply
+  stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -603,10 +603,10 @@ rte-client-server1-azure-share-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-site-b-1-client - apply
+# rte-client-server1-site-b-1-client - deploy
 rte-client-server1-site-b-1-client:
   <<: *base
-  stage: rte-apply
+  stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -663,10 +663,10 @@ rte-client-server1-site-b-1-client-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-site-c-1-server - apply
+# rte-client-server1-site-c-1-server - deploy
 rte-client-server1-site-c-1-server:
   <<: *base
-  stage: rte-apply
+  stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -720,10 +720,10 @@ rte-client-server1-site-c-1-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut - apply
-mcn-apply:
+# eut - deploy
+mcn-deploy:
   <<: *base
-  stage: eut-apply
+  stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
@@ -785,10 +785,10 @@ mcn-artifacts:
       - runner_system_failure
 
 
-# feature - mcn - network_policy - apply
-feature-mcn-network_policy-apply:
+# feature - mcn - network_policy - deploy
+feature-mcn-network_policy-deploy:
   <<: *base
-  stage: feature-apply
+  stage: feature-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_feature_rules, rules ]
@@ -808,10 +808,10 @@ feature-mcn-network_policy-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# feature - mcn - forward_proxy_policy - apply
-feature-mcn-forward_proxy_policy-apply:
+# feature - mcn - forward_proxy_policy - deploy
+feature-mcn-forward_proxy_policy-deploy:
   <<: *base
-  stage: feature-apply
+  stage: feature-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_feature_rules, rules ]
@@ -830,8 +830,8 @@ feature-mcn-forward_proxy_policy-apply:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server-site-a-1-east-west-traffic-a - apply
-test-client-server-site-a-1-east-west-traffic-a-apply:
+# test - test-client-server-site-a-1-east-west-traffic-a - deploy
+test-client-server-site-a-1-east-west-traffic-a-deploy:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -885,8 +885,8 @@ test-client-server-site-a-1-east-west-traffic-a-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server-site-a-1-east-west-traffic-b - apply
-test-client-server-site-a-1-east-west-traffic-b-apply:
+# test - test-client-server-site-a-1-east-west-traffic-b - deploy
+test-client-server-site-a-1-east-west-traffic-b-deploy:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -940,8 +940,8 @@ test-client-server-site-a-1-east-west-traffic-b-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server1-site-b-1-east-west-traffic-a - apply
-test-client-server1-site-b-1-east-west-traffic-a-apply:
+# test - test-client-server1-site-b-1-east-west-traffic-a - deploy
+test-client-server1-site-b-1-east-west-traffic-a-deploy:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -995,8 +995,8 @@ test-client-server1-site-b-1-east-west-traffic-a-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server1-site-b-1-east-west-traffic-b - apply
-test-client-server1-site-b-1-east-west-traffic-b-apply:
+# test - test-client-server1-site-b-1-east-west-traffic-b - deploy
+test-client-server1-site-b-1-east-west-traffic-b-deploy:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -1050,8 +1050,8 @@ test-client-server1-site-b-1-east-west-traffic-b-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a - apply
-verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a-apply:
+# verification - verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a - deploy
+verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a-deploy:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -1072,8 +1072,8 @@ verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b - apply
-verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b-apply:
+# verification - verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b - deploy
+verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b-deploy:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -1094,8 +1094,8 @@ verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a - apply
-verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a-apply:
+# verification - verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a - deploy
+verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a-deploy:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
@@ -1116,8 +1116,8 @@ verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verif
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# verification - verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b - apply
-verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b-apply:
+# verification - verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b - deploy
+verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b-deploy:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]

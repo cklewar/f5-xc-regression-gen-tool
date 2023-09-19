@@ -119,10 +119,10 @@ variables:
     - cd $CI_PROJECT_DIR
 {% for rte in rtes -%}
 {% for provider, share in rte.share %}
-# {{ share.job | replace(from="_", to="-") }} - apply
+# {{ share.job | replace(from="_", to="-") }} - deploy
 {{ share.job | replace(from="_", to="-") }}:
   <<: *base
-  stage: rte-share-apply
+  stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -180,10 +180,10 @@ variables:
       - runner_system_failure
 {% endfor -%}
 {% for component in rte.components %}
-# {{ component.job | replace(from="_", to="-") }} - apply
+# {{ component.job | replace(from="_", to="-") }} - deploy
 {{ component.job | replace(from="_", to="-") }}:
   <<: *base
-  stage: rte-apply
+  stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
@@ -244,10 +244,10 @@ variables:
       - runner_system_failure
 {% endfor -%}
 {% endfor %}
-# eut - apply
-{{ eut.module.name }}-apply:
+# eut - deploy
+{{ eut.module.name }}-deploy:
   <<: *base
-  stage: eut-apply
+  stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
@@ -306,10 +306,10 @@ variables:
       - runner_system_failure
 
 {% for feature in features %}
-# feature - {{ eut.base.module }} - {{ feature.name }} - apply
-feature-{{ eut.base.module }}-{{ feature.name }}-apply:
+# feature - {{ eut.base.module }} - {{ feature.name }} - deploy
+feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
   <<: *base
-  stage: feature-apply
+  stage: feature-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_feature_rules, rules ]
@@ -334,8 +334,8 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
 {% endfor -%}
 {% for rte in rtes -%}
 {% for test in rte.tests %}
-# test - {{ test.job }} - apply
-{{ test.job }}-apply:
+# test - {{ test.job }} - deploy
+{{ test.job }}-deploy:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
@@ -400,8 +400,8 @@ feature-{{ eut.base.module }}-{{ feature.name }}-apply:
 {% for rte in rtes -%}
 {% for test in rte.tests -%}
 {% for verification in test.verifications %}
-# verification - {{ verification.job }} - apply
-{{ verification.job }}-apply:
+# verification - {{ verification.job }} - deploy
+{{ verification.job }}-deploy:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
