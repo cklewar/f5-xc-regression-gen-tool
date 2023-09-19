@@ -119,6 +119,7 @@ const EDGE_TYPE_HAS_SITES: &str = "has_sites";
 const EDGE_TYPE_NEEDS_SHARE: &str = "needs_share";
 const EDGE_TYPE_USES_RTES: &str = "uses_rtes";
 const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
+const EDGE_TYPE_REFERS_SITE: &str = "refers_site";
 const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
 const EDGE_TYPE_HAS_FEATURES: &str = "has_features";
 const EDGE_TYPE_PROVIDES_RTE: &str = "provides_rte";
@@ -184,6 +185,7 @@ enum EdgeTypes {
     HasSites,
     UsesRtes,
     NextStage,
+    RefersSite,
     NeedsShare,
     HasFeature,
     HasFeatures,
@@ -219,20 +221,20 @@ impl VertexTypes {
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
             VertexTypes::Feature => VERTEX_TYPE_FEATURE,
             VertexTypes::Features => VERTEX_TYPE_FEATURES,
-            VertexTypes::EutProvider => VERTEX_TYPE_EUT_PROVIDER,
-            VertexTypes::RteProvider => VERTEX_TYPE_RTE_PROVIDER,
+            VertexTypes::Collector => VERTEX_TYPE_COLLECTOR,
             VertexTypes::Providers => VERTEX_TYPE_PROVIDERS,
             VertexTypes::Connection => VERTEX_TYPE_CONNECTION,
-            VertexTypes::Connections => VERTEX_TYPE_CONNECTIONS,
-            VertexTypes::Collector => VERTEX_TYPE_COLLECTOR,
             VertexTypes::Components => VERTEX_TYPE_COMPONENTS,
-            VertexTypes::ConnectionSrc => VERTEX_TYPE_CONNECTION_SRC,
-            VertexTypes::ConnectionDst => VERTEX_TYPE_CONNECTION_DST,
+            VertexTypes::Connections => VERTEX_TYPE_CONNECTIONS,
+            VertexTypes::EutProvider => VERTEX_TYPE_EUT_PROVIDER,
+            VertexTypes::RteProvider => VERTEX_TYPE_RTE_PROVIDER,
             VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
             VertexTypes::StageDestroy => VERTEX_TYPE_STAGE_DESTROY,
             VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
             VertexTypes::ComponentSrc => VERTEX_TYPE_COMPONENT_SRC,
             VertexTypes::ComponentDst => VERTEX_TYPE_COMPONENT_DST,
+            VertexTypes::ConnectionSrc => VERTEX_TYPE_CONNECTION_SRC,
+            VertexTypes::ConnectionDst => VERTEX_TYPE_CONNECTION_DST,
             VertexTypes::None => VERTEX_TYPE_NONE,
         }
     }
@@ -315,6 +317,7 @@ impl EdgeTypes {
             EdgeTypes::HasSites => EDGE_TYPE_HAS_SITES,
             EdgeTypes::UsesRtes => EDGE_TYPE_USES_RTES,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
+            EdgeTypes::RefersSite => EDGE_TYPE_REFERS_SITE,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
             EdgeTypes::NeedsShare => EDGE_TYPE_NEEDS_SHARE,
             EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
@@ -385,9 +388,9 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ConnectionDst.name().to_string()), EdgeTypes::HasConnectionDst.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Runs.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::HasComponentSrc.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::HasSite.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::RefersSite.name());
         map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::HasComponentDst.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::HasSite.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::RefersSite.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasDeployStages.name());
@@ -549,7 +552,6 @@ struct RteProviderShareRenderContext {
     job: String,
     rte: String,
     eut: String,
-    site: String,
     provider: String,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
@@ -762,11 +764,19 @@ impl ScriptRteRenderContext {
     }
 }
 
+#[derive(Serialize, Clone, Debug)]
+struct ScriptRteProviderShareDataRenderContext {
+    name: String,
+    index: usize,
+    has_client: bool,
+    has_server: bool,
+}
+
 #[derive(Serialize, Debug)]
 struct ScriptRteProviderShareRenderContext {
     eut: Option<String>,
     rte: Option<String>,
-    site: Option<String>,
+    data: Option<Vec<ScriptRteProviderShareDataRenderContext>>,
     vars: Option<RegressionConfigProjectVars>,
     project: String,
     provider: Option<String>,
@@ -779,7 +789,7 @@ impl ScriptRteProviderShareRenderContext {
             eut: None,
             rte: None,
             vars: None,
-            site: None,
+            data: None,
             provider: None,
         }
     }
@@ -960,8 +970,8 @@ impl Regression {
                         KEY_GVID: format!("{}_{}", self.config.eut.module, k),
                         KEY_GV_LABEL: k
                     }), PropertyType::Gv);
-                    let _p = self.get_object_neighbour(&eut.id, EdgeTypes::HasProviders);
-                    let provider = self.get_object_neighbours_with_properties(&_p.id, EdgeTypes::ProvidesProvider);
+                    let _p = self.get_object_neighbour_out(&eut.id, EdgeTypes::HasProviders);
+                    let provider = self.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
                     let mut id_name_map: HashMap<&str, Uuid> = HashMap::new();
 
                     //Generate provider name to vertex id map
@@ -1093,7 +1103,7 @@ impl Regression {
                             KEY_GV_LABEL: KEY_PROVIDERS
                         }), PropertyType::Gv);
                         // REL: RTE -> Features
-                        let eut_f_o = self.get_object_neighbour(&eut.id, EdgeTypes::HasFeatures);
+                        let eut_f_o = self.get_object_neighbour_out(&eut.id, EdgeTypes::HasFeatures);
                         self.create_relationship(&r_o, &eut_f_o);
 
                         for (k, v) in r.as_object().unwrap().iter() {
@@ -1146,8 +1156,8 @@ impl Regression {
                                             KEY_GV_LABEL: source
                                         }), PropertyType::Gv);
 
-                                        let _sites = self.get_object_neighbour(&eut.id, EdgeTypes::HasSites);
-                                        let sites = self.get_object_neighbours_with_properties(&_sites.id, EdgeTypes::HasSite);
+                                        let _sites = self.get_object_neighbour_out(&eut.id, EdgeTypes::HasSites);
+                                        let sites = self.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
                                         //Connection Source -> Site
                                         for s in sites.iter() {
@@ -1422,22 +1432,22 @@ impl Regression {
                             }
                         }
                         // Connection -> Component
-                        let _c = self.get_object_neighbour(&r_o.id, EdgeTypes::HasConnections);
-                        let connections = self.get_object_neighbours(&_c.id, EdgeTypes::HasConnection);
-                        let _p = self.get_object_neighbour(&r_o.id, EdgeTypes::NeedsProvider);
-                        let rte_provider = self.get_object_neighbours_with_properties(&_p.id, EdgeTypes::ProvidesProvider);
+                        let _c = self.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
+                        let connections = self.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
+                        let _p = self.get_object_neighbour_out(&r_o.id, EdgeTypes::NeedsProvider);
+                        let rte_provider = self.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
 
                         for c in connections.iter() {
-                            let c_s = self.get_object_neighbour_with_properties(&c.id, EdgeTypes::HasConnectionSrc);
-                            let site = self.get_object_neighbour(&c_s.vertex.id, EdgeTypes::HasSite);
-                            let site_provider = self.get_object_neighbour_with_properties(&site.id, EdgeTypes::UsesProvider);
+                            let c_s = self.get_object_neighbour_with_properties_out(&c.id, EdgeTypes::HasConnectionSrc);
+                            let site = self.get_object_neighbour_out(&c_s.vertex.id, EdgeTypes::RefersSite);
+                            let site_provider = self.get_object_neighbour_with_properties_out(&site.id, EdgeTypes::UsesProvider);
                             let s_p_name = site_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().
                                 unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
-                            let _c_d_s: Vec<VertexProperties> = self.get_object_neighbours_with_properties(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
+                            let _c_d_s: Vec<VertexProperties> = self.get_object_neighbours_with_properties_out(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
                             for p in rte_provider.iter() {
-                                let _components = self.get_object_neighbour(&p.vertex.id, EdgeTypes::HasComponents);
-                                let component_src = self.get_object_neighbour(&_components.id, EdgeTypes::HasComponentSrc);
+                                let _components = self.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
+                                let component_src = self.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentSrc);
                                 let r_p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().
                                     unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                                 if s_p_name == r_p_name {
@@ -1447,8 +1457,8 @@ impl Regression {
                             //CONNECTION DSTs
                             for c_d in _c_d_s.iter() {
                                 for p in rte_provider.iter() {
-                                    let _components = self.get_object_neighbour(&p.vertex.id, EdgeTypes::HasComponents);
-                                    let component_dst = self.get_object_neighbour(&_components.id, EdgeTypes::HasComponentDst);
+                                    let _components = self.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
+                                    let component_dst = self.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentDst);
                                     self.create_relationship(&c_d.vertex, &component_dst);
                                 }
                             }
@@ -1471,17 +1481,17 @@ impl Regression {
         let verification_stage_deploy = self.add_ci_stages(&test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Test and Verification single job stages
-        let _rtes = self.get_object_neighbour(&eut.id, EdgeTypes::UsesRtes);
-        let rtes = self.get_object_neighbours_with_properties(&_rtes.id, EdgeTypes::ProvidesRte);
+        let _rtes = self.get_object_neighbour_out(&eut.id, EdgeTypes::UsesRtes);
+        let rtes = self.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
         let mut _test_stages: Vec<String> = Vec::new();
         let mut _verification_stages: Vec<String> = Vec::new();
 
         for rte in rtes.iter() {
-            let _c = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::HasConnections);
-            let _conns = self.get_object_neighbours(&_c.id, EdgeTypes::HasConnection);
+            let _c = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+            let _conns = self.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
             for conn in _conns.iter() {
-                let c_src = self.get_object_neighbour_with_properties(&conn.id, EdgeTypes::HasConnectionSrc);
-                let tests = self.get_object_neighbours_with_properties(&c_src.vertex.id, EdgeTypes::Runs);
+                let c_src = self.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc);
+                let tests = self.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
                 for t in tests.iter() {
                     let t_stage_name = format!("{}-{}-{}-{}-{}",
                                                KEY_TEST,
@@ -1493,7 +1503,7 @@ impl Regression {
                     _test_stages.push(t_stage_name);
 
                     //Verification stages
-                    let verifications = self.get_object_neighbours_with_properties(&t.vertex.id, EdgeTypes::Needs);
+                    let verifications = self.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
                     for v in verifications.iter() {
                         let v_stage_name = format!("{}-{}-{}-{}-{}",
                                                    KEY_VERIFICATION,
@@ -1513,8 +1523,8 @@ impl Regression {
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
-        let _features = self.get_object_neighbour(&eut.id, EdgeTypes::HasFeatures);
-        let features = self.get_object_neighbours(&_features.id, EdgeTypes::HasFeature);
+        let _features = self.get_object_neighbour_out(&eut.id, EdgeTypes::HasFeatures);
+        let features = self.get_object_neighbours_out(&_features.id, EdgeTypes::HasFeature);
 
         if features.len() > 0 {
             stage_destroy = self.add_ci_stages(&ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
@@ -1635,14 +1645,14 @@ impl Regression {
         a.get(0).unwrap().clone()
     }
 
-    fn get_object_neighbour(&self, id: &Uuid, identifier: EdgeTypes) -> Vertex {
+    fn get_object_neighbour_out(&self, id: &Uuid, identifier: EdgeTypes) -> Vertex {
         let i = Identifier::new(identifier.name().to_string()).unwrap();
         let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
         let id = indradb::util::extract_edges(o.unwrap()).unwrap().get(0).unwrap().inbound_id;
         self.get_object(&id)
     }
 
-    fn get_object_neighbours(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<Vertex> {
+    fn get_object_neighbours_out(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<Vertex> {
         let i = Identifier::new(identifier.name().to_string()).unwrap();
         let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
         let mut objs: Vec<Vertex> = Vec::new();
@@ -1653,20 +1663,31 @@ impl Regression {
         objs
     }
 
-    fn get_object_neighbour_with_properties(&self, id: &Uuid, identifier: EdgeTypes) -> VertexProperties {
+    fn get_object_neighbour_with_properties_out(&self, id: &Uuid, identifier: EdgeTypes) -> VertexProperties {
         let i = Identifier::new(identifier.name().to_string()).unwrap();
         let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
         let id = indradb::util::extract_edges(o.unwrap()).unwrap().get(0).unwrap().inbound_id;
         self.get_object_with_properties(&id)
     }
 
-    fn get_object_neighbours_with_properties(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<VertexProperties> {
+    fn get_object_neighbours_with_properties_out(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<VertexProperties> {
         let i = Identifier::new(identifier.name().to_string()).unwrap();
         let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
         let mut objs: Vec<VertexProperties> = Vec::new();
 
         for item in indradb::util::extract_edges(o.unwrap()).unwrap().iter() {
             objs.push(self.get_object_with_properties(&item.inbound_id));
+        }
+        objs
+    }
+
+    fn get_object_neighbours_with_properties_in(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<VertexProperties> {
+        let i = Identifier::new(identifier.name().to_string()).unwrap();
+        let o = self.regression.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
+        let mut objs: Vec<VertexProperties> = Vec::new();
+
+        for item in indradb::util::extract_edges(o.unwrap()).unwrap().iter() {
+            objs.push(self.get_object_with_properties(&item.outbound_id));
         }
         objs
     }
@@ -1698,13 +1719,13 @@ impl Regression {
         let project = self.get_object_with_properties(&id);
         let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
 
-        let eut = self.get_object_neighbour_with_properties(&project.vertex.id, EdgeTypes::HasEut);
+        let eut = self.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut);
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
         let eut_name = eut_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
 
-        let _eut_providers = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasProviders);
-        let eut_provider = self.get_object_neighbours_with_properties(&_eut_providers.id, EdgeTypes::ProvidesProvider);
+        let _eut_providers = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasProviders);
+        let eut_provider = self.get_object_neighbours_with_properties_out(&_eut_providers.id, EdgeTypes::ProvidesProvider);
 
         let mut eut_provider_p_base = Vec::new();
         for p in eut_provider.iter() {
@@ -1713,12 +1734,12 @@ impl Regression {
         }
         //Process eut sites
         let mut eut_sites: Vec<EutSiteRenderContext> = vec![];
-        let _sites = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasSites);
-        let sites = self.get_object_neighbours_with_properties(&_sites.id, EdgeTypes::HasSite);
+        let _sites = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);
+        let sites = self.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
         for (i, s) in sites.iter().enumerate() {
             let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-            let s_p = self.get_object_neighbour_with_properties(&s.vertex.id, EdgeTypes::UsesProvider);
+            let s_p = self.get_object_neighbour_with_properties_out(&s.vertex.id, EdgeTypes::UsesProvider);
             let provider_name = s_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
             //Process eut site scripts
@@ -1763,8 +1784,8 @@ impl Regression {
             sites: eut_sites,
         };
 
-        let _features = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::HasFeatures);
-        let features = self.get_object_neighbours_with_properties(&_features.id, EdgeTypes::HasFeature);
+        let _features = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasFeatures);
+        let features = self.get_object_neighbours_with_properties_out(&_features.id, EdgeTypes::HasFeature);
         let mut features_rc: Vec<FeatureRenderContext> = Vec::new();
 
         for feature in features.iter() {
@@ -1802,25 +1823,25 @@ impl Regression {
             features_rc.push(frc);
         }
 
-        let _rtes = self.get_object_neighbour(&eut.vertex.id, EdgeTypes::UsesRtes);
-        let rtes = self.get_object_neighbours_with_properties(&_rtes.id, EdgeTypes::ProvidesRte);
+        let _rtes = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::UsesRtes);
+        let rtes = self.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
         let mut rtes_rc: Vec<RteRenderContext> = Vec::new();
 
         for rte in rtes.iter() {
             let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-            let _c = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::HasConnections);
-            let connections = self.get_object_neighbours_with_properties(&_c.id, EdgeTypes::HasConnection);
+            let _c = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+            let connections = self.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
             let mut rte_crcs = RteRenderContext {
                 ci: HashMap::new(),
                 tests: vec![],
                 shares: Default::default(),
                 components: Default::default(),
             };
-            let _provider = self.get_object_neighbour(&rte.vertex.id, EdgeTypes::NeedsProvider);
-            let provider = self.get_object_neighbours_with_properties(&_provider.id, EdgeTypes::ProvidesProvider);
+            let _provider = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::NeedsProvider);
+            let provider = self.get_object_neighbours_with_properties_out(&_provider.id, EdgeTypes::ProvidesProvider);
 
             for p in provider.iter() {
-                let ci_p = self.get_object_neighbour_with_properties(&p.vertex.id, EdgeTypes::HasCi);
+                let ci_p = self.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::HasCi);
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 rte_crcs.ci.insert(p_name.to_string(),
                                    RteCiRenderContext {
@@ -1829,55 +1850,77 @@ impl Regression {
                                    },
                 );
 
-                let share_p = self.get_object_neighbour_with_properties(&p.vertex.id, EdgeTypes::NeedsShare);
-                let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                //Process provider share data render context
+                let mut data_rc: Vec<ScriptRteProviderShareDataRenderContext> = Vec::new();
+                for (i, site) in sites.iter().enumerate() {
+                    let components = self.get_object_neighbours_with_properties_in(&site.vertex.id, EdgeTypes::RefersSite);
+                    let mut srpsd_rc = ScriptRteProviderShareDataRenderContext {
+                        name: site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                        index: i,
+                        has_client: false,
+                        has_server: false,
+                    };
 
-                //Process provider share scripts
-                for site in sites.iter() {
-                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-                    let site_name = site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                        let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
-                        let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
-                        ctx.rte = Option::from(rte_name.to_string());
-                        ctx.eut = Option::from(eut_name.to_string());
-                        ctx.site = Option::from(site_name.to_string());
-                        ctx.vars = Option::from(self.config.project.vars.clone());
-                        ctx.provider = Option::from(p_name.to_string());
-                        let mut commands: Vec<String> = Vec::new();
-
-                        for command in ctx.render_script(&ctx, &contents).lines() {
-                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    for c in components.iter() {
+                        match VertexTypes::get_type_by_key(c.vertex.t.as_str()) {
+                            VertexTypes::ConnectionSrc => {
+                                srpsd_rc.has_client = true
+                            }
+                            VertexTypes::ConnectionDst => {
+                                srpsd_rc.has_server = true
+                            }
+                            _ => {}
                         }
+                    }
+                    data_rc.push(srpsd_rc);
+                }
 
-                        let data: HashMap<String, Vec<String>> = [
-                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                        ].into_iter().collect();
+                //Process provider share scripts render context
+                let share_p = self.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare);
+                let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
-                        scripts.push(data);
+                for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
+                    let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
+
+                    ctx.rte = Option::from(rte_name.to_string());
+                    ctx.eut = Option::from(eut_name.to_string());
+                    ctx.vars = Option::from(self.config.project.vars.clone());
+                    ctx.data = Option::from(data_rc.clone());
+                    ctx.provider = Option::from(p_name.to_string());
+
+                    let mut commands: Vec<String> = Vec::new();
+                    for command in ctx.render_script(&ctx, &contents).lines() {
+                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
                     }
 
-                    rte_crcs.shares.push(RteProviderShareRenderContext {
-                        job: format!("{}_{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, site_name, KEY_SHARE),
-                        rte: rte_name.to_string(),
-                        eut: eut_name.to_string(),
-                        site: site_name.to_string(),
-                        provider: p_name.to_string(),
-                        scripts,
-                    },
-                    );
+                    let data: HashMap<String, Vec<String>> = [
+                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                    ].into_iter().collect();
+
+                    scripts.push(data);
                 }
+
+                rte_crcs.shares.push(RteProviderShareRenderContext {
+                    job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
+                    rte: rte_name.to_string(),
+                    eut: eut_name.to_string(),
+                    provider: p_name.to_string(),
+                    scripts,
+                },
+                );
             }
 
             for conn in connections.iter() {
-                let src = self.get_object_neighbour_with_properties(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
+                let src = self.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
                 let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let src_site = self.get_object_neighbour_with_properties(&src.vertex.id, EdgeTypes::HasSite);
+                let src_site = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite);
                 let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let src_provider = self.get_object_neighbour_with_properties(&src_site.vertex.id, EdgeTypes::UsesProvider);
+                let src_provider = self.get_object_neighbour_with_properties_out(&src_site.vertex.id, EdgeTypes::UsesProvider);
                 let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let comp_src = self.get_object_neighbour_with_properties(&src.vertex.id, EdgeTypes::HasComponentSrc);
+                let comp_src = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc);
                 let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &src_name, &comp_src_name);
 
@@ -1892,14 +1935,14 @@ impl Regression {
                         if src_p_name == p_name {
                             let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
-
                             let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
+
                             ctx.rte = Option::from(rte_name.to_string());
                             ctx.eut = Option::from(eut_name.to_string());
-                            ctx.project = Option::from(self.config.project.clone());
                             ctx.site = Option::from(src_site_name.to_string());
-                            let mut commands: Vec<String> = Vec::new();
+                            ctx.project = Option::from(self.config.project.clone());
 
+                            let mut commands: Vec<String> = Vec::new();
                             for command in ctx.render_script(&ctx, &contents).lines() {
                                 commands.push(format!("{:indent$}{}", "", command, indent = 0));
                             }
@@ -1922,14 +1965,14 @@ impl Regression {
                 };
                 rte_crcs.components.push(rte_crc);
 
-                let dsts = self.get_object_neighbours_with_properties(&src.vertex.id, EdgeTypes::HasConnectionDst);
+                let dsts = self.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
                 for dst in dsts.iter() {
                     let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let dst_site = self.get_object_neighbour_with_properties(&src.vertex.id, EdgeTypes::HasSite);
+                    let dst_site = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite);
                     let dst_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let dst_provider = self.get_object_neighbour_with_properties(&dst_site.vertex.id, EdgeTypes::UsesProvider);
+                    let dst_provider = self.get_object_neighbour_with_properties_out(&dst_site.vertex.id, EdgeTypes::UsesProvider);
                     let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let comp_dst = self.get_object_neighbour_with_properties(&dst.vertex.id, EdgeTypes::HasComponentDst);
+                    let comp_dst = self.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst);
                     let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &dst_name, &comp_dst_name);
 
@@ -1945,11 +1988,12 @@ impl Regression {
                                 let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                                 let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                                 let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
+
                                 ctx.rte = Option::from(rte_name.to_string());
                                 ctx.eut = Option::from(eut_name.to_string());
                                 ctx.project = Option::from(self.config.project.clone());
-                                let mut commands: Vec<String> = Vec::new();
 
+                                let mut commands: Vec<String> = Vec::new();
                                 for command in ctx.render_script(&ctx, &contents).lines() {
                                     commands.push(format!("{:indent$}{}", "", command, indent = 0));
                                 }
@@ -1974,7 +2018,7 @@ impl Regression {
                 }
 
                 //Tests
-                let tests_p = self.get_object_neighbours_with_properties(&src.vertex.id, EdgeTypes::Runs);
+                let tests_p = self.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::Runs);
                 for t in tests_p.iter() {
                     let t_job_name = format!("{}_{}_{}_{}",
                                              KEY_TEST,
@@ -1992,11 +2036,12 @@ impl Regression {
                         let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
+
                         ctx.rte = Option::from(rte_name.to_string());
                         ctx.name = Option::from(t_name.to_string());
                         ctx.module = Option::from(t_module.to_string());
-                        let mut commands: Vec<String> = Vec::new();
 
+                        let mut commands: Vec<String> = Vec::new();
                         for command in ctx.render_script(&ctx, &contents).lines() {
                             commands.push(format!("{:indent$}{}", "", command, indent = 0));
                         }
@@ -2008,7 +2053,7 @@ impl Regression {
                     }
 
                     //Verifications
-                    let verifications_p = self.get_object_neighbours_with_properties(&t.vertex.id, EdgeTypes::Needs);
+                    let verifications_p = self.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
                     let mut verifications: Vec<RteVerificationRenderContext> = Vec::new();
                     for v in verifications_p.iter() {
                         let v_job_name = format!("{}_{}_{}_{}_{}",
@@ -2027,13 +2072,14 @@ impl Regression {
                             let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                             let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
+
                             ctx.rte = Option::from(rte_name.to_string());
                             ctx.name = Option::from(v_name.to_string());
                             ctx.module = Option::from(v_module.to_string());
                             ctx.test_name = Option::from(t_name.to_string());
                             ctx.test_module = Option::from(t_module.to_string());
-                            let mut commands: Vec<String> = Vec::new();
 
+                            let mut commands: Vec<String> = Vec::new();
                             for command in ctx.render_script(&ctx, &contents).lines() {
                                 commands.push(format!("{:indent$}{}", "", command, indent = 0));
                             }
@@ -2076,9 +2122,9 @@ impl Regression {
         let mut deploy_stages: Vec<String> = Vec::new();
         let mut destroy_stages: Vec<String> = Vec::new();
 
-        let project_ci = self.get_object_neighbour(&project.vertex.id, EdgeTypes::HasCi);
-        let s_deploy = self.get_object_neighbour_with_properties(&project_ci.id, EdgeTypes::HasDeployStages);
-        let s_destroy = self.get_object_neighbour_with_properties(&project_ci.id, EdgeTypes::HasDestroyStages);
+        let project_ci = self.get_object_neighbour_out(&project.vertex.id, EdgeTypes::HasCi);
+        let s_deploy = self.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDeployStages);
+        let s_destroy = self.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDestroyStages);
         deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
         self.get_next_stage(&s_deploy.vertex.id, &mut deploy_stages);
         deploy_stages.push(s_destroy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
@@ -2101,7 +2147,7 @@ impl Regression {
     }
 
     fn get_next_stage(&self, id: &Uuid, data: &mut Vec<String>) {
-        for stage in self.get_object_neighbours_with_properties(&id, EdgeTypes::NextStage).iter() {
+        for stage in self.get_object_neighbours_with_properties_out(&id, EdgeTypes::NextStage).iter() {
             data.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
             self.get_next_stage(&stage.vertex.id, data);
         }
