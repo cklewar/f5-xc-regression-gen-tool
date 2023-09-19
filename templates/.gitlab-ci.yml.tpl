@@ -166,11 +166,6 @@ variables:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    { %- for component in rte.components % }
-    - !reference [ .regression_test_{ { component.rte } }_{ { test.name | replace(from="-", to="_") } }, rules ]
-    { %- endfor % }
-    - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules ]
-    - !reference [ .deploy_rte_client_server_site_a_1_client_rules, rules ]
   script:
     - |
       {% for script in share.scripts -%}
