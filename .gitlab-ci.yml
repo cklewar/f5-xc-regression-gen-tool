@@ -104,145 +104,175 @@ variables:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_site_a_1_share:
+.deploy_rte_client_server_aws_site_a_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_site_a_1_share:
+.destroy_rte_client_server_aws_site_a_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_site_a_2_share:
+.deploy_rte_client_server_aws_site_a_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_site_a_2_share:
+.destroy_rte_client_server_aws_site_a_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_site_a_3_share:
+.deploy_rte_client_server_aws_site_a_3_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_site_a_3_share:
+.destroy_rte_client_server_aws_site_a_3_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_site_b_1_share:
+.deploy_rte_client_server_aws_site_b_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_site_b_1_share:
+.destroy_rte_client_server_aws_site_b_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_site_b_2_share:
+.deploy_rte_client_server_aws_site_b_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_site_b_2_share:
+.destroy_rte_client_server_aws_site_b_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_site_c_1_share:
+.deploy_rte_client_server_aws_site_c_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_site_c_1_share:
+.destroy_rte_client_server_aws_site_c_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_site_c_2_share:
+.deploy_rte_client_server_aws_site_c_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_site_c_2_share:
+.destroy_rte_client_server_aws_site_c_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_azure_site_a_1_share:
+.deploy_rte_client_server_azure_site_a_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_site_a_1_share:
+.destroy_rte_client_server_azure_site_a_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_azure_site_a_2_share:
+.deploy_rte_client_server_azure_site_a_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_site_a_2_share:
+.destroy_rte_client_server_azure_site_a_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_azure_site_a_3_share:
+.deploy_rte_client_server_azure_site_a_3_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_site_a_3_share:
+.destroy_rte_client_server_azure_site_a_3_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_azure_site_b_1_share:
+.deploy_rte_client_server_azure_site_b_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_site_b_1_share:
+.destroy_rte_client_server_azure_site_b_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_azure_site_b_2_share:
+.deploy_rte_client_server_azure_site_b_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_site_b_2_share:
+.destroy_rte_client_server_azure_site_b_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_azure_site_c_1_share:
+.deploy_rte_client_server_azure_site_c_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_site_c_1_share:
+.destroy_rte_client_server_azure_site_c_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_azure_site_c_2_share:
+.deploy_rte_client_server_azure_site_c_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_site_c_2_share:
+.destroy_rte_client_server_azure_site_c_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_rte_client_server_site_a_1_client_rules:
+  rules:
+    - if: $ACTION == "deploy-rte-client-server-site-a-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server-site-a-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_client_server_site_a_1_client_rules:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server-site-a-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server-site-a-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_rte_client_server_site_b_1_server_rules:
+  rules:
+    - if: $ACTION == "deploy-rte-client-server-site-b-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server-site-b-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_client_server_site_b_1_server_rules:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server-site-b-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server-site-b-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_rte_client_server_site_c_1_server_rules:
+  rules:
+    - if: $ACTION == "deploy-rte-client-server-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_client_server_site_c_1_server_rules:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_client_server_east_west_traffic_a:
   rules:
@@ -254,145 +284,175 @@ variables:
     - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_aws_site_a_1_share:
+.regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a:
+  rules:
+    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b:
+  rules:
+    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_rte_client_server1_aws_site_a_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_aws_site_a_1_share:
+.destroy_rte_client_server1_aws_site_a_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-aws-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_aws_site_a_2_share:
+.deploy_rte_client_server1_aws_site_a_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_aws_site_a_2_share:
+.destroy_rte_client_server1_aws_site_a_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-aws-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_aws_site_a_3_share:
+.deploy_rte_client_server1_aws_site_a_3_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_aws_site_a_3_share:
+.destroy_rte_client_server1_aws_site_a_3_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-aws-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_aws_site_b_1_share:
+.deploy_rte_client_server1_aws_site_b_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_aws_site_b_1_share:
+.destroy_rte_client_server1_aws_site_b_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-aws-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_aws_site_b_2_share:
+.deploy_rte_client_server1_aws_site_b_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_aws_site_b_2_share:
+.destroy_rte_client_server1_aws_site_b_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-aws-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_aws_site_c_1_share:
+.deploy_rte_client_server1_aws_site_c_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_aws_site_c_1_share:
+.destroy_rte_client_server1_aws_site_c_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-aws-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_aws_site_c_2_share:
+.deploy_rte_client_server1_aws_site_c_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_aws_site_c_2_share:
+.destroy_rte_client_server1_aws_site_c_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-aws-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_azure_site_a_1_share:
+.deploy_rte_client_server1_azure_site_a_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_azure_site_a_1_share:
+.destroy_rte_client_server1_azure_site_a_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-azure-site-a-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_azure_site_a_2_share:
+.deploy_rte_client_server1_azure_site_a_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_azure_site_a_2_share:
+.destroy_rte_client_server1_azure_site_a_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-azure-site-a-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_azure_site_a_3_share:
+.deploy_rte_client_server1_azure_site_a_3_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_azure_site_a_3_share:
+.destroy_rte_client_server1_azure_site_a_3_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-azure-site-a-3-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_azure_site_b_1_share:
+.deploy_rte_client_server1_azure_site_b_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_azure_site_b_1_share:
+.destroy_rte_client_server1_azure_site_b_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-azure-site-b-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_azure_site_b_2_share:
+.deploy_rte_client_server1_azure_site_b_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_azure_site_b_2_share:
+.destroy_rte_client_server1_azure_site_b_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-azure-site-b-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_azure_site_c_1_share:
+.deploy_rte_client_server1_azure_site_c_1_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_azure_site_c_1_share:
+.destroy_rte_client_server1_azure_site_c_1_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-azure-site-c-1-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server1_azure_site_c_2_share:
+.deploy_rte_client_server1_azure_site_c_2_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server1_azure_site_c_2_share:
+.destroy_rte_client_server1_azure_site_c_2_share_rules:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-rte-client-server1-azure-site-c-2-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_rte_client_server1_site_b_1_client_rules:
+  rules:
+    - if: $ACTION == "deploy-rte-client-server1-site-b-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server1-site-b-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_client_server1_site_b_1_client_rules:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server1-site-b-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server1-site-b-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_rte_client_server1_site_c_1_server_rules:
+  rules:
+    - if: $ACTION == "deploy-rte-client-server1-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server1-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_client_server1_site_c_1_server_rules:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server1-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server1-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_client_server1_east_west_traffic_a:
   rules:
@@ -403,16 +463,6 @@ variables:
   rules:
     - if: $ACTION == "test-client-server1-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test-client-server1-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a:
-  rules:
-    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b:
-  rules:
-    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a:
   rules:
@@ -1240,6 +1290,7 @@ rte-client-server-site-a-1-client:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_site_a_1_client_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1301,6 +1352,7 @@ rte-client-server-site-b-1-server:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_site_b_1_server_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1358,6 +1410,7 @@ rte-client-server-site-c-1-server:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_site_c_1_server_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -2199,6 +2252,7 @@ rte-client-server1-site-b-1-client:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_site_b_1_client_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -2256,6 +2310,7 @@ rte-client-server1-site-c-1-server:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_site_c_1_server_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
