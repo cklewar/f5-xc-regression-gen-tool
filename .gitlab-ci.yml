@@ -104,25 +104,15 @@ variables:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.deploy_rte_client_server_aws_share_rules:
+.deploy_rte_share_rules:
   rules:
-    - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_share_rules:
+.destroy_rte_share-_rules:
   rules:
-    - if: $ACTION == "destroy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_azure_share_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server_azure_share_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_rte_client_server_site_a_1_client_rules:
   rules:
@@ -173,26 +163,6 @@ variables:
   rules:
     - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server1_aws_share_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server1_aws_share_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server1_azure_share_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server1_azure_share_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_rte_client_server1_site_b_1_client_rules:
   rules:
@@ -259,70 +229,14 @@ variables:
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
 
-# rte-client-server-aws-share - deploy
-rte-client-server-aws-share-deploy:
+# rte - share - deploy
+rte-rte_client_server_azure_share-share-deploy:
   <<: *base
   stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share
-      cd $RTE_ROOT_DIR/client_server/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var="data=[[object], [object], [object], [object], [object], [object], [object]]" -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
-      
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-aws-share - artifacts
-rte-client-server-aws-share-artifacts:
-  <<: *base
-  stage: rte-share-artifacts
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share
-      cd $RTE_ROOT_DIR/client_server/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
-      
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-azure-share - deploy
-rte-client-server-azure-share-deploy:
-  <<: *base
-  stage: rte-share-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -344,8 +258,8 @@ rte-client-server-azure-share-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-azure-share - artifacts
-rte-client-server-azure-share-artifacts:
+# rte - share - artifacts
+rte-rte_client_server_azure_share-share-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
@@ -370,6 +284,7 @@ rte-client-server-azure-share-artifacts:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+
 
 # rte-client-server-site-a-1-client - deploy
 rte-client-server-site-a-1-client:
@@ -548,71 +463,14 @@ rte-client-server-site-c-1-server-artifacts:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# rte-client-server1-aws-share - deploy
-rte-client-server1-aws-share-deploy:
+# rte - share - deploy
+rte-rte_client_server1_azure_share-share-deploy:
   <<: *base
   stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share
-      cd $RTE_ROOT_DIR/client_server1/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/"
-      terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var="data=[[object], [object], [object], [object], [object], [object], [object]]" -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars
-      
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-aws-share - artifacts
-rte-client-server1-aws-share-artifacts:
-  <<: *base
-  stage: rte-share-artifacts
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share
-      cd $RTE_ROOT_DIR/client_server1/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars
-      
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-azure-share - deploy
-rte-client-server1-azure-share-deploy:
-  <<: *base
-  stage: rte-share-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -634,8 +492,8 @@ rte-client-server1-azure-share-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server1-azure-share - artifacts
-rte-client-server1-azure-share-artifacts:
+# rte - share - artifacts
+rte-rte_client_server1_azure_share-share-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
@@ -660,6 +518,7 @@ rte-client-server1-azure-share-artifacts:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+
 
 # rte-client-server1-site-b-1-client - deploy
 rte-client-server1-site-b-1-client:
@@ -1827,33 +1686,6 @@ rte-client-server-site-c-1-server-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-share - destroy
-rte-client-server-aws-share-destroy:
-  <<: *base
-  stage: rte-share-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server_aws_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var="data=[[object], [object], [object], [object], [object], [object], [object]]" -auto-approve
-      
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
 # rte-client-server-azure-share - destroy
 rte-client-server-azure-share-destroy:
   <<: *base
@@ -1920,33 +1752,6 @@ rte-client-server1-site-c-1-server-destroy:
       cd $RTE_ROOT_DIR/client_server1/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-      
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-aws-share - destroy
-rte-client-server1-aws-share-destroy:
-  <<: *base
-  stage: rte-share-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server1_aws_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var="data=[[object], [object], [object], [object], [object], [object], [object]]" -auto-approve
       
   artifacts:
     paths:

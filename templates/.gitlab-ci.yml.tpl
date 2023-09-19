@@ -62,18 +62,17 @@ variables:
   rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-{% for rte in rtes -%}
-{% for share in rte.shares %}
-.deploy_{{ share.job | replace(from="-", to="_") }}_rules:
-  rules:
-    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_{{ share.job | replace(from="-", to="_") }}_rules:
+.deploy_rte_share_rules:
   rules:
-    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-{% endfor -%}
+    - if: $ACTION == "deploy-rte-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_share-_rules:
+  rules:
+    - if: $ACTION == "destroy-rte-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% for rte in rtes -%}
 {% for component in rte.components %}
 .deploy_{{ component.job | replace(from="-", to="_") }}_rules:
   rules:
@@ -126,19 +125,19 @@ variables:
     - terraform version
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
+
 {% for rte in rtes -%}
-{% for share in rte.shares %}
-# {{ share.job | replace(from="_", to="-") }} - deploy
-{{ share.job | replace(from="_", to="-") }}-deploy:
+# rte - share - deploy
+rte-{{ rte.share.job }}-share-deploy:
   <<: *base
   stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .deploy_rte_share_rules, rules ]
   script:
     - |
-      {% for script in share.scripts -%}
+      {% for script in rte.share.scripts -%}
       {% for k, v in script -%}
       {% if k == "apply" -%}
       {% for command in v -%}
@@ -151,7 +150,7 @@ variables:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[share.provider].timeout }}
+  timeout: {{ rte.ci[rte.share.provider].timeout }}
   retry:
     max: 1
     when:
@@ -159,8 +158,8 @@ variables:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# {{ share.job | replace(from="_", to="-") }} - artifacts
-{{ share.job | replace(from="_", to="-") }}-artifacts:
+# rte - share - artifacts
+rte-{{ rte.share.job }}-share-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
@@ -168,7 +167,7 @@ variables:
     - !reference [ .deploy_rte_rules, rules ]
   script:
     - |
-      {% for script in share.scripts -%}
+      {% for script in rte.share.scripts -%}
       {% for k, v in script -%}
       {% if k == "artifacts" -%}
       {% for command in v -%}
@@ -181,14 +180,14 @@ variables:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[share.provider].timeout }}
+  timeout: {{ rte.ci[rte.share.provider].timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-{% endfor -%}
+
 {% for component in rte.components %}
 # {{ component.job | replace(from="_", to="-") }} - deploy
 {{ component.job | replace(from="_", to="-") }}:
@@ -530,19 +529,18 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-{% endfor -%}
-{% for share in rte.shares %}
-# {{ share.job | replace(from="_", to="-") }} - destroy
-{{ share.job | replace(from="_", to="-") }}-destroy:
+{% endfor %}
+# {{ rte.share.job | replace(from="_", to="-") }} - destroy
+{{ rte.share.job | replace(from="_", to="-") }}-destroy:
   <<: *base
   stage: rte-share-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ rte.share.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
-      {% for script in share.scripts -%}
+      {% for script in rte.share.scripts -%}
       {% for k, v in script -%}
       {% if k == "destroy" -%}
       {% for command in v -%}
@@ -555,12 +553,11 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[share.provider].timeout }}
+  timeout: {{ rte.ci[rte.share.provider].timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-{% endfor -%}
 {% endfor -%}
