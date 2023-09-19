@@ -798,7 +798,7 @@ impl ScriptRteProviderShareRenderContext {
     pub fn render_script(&self, context: &ScriptRteProviderShareRenderContext, input: &String) -> String {
         info!("Render regression pipeline file rte provider share script section...");
         let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
         info!("Render regression pipeline file rte provider share script section -> Done.");
         rendered
     }
@@ -1888,7 +1888,6 @@ impl Regression {
                     let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                     let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
 
-
                     ctx.rte = Option::from(rte_name.to_string());
                     ctx.eut = Option::from(eut_name.to_string());
                     ctx.vars = Option::from(self.config.project.vars.clone());
@@ -2002,7 +2001,7 @@ impl Regression {
                                 }
 
                                 let data: HashMap<String, Vec<String>> = [
-                                    (script.as_object().unwrap().get("script").unwrap().as_str().unwrap().to_string(), commands),
+                                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
                                 ].into_iter().collect();
                                 scripts.push(data);
                             }
@@ -2050,7 +2049,7 @@ impl Regression {
                         }
 
                         let data: HashMap<String, Vec<String>> = [
-                            (script.as_object().unwrap().get("script").unwrap().as_str().unwrap().to_string(), commands),
+                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
                         ].into_iter().collect();
                         scripts.push(data);
                     }
@@ -2088,7 +2087,7 @@ impl Regression {
                             }
 
                             let data: HashMap<String, Vec<String>> = [
-                                (script.as_object().unwrap().get("script").unwrap().as_str().unwrap().to_string(), commands),
+                                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
                             ].into_iter().collect();
                             scripts.push(data);
                         }
