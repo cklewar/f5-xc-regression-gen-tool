@@ -36,7 +36,7 @@ variables:
   S3_TESTS_ROOT: "$S3_ROOT/regression/tests"
   S3_VERIFICATIONS_ROOT: "$S3_ROOT/regression/verification"
   KEYS_DIR: "${CI_PROJECT_DIR}/keys"
-  PROJECT_VARS_ROOT_DIR: "${CI_PROJECT_DIR}/vars/project-a"
+  PROJECT_VARS_ROOT_DIR: "${CI_PROJECT_DIR}/regression/vars/project-a"
   ARTIFACTS_ROOT_DIR: "${CI_PROJECT_DIR}/artifacts"
   EUT_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/base"
   FEATURES_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/features"
