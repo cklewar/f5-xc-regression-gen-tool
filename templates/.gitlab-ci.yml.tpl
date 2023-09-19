@@ -63,7 +63,7 @@ variables:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% for rte in rtes -%}
-{% for k, share in rte.share %}
+{% for share in rte.shares %}
 .deploy_{{ share.job | replace(from="-", to="_") }}:
   rules:
     - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -118,9 +118,9 @@ variables:
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
 {% for rte in rtes -%}
-{% for provider, share in rte.share %}
+{% for share in rte.shares %}
 # {{ share.job | replace(from="_", to="-") }} - deploy
-{{ share.job | replace(from="_", to="-") }}:
+{{ share.job | replace(from="_", to="-") }}-deploy:
   <<: *base
   stage: rte-share-deploy
   rules:
@@ -142,13 +142,14 @@ variables:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[provider].timeout }}
+  timeout: {{ rte.ci[share.provider].timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+
 # {{ share.job | replace(from="_", to="-") }} - artifacts
 {{ share.job | replace(from="_", to="-") }}-artifacts:
   <<: *base
@@ -171,7 +172,7 @@ variables:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[provider].timeout }}
+  timeout: {{ rte.ci[share.provider].timeout }}
   retry:
     max: 1
     when:
@@ -243,9 +244,10 @@ variables:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% endfor %}
-# eut - deploy
-{{ eut.module.name }}-deploy:
+{% endfor -%}
+{% for site in eut.sites %}
+# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - deploy
+eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -253,7 +255,7 @@ variables:
     - !reference [ .deploy_eut_rules, rules ]
   script:
       - |
-        {% for script in eut.scripts -%}
+        {% for script in site.scripts -%}
         {% for k, v in script -%}
         {% if k == "apply" -%}
         {% for command in v -%}
@@ -274,8 +276,8 @@ variables:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut - artifacts
-{{ eut.module.name }}-artifacts:
+# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - artifacts
+eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:
@@ -284,7 +286,7 @@ variables:
     - !reference [ .destroy_rte_rules, rules ]
   script:
       - |
-        {% for script in eut.scripts -%}
+        {% for script in site.scripts -%}
         {% for k, v in script -%}
         {% if k == "artifacts" -%}
         {% for command in v -%}
@@ -304,7 +306,7 @@ variables:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
+{% endfor %}
 {% for feature in features %}
 # feature - {{ eut.base.module }} - {{ feature.name }} - deploy
 feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
@@ -456,8 +458,9 @@ feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-# eut - destroy
-eut-destroy:
+{% for site in eut.sites %}
+# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - destroy
+eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
   <<: *base
   stage: eut-destroy
   rules:
@@ -465,7 +468,7 @@ eut-destroy:
     - !reference [ .destroy_eut_rules, rules ]
   script:
       - |
-        {% for script in eut.scripts -%}
+        {% for script in site.scripts -%}
         {% for k, v in script -%}
         {% if k == "destroy" -%}
         {% for command in v -%}
@@ -485,7 +488,7 @@ eut-destroy:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
+{% endfor -%}
 {% for rte in rtes -%}
 {% for component in rte.components %}
 # {{ component.job | replace(from="_", to="-") }} - destroy
@@ -518,7 +521,7 @@ eut-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% for provider, share in rte.share %}
+{% for share in rte.shares %}
 # {{ share.job | replace(from="_", to="-") }} - destroy
 {{ share.job | replace(from="_", to="-") }}-destroy:
   <<: *base
@@ -542,7 +545,7 @@ eut-destroy:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[provider].timeout }}
+  timeout: {{ rte.ci[share.provider].timeout }}
   retry:
     max: 1
     when:
