@@ -764,7 +764,7 @@ impl ScriptRteRenderContext {
     }
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Debug)]
 struct ScriptRteProviderShareDataRenderContext {
     name: String,
     index: usize,
@@ -776,7 +776,8 @@ struct ScriptRteProviderShareDataRenderContext {
 struct ScriptRteProviderShareRenderContext {
     eut: Option<String>,
     rte: Option<String>,
-    data: Option<Vec<ScriptRteProviderShareDataRenderContext>>,
+    data: Option<String>,
+    //Option<Vec<ScriptRteProviderShareDataRenderContext>>,
     vars: Option<RegressionConfigProjectVars>,
     project: String,
     provider: Option<String>,
@@ -1837,6 +1838,33 @@ impl Regression {
                 shares: vec![],
                 components: Default::default(),
             };
+
+            //Process provider share data render context
+            let mut data_rc: Vec<ScriptRteProviderShareDataRenderContext> = Vec::new();
+            for (i, site) in sites.iter().enumerate() {
+                let components = self.get_object_neighbours_with_properties_in(&site.vertex.id, EdgeTypes::RefersSite);
+                let mut srpsd_rc = ScriptRteProviderShareDataRenderContext {
+                    name: site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    index: i,
+                    has_client: false,
+                    has_server: false,
+                };
+
+                for c in components.iter() {
+                    match VertexTypes::get_type_by_key(c.vertex.t.as_str()) {
+                        VertexTypes::ConnectionSrc => {
+                            srpsd_rc.has_client = true
+                        }
+                        VertexTypes::ConnectionDst => {
+                            srpsd_rc.has_server = true
+                        }
+                        _ => {}
+                    }
+                }
+                data_rc.push(srpsd_rc);
+
+            }
+
             let _provider = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::NeedsProvider);
             let provider = self.get_object_neighbours_with_properties_out(&_provider.id, EdgeTypes::ProvidesProvider);
 
@@ -1850,31 +1878,6 @@ impl Regression {
                                    },
                 );
 
-                //Process provider share data render context
-                let mut data_rc: Vec<ScriptRteProviderShareDataRenderContext> = Vec::new();
-                for (i, site) in sites.iter().enumerate() {
-                    let components = self.get_object_neighbours_with_properties_in(&site.vertex.id, EdgeTypes::RefersSite);
-                    let mut srpsd_rc = ScriptRteProviderShareDataRenderContext {
-                        name: site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                        index: i,
-                        has_client: false,
-                        has_server: false,
-                    };
-
-                    for c in components.iter() {
-                        match VertexTypes::get_type_by_key(c.vertex.t.as_str()) {
-                            VertexTypes::ConnectionSrc => {
-                                srpsd_rc.has_client = true
-                            }
-                            VertexTypes::ConnectionDst => {
-                                srpsd_rc.has_server = true
-                            }
-                            _ => {}
-                        }
-                    }
-                    data_rc.push(srpsd_rc);
-                }
-
                 //Process provider share scripts render context
                 let share_p = self.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare);
                 let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
@@ -1885,10 +1888,11 @@ impl Regression {
                     let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                     let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
 
+
                     ctx.rte = Option::from(rte_name.to_string());
                     ctx.eut = Option::from(eut_name.to_string());
                     ctx.vars = Option::from(self.config.project.vars.clone());
-                    ctx.data = Option::from(data_rc.clone());
+                    ctx.data = Option::from(serde_json::to_string(&data_rc).unwrap());
                     ctx.provider = Option::from(p_name.to_string());
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1902,6 +1906,8 @@ impl Regression {
 
                     scripts.push(data);
                 }
+
+                error!("SCRIPTS: {:#?}", &scripts);
 
                 rte_crcs.shares.push(RteProviderShareRenderContext {
                     job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
@@ -2140,7 +2146,7 @@ impl Regression {
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
-        error!("{:#?}", context);
+        //error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }
