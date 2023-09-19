@@ -64,10 +64,14 @@ variables:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% for rte in rtes -%}
 {% for k, share in rte.share %}
-.regression_{{ share.job | replace(from="-", to="_") }}:
+.deploy_{{ share.job | replace(from="-", to="_") }}:
   rules:
-    - if: $ACTION == "{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+.destroy_{{ share.job | replace(from="-", to="_") }}:
+  rules:
+    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests %}
 .regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}:
@@ -81,8 +85,8 @@ variables:
 {%for verification in test.verifications %}
 .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
   rules:
-    - if: $ACTION == "verification-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verification-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
 {% endfor %}
@@ -121,6 +125,7 @@ variables:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }} ]
   script:
     - |
       {% for script in share.scripts -%}
@@ -520,6 +525,7 @@ eut-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
+    - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }} ]
   script:
     - |
       {% for script in share.scripts -%}

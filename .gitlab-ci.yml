@@ -103,15 +103,23 @@ variables:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.regression_rte_client_server_aws_share:
+.deploy_rte_client_server_aws_share:
   rules:
-    - if: $ACTION == "rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+.destroy_rte_client_server_aws_share:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.regression_rte_client_server_azure_share:
+.deploy_rte_client_server_azure_share:
   rules:
-    - if: $ACTION == "rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+.destroy_rte_client_server_azure_share:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_client_server_east_west_traffic_a:
   rules:
@@ -123,15 +131,23 @@ variables:
     - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.regression_rte_client_server1_aws_share:
+.deploy_rte_client_server1_aws_share:
   rules:
-    - if: $ACTION == "rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+.destroy_rte_client_server1_aws_share:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.regression_rte_client_server1_azure_share:
+.deploy_rte_client_server1_azure_share:
   rules:
-    - if: $ACTION == "rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+.destroy_rte_client_server1_azure_share:
+  rules:
+    - if: $ACTION == "destroy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_client_server1_east_west_traffic_a:
   rules:
@@ -145,23 +161,23 @@ variables:
 
 .regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a:
   rules:
-    - if: $ACTION == "verification-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verification-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b:
   rules:
-    - if: $ACTION == "verification-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verification-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a:
   rules:
-    - if: $ACTION == "verification-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verification-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_verification_client_server1_east_west_traffic_b_east_west_traffic_verify_b:
   rules:
-    - if: $ACTION == "verification-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verification-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .base: &base
   tags:
@@ -195,6 +211,7 @@ rte-client-server-aws-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_aws_share ]
   script:
     - |
       #!/usr/bin/env bash
@@ -249,6 +266,7 @@ rte-client-server-azure-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_azure_share ]
   script:
     - |
       #!/usr/bin/env bash
@@ -478,6 +496,7 @@ rte-client-server1-aws-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_share ]
   script:
     - |
       #!/usr/bin/env bash
@@ -532,6 +551,7 @@ rte-client-server1-azure-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_share ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1272,6 +1292,7 @@ rte-client-server-aws-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
+    - !reference [ .destroy_rte_client_server_aws_share ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1298,6 +1319,7 @@ rte-client-server-azure-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
+    - !reference [ .destroy_rte_client_server_azure_share ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1376,6 +1398,7 @@ rte-client-server1-aws-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
+    - !reference [ .destroy_rte_client_server1_aws_share ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1402,6 +1425,7 @@ rte-client-server1-azure-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
+    - !reference [ .destroy_rte_client_server1_azure_share ]
   script:
     - |
       #!/usr/bin/env bash
