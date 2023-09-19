@@ -126,7 +126,7 @@ variables:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }} ]
+    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}, rules ]
   script:
     - |
       {% for script in share.scripts -%}
@@ -526,7 +526,7 @@ eut-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }} ]
+    - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }}, rules ]
   script:
     - |
       {% for script in share.scripts -%}

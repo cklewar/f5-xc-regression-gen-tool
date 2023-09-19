@@ -215,7 +215,7 @@ rte-client-server-aws-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share ]
+    - !reference [ .deploy_rte_client_server_aws_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -270,7 +270,7 @@ rte-client-server-azure-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share ]
+    - !reference [ .deploy_rte_client_server_azure_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -500,7 +500,7 @@ rte-client-server1-aws-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share ]
+    - !reference [ .deploy_rte_client_server1_aws_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -555,7 +555,7 @@ rte-client-server1-azure-share:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share ]
+    - !reference [ .deploy_rte_client_server1_azure_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1296,7 +1296,7 @@ rte-client-server-aws-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server_aws_share ]
+    - !reference [ .destroy_rte_client_server_aws_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1323,7 +1323,7 @@ rte-client-server-azure-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server_azure_share ]
+    - !reference [ .destroy_rte_client_server_azure_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1402,7 +1402,7 @@ rte-client-server1-aws-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server1_aws_share ]
+    - !reference [ .destroy_rte_client_server1_aws_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -1429,7 +1429,7 @@ rte-client-server1-azure-share-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server1_azure_share ]
+    - !reference [ .destroy_rte_client_server1_azure_share, rules ]
   script:
     - |
       #!/usr/bin/env bash
