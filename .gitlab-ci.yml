@@ -3372,7 +3372,7 @@ rte-client-server-aws-site-a-1-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_a_1"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3399,7 +3399,7 @@ rte-client-server-aws-site-a-2-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_a_2"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3426,7 +3426,7 @@ rte-client-server-aws-site-a-3-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_a_3"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3453,7 +3453,7 @@ rte-client-server-aws-site-b-1-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_b_1"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3480,7 +3480,7 @@ rte-client-server-aws-site-b-2-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_b_2"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3507,7 +3507,7 @@ rte-client-server-aws-site-c-1-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_c_1"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3534,7 +3534,7 @@ rte-client-server-aws-site-c-2-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_c_2"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3800,9 +3800,9 @@ rte-client-server1-aws-site-a-1-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_a_1"
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3827,9 +3827,9 @@ rte-client-server1-aws-site-a-2-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_a_2"
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3854,9 +3854,9 @@ rte-client-server1-aws-site-a-3-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_a_3"
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3881,9 +3881,9 @@ rte-client-server1-aws-site-b-1-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_b_1"
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3908,9 +3908,9 @@ rte-client-server1-aws-site-b-2-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_b_2"
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3935,9 +3935,9 @@ rte-client-server1-aws-site-c-1-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_c_1"
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
@@ -3962,9 +3962,9 @@ rte-client-server1-aws-site-c-2-share-destroy:
   script:
     - |
       #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+      cd $RTE_ROOT_DIR/client_server1/aws/share
+      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_c_2"
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -auto-approve
       
   artifacts:
     paths:
