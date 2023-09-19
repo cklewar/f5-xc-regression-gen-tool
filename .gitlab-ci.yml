@@ -107,6 +107,7 @@ variables:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .destroy_rte_client_server_aws_share:
   rules:
     - if: $ACTION == "destroy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -116,6 +117,7 @@ variables:
   rules:
     - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .destroy_rte_client_server_azure_share:
   rules:
     - if: $ACTION == "destroy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -135,6 +137,7 @@ variables:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .destroy_rte_client_server1_aws_share:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -144,6 +147,7 @@ variables:
   rules:
     - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .destroy_rte_client_server1_azure_share:
   rules:
     - if: $ACTION == "destroy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"

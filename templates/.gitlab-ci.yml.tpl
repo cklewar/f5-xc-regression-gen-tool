@@ -68,6 +68,7 @@ variables:
   rules:
     - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .destroy_{{ share.job | replace(from="-", to="_") }}:
   rules:
     - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
