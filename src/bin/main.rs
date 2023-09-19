@@ -750,6 +750,7 @@ struct ScriptRteProviderShareRenderContext {
     eut: Option<String>,
     rte: Option<String>,
     site: Option<String>,
+    vars: Option<RegressionConfigProjectVars>,
     project: String,
     provider: Option<String>,
 }
@@ -760,6 +761,7 @@ impl ScriptRteProviderShareRenderContext {
             project,
             eut: None,
             rte: None,
+            vars: None,
             site: None,
             provider: None,
         }
@@ -1819,6 +1821,7 @@ impl Regression {
                         ctx.eut = Option::from(eut_name.to_string());
                         ctx.provider = Option::from(p_name.to_string());
                         ctx.site = Option::from(site_name.to_string());
+                        ctx.vars = Option::from(self.config.project.vars.clone());
                         let mut commands: Vec<String> = Vec::new();
 
                         for command in ctx.render_script(&ctx, &contents).lines() {

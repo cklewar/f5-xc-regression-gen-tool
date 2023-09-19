@@ -222,7 +222,7 @@ rte-client-server-aws-share:
       mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/site_c_2
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share/site_c_2"
-      terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var="project_suffix=site_c_2"-auto-approve
+      terraform apply -var-file=$RTE_ROOT_DIR/vars/project-a/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var="project_suffix=site_c_2" -auto-approve
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/site_c_2/share.tfvars
       
   artifacts:
@@ -507,7 +507,7 @@ rte-client-server1-aws-share:
       mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_c_2
       cd $RTE_ROOT_DIR/client_server1/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share/site_c_2"
-      terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var="project_suffix=site_c_2"-auto-approve
+      terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var="project_suffix=site_c_2" -auto-approve
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_c_2/share.tfvars
       
   artifacts:
