@@ -539,7 +539,7 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }}, rules ]
+    - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
       {% for script in share.scripts -%}
