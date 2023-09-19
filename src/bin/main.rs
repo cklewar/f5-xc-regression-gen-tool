@@ -735,6 +735,7 @@ impl ScriptTestRenderContext {
 struct ScriptRteRenderContext {
     eut: Option<String>,
     rte: Option<String>,
+    site: Option<String>,
     release: Option<String>,
     project: Option<RegressionConfigProject>,
     provider: String,
@@ -744,10 +745,11 @@ impl ScriptRteRenderContext {
     pub fn new(provider: String) -> Self {
         Self {
             provider,
-            project: None,
             eut: None,
             rte: None,
+            site: None,
             release: None,
+            project: None,
         }
     }
 
@@ -1728,7 +1730,7 @@ impl Regression {
                 let mut ctx: ScriptEutRenderContext = ScriptEutRenderContext::new(self.config.project.clone());
                 ctx.name = Option::from(eut_name.to_string());
                 ctx.site = Option::from(site_name.to_string());
-                ctx.index =  Option::from(i);
+                ctx.index = Option::from(i);
                 ctx.release = Option::from(eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
                 ctx.provider = Option::from(provider_name.to_string());
                 let mut commands: Vec<String> = Vec::new();
@@ -1895,6 +1897,7 @@ impl Regression {
                             ctx.rte = Option::from(rte_name.to_string());
                             ctx.eut = Option::from(eut_name.to_string());
                             ctx.project = Option::from(self.config.project.clone());
+                            ctx.site = Option::from(src_site_name.to_string());
                             let mut commands: Vec<String> = Vec::new();
 
                             for command in ctx.render_script(&ctx, &contents).lines() {
