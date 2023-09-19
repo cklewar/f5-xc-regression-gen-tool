@@ -599,7 +599,7 @@ struct RteComponentRenderContext {
 struct RteRenderContext {
     ci: HashMap<String, RteCiRenderContext>,
     tests: Vec<RteTestRenderContext>,
-    share: RteProviderShareRenderContext,
+    shares: Vec<RteProviderShareRenderContext>,
     components: Vec<RteComponentRenderContext>,
 }
 
@@ -1834,13 +1834,7 @@ impl Regression {
             let mut rte_crcs = RteRenderContext {
                 ci: HashMap::new(),
                 tests: vec![],
-                share: RteProviderShareRenderContext {
-                    job: "".to_string(),
-                    rte: "".to_string(),
-                    eut: "".to_string(),
-                    provider: "".to_string(),
-                    scripts: vec![],
-                },
+                shares: vec![],
                 components: Default::default(),
             };
             let _provider = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::NeedsProvider);
@@ -1909,13 +1903,13 @@ impl Regression {
                     scripts.push(data);
                 }
 
-                rte_crcs.share = RteProviderShareRenderContext {
+                rte_crcs.shares.push(RteProviderShareRenderContext {
                     job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
                     rte: rte_name.to_string(),
                     eut: eut_name.to_string(),
                     provider: p_name.to_string(),
                     scripts,
-                };
+                });
             }
 
             for conn in connections.iter() {
