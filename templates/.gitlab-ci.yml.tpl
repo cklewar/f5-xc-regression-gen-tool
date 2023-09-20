@@ -178,7 +178,7 @@ variables:
     - !reference [ .deploy_rte_rules, rules ]
     {%- for rte in rtes %}
     {%- for component in rte.components %}
-    {%- if component.provider == share.provider %}
+    {%- if component.provider == share.provider and rte.name == component.rte %}
     - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endif %}
     {%- endfor %}

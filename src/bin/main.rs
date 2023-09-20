@@ -598,6 +598,7 @@ struct RteComponentRenderContext {
 #[derive(Serialize, Debug)]
 struct RteRenderContext {
     ci: HashMap<String, RteCiRenderContext>,
+    name: String,
     tests: Vec<RteTestRenderContext>,
     shares: Vec<RteProviderShareRenderContext>,
     components: Vec<RteComponentRenderContext>,
@@ -1837,6 +1838,7 @@ impl Regression {
             let connections = self.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
             let mut rte_crcs = RteRenderContext {
                 ci: HashMap::new(),
+                name: rte_name.to_string(),
                 tests: vec![],
                 shares: vec![],
                 components: Default::default(),
@@ -2167,7 +2169,7 @@ impl Regression {
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
-        //error!("{:#?}", context);
+        error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }
