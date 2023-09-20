@@ -349,10 +349,13 @@ rte-client-server-aws-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_a_2_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -407,10 +410,13 @@ rte-client-server-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_a_2_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -444,7 +450,7 @@ rte-client-server-conn-c-aws-site-a-2-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_2
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_2"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_2' -var='destinations=[site_b_1]' -auto-approve
+        terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_2' -var='destinations=[site_b_1]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_2/client.tfvars
         #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
@@ -506,7 +512,7 @@ rte-client-server-conn-c-aws-site-b-1-server:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server/site_b_1"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2]' -auto-approve
+        terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1/server.tfvars
   artifacts:
     paths:
@@ -564,7 +570,7 @@ rte-client-server-conn-a-aws-site-a-1-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=[site_b_1, site_c_1]' -auto-approve
+        terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=[site_c_1, site_b_1]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
         #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
@@ -626,7 +632,7 @@ rte-client-server-conn-a-aws-site-b-1-server:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server/site_b_1"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2, site_a_1]' -auto-approve
+        terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2, site_a_1]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1/server.tfvars
   artifacts:
     paths:
@@ -765,10 +771,13 @@ rte-client-server1-aws-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_a_2_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -823,10 +832,13 @@ rte-client-server1-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_a_2_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -860,7 +872,7 @@ rte-client-server1-conn-b-aws-site-b-1-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1
         cd $RTE_ROOT_DIR/client_server1/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=[site_c_1]' -auto-approve
+        terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=[site_c_1]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1/client.tfvars
   artifacts:
     paths:
@@ -2055,7 +2067,7 @@ rte-client-server-conn-c-aws-site-a-2-client-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_2"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_2' -var='destinations=[site_b_1]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_2' -var='destinations=[site_b_1]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -2080,7 +2092,7 @@ rte-client-server-conn-c-aws-site-b-1-server-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -2105,7 +2117,7 @@ rte-client-server-conn-a-aws-site-a-1-client-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=[site_b_1, site_c_1]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=[site_c_1, site_b_1]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -2130,7 +2142,7 @@ rte-client-server-conn-a-aws-site-b-1-server-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2, site_a_1]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=[site_a_2, site_a_1]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -2232,7 +2244,7 @@ rte-client-server1-conn-b-aws-site-b-1-client-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server1/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=[site_c_1]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=[site_c_1]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/

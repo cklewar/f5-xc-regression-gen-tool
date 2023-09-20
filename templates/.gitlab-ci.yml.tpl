@@ -177,8 +177,8 @@ variables:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
     {%- for rte in rtes %}
-    {%- for share in rte.shares %}
-    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for component in rte.components %}
+    - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- endfor %}
   script:
