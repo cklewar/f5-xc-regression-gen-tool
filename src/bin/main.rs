@@ -740,7 +740,7 @@ struct ScriptRteRenderContext {
     release: Option<String>,
     project: Option<RegressionConfigProject>,
     provider: String,
-    destinations: Option<HashSet<String>>,
+    destinations: Option<String>,
 }
 
 impl ScriptRteRenderContext {
@@ -759,7 +759,7 @@ impl ScriptRteRenderContext {
     pub fn render_script(&self, context: &ScriptRteRenderContext, input: &String) -> String {
         info!("Render regression pipeline file rte script section...");
         let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
         info!("Render regression pipeline file rte script section -> Done.");
         rendered
     }
@@ -1957,7 +1957,7 @@ impl Regression {
                             ctx.eut = Option::from(eut_name.to_string());
                             ctx.site = Option::from(src_site_name.to_string());
                             ctx.project = Option::from(self.config.project.clone());
-                            ctx.destinations = Option::from(client_destinations.clone());
+                            ctx.destinations = Option::from(serde_json::to_string(&client_destinations).unwrap());
 
                             let mut commands: Vec<String> = Vec::new();
                             for command in ctx.render_script(&ctx, &contents).lines() {
@@ -2016,7 +2016,7 @@ impl Regression {
                                 ctx.eut = Option::from(eut_name.to_string());
                                 ctx.project = Option::from(self.config.project.clone());
                                 ctx.site = Option::from(dst_site_name.to_string());
-                                ctx.destinations = Option::from(server_destinations.clone());
+                                ctx.destinations = Option::from(serde_json::to_string(&server_destinations).unwrap());
 
                                 let mut commands: Vec<String> = Vec::new();
                                 for command in ctx.render_script(&ctx, &contents).lines() {
