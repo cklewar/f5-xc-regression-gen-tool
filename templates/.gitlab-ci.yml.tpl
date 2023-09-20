@@ -148,15 +148,15 @@ variables:
     - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
-      {% for script in share.scripts -%}
-      {% for k, v in script -%}
-      {% if k == "apply" -%}
-      {% for command in v -%}
+      {%- for script in share.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "apply" %}
+      {%- for command in v %}
       {{ command }}
-      {% endfor -%}
-      {% endif -%}
-      {% endfor -%}
-      {% endfor %}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -176,17 +176,22 @@ variables:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    {%- for rte in rtes %}
+    {%- for share in rte.shares %}
+    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- endfor %}
   script:
     - |
-      {% for script in share.scripts -%}
-      {% for k, v in script -%}
-      {% if k == "artifacts" -%}
-      {% for command in v -%}
+      {%- for script in share.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "artifacts" %}
+      {%- for command in v %}
       {{ command }}
-      {% endfor -%}
-      {% endif -%}
-      {% endfor -%}
-      {% endfor %}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -210,15 +215,15 @@ variables:
     - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
-        {% for script in component.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "apply" -%}
-        {% for command in v -%}
+        {%- for script in component.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -243,15 +248,15 @@ variables:
   stage: rte-artifacts
   script:
       - |
-        {% for script in component.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "artifacts" -%}
-        {% for command in v -%}
+        {%- for script in component.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -275,15 +280,15 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-deploy:
     - !reference [ .deploy_eut_rules, rules ]
   script:
       - |
-        {% for script in site.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "apply" -%}
-        {% for command in v -%}
+        {%- for script in site.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -306,15 +311,15 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
     - !reference [ .destroy_rte_rules, rules ]
   script:
       - |
-        {% for script in site.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "artifacts" -%}
-        {% for command in v -%}
+        {%- for script in site.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -337,15 +342,15 @@ feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
     - !reference [ .deploy_feature_rules, rules ]
   script:
       - |
-        {% for script in feature.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "apply" -%}
-        {% for command in v -%}
+        {%- for script in feature.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
@@ -365,15 +370,15 @@ feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
   stage: regression-test
   script:
       - |
-        {% for script in test.scripts -%}
-        {% for k, v in script -%}
-        {%- if k == "apply" -%}
-        {%- for command in v -%}
+        {%- for script in test.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -397,15 +402,15 @@ feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
   stage: regression-test-artifacts
   script:
       - |
-        {% for script in test.scripts -%}
-        {% for k, v in script -%}
-        {%- if k == "artifacts" -%}
-        {%- for command in v -%}
+        {%- for script in test.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -431,15 +436,15 @@ feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
   stage: regression-test-verify
   script:
       - |
-        {% for script in verification.scripts -%}
-        {% for k, v in script -%}
-        {%- if k == "apply" -%}
-        {%- for command in v -%}
+        {%- for script in verification.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   timeout: {{ verification.ci.timeout }}
   retry:
     max: 1
@@ -461,15 +466,15 @@ feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
     - !reference [ .destroy_feature_rules, rules ]
   script:
       - |
-        {% for script in feature.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "destroy" -%}
-        {% for command in v -%}
+        {%- for script in feature.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "destroy" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
@@ -488,15 +493,15 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
     - !reference [ .destroy_eut_rules, rules ]
   script:
       - |
-        {% for script in site.scripts -%}
-        {% for k, v in script -%}
-        {% if k == "destroy" -%}
-        {% for command in v -%}
+        {%- for script in site.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "destroy" %}
+        {%- for command in v %}
         {{ command }}
-        {% endfor -%}
-        {% endif -%}
-        {% endfor -%}
-        {% endfor %}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -520,15 +525,15 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
-      {% for script in component.scripts -%}
-      {% for k, v in script -%}
-      {% if k == "destroy" -%}
-      {% for command in v -%}
+      {%- for script in component.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "destroy" %}
+      {%- for command in v %}
       {{ command }}
-      {% endfor -%}
-      {% endif -%}
-      {% endfor -%}
-      {% endfor %}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -552,15 +557,15 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
     - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
-      {% for script in share.scripts -%}
-      {% for k, v in script -%}
-      {% if k == "destroy" -%}
-      {% for command in v -%}
+      {%- for script in share.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "destroy" %}
+      {%- for command in v %}
       {{ command }}
-      {% endfor -%}
-      {% endif -%}
-      {% endfor -%}
-      {% endfor %}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/

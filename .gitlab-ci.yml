@@ -286,7 +286,6 @@ rte-client-server-aws-share-deploy:
       terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=7' -var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":false,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
       terraform output -json > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -306,6 +305,10 @@ rte-client-server-aws-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -313,7 +316,6 @@ rte-client-server-aws-share-artifacts:
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -342,7 +344,6 @@ rte-client-server-azure-share-deploy:
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/shared"
       terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/azure/shared/shared.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -362,6 +363,10 @@ rte-client-server-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -369,7 +374,6 @@ rte-client-server-azure-share-artifacts:
       cd $RTE_ROOT_DIR/client_server/azure/shared
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/shared"
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/azure/shared/shared.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -402,7 +406,6 @@ rte-client-server-site-a-1-client:
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
         #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server_aws_DESTINATION_IPS_ARTIFACTS_FILE
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -431,7 +434,6 @@ rte-client-server-site-a-1-client-artifacts:
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -460,7 +462,6 @@ rte-client-server-site-b-1-server:
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
         terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -489,7 +490,6 @@ rte-client-server-site-b-1-server-artifacts:
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -518,7 +518,6 @@ rte-client-server-site-c-1-server:
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
         terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -547,7 +546,6 @@ rte-client-server-site-c-1-server-artifacts:
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -576,7 +574,6 @@ rte-client-server1-aws-share-deploy:
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
       terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json  -var='subnet_count=7'-var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":false,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -596,6 +593,10 @@ rte-client-server1-aws-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -603,7 +604,6 @@ rte-client-server1-aws-share-artifacts:
       cd $RTE_ROOT_DIR/client_server1/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -632,7 +632,6 @@ rte-client-server1-azure-share-deploy:
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure/shared"
       terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/shared/shared.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -652,6 +651,10 @@ rte-client-server1-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
+    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -659,7 +662,6 @@ rte-client-server1-azure-share-artifacts:
       cd $RTE_ROOT_DIR/client_server1/azure/shared
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure/shared"
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/shared/shared.tfvars
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -688,7 +690,6 @@ rte-client-server1-site-b-1-client:
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
         terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_b_1/share.tfvars -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1/client.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -717,7 +718,6 @@ rte-client-server1-site-b-1-client-artifacts:
         cd $RTE_ROOT_DIR/client_server1/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1/client.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -746,7 +746,6 @@ rte-client-server1-site-c-1-server:
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
         terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -775,7 +774,6 @@ rte-client-server1-site-c-1-server-artifacts:
         cd $RTE_ROOT_DIR/client_server1/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -803,7 +801,6 @@ eut-mcn-site-a-1-deploy:
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_1/1.0"
         terraform apply -var="site_index=0" -var="project_suffix=site_a_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_1/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -831,7 +828,6 @@ eut-mcn-site-a-1-artifacts:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_1/1.0"
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_1/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -859,7 +855,6 @@ eut-mcn-site-a-2-deploy:
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_2/1.0"
         terraform apply -var="site_index=1" -var="project_suffix=site_a_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_2/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -887,7 +882,6 @@ eut-mcn-site-a-2-artifacts:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_2/1.0"
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_2/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -915,7 +909,6 @@ eut-mcn-site-a-3-deploy:
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_3/1.0"
         terraform apply -var="site_index=2" -var="project_suffix=site_a_3" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_3/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -943,7 +936,6 @@ eut-mcn-site-a-3-artifacts:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_3/1.0"
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_3/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -971,7 +963,6 @@ eut-mcn-site-b-1-deploy:
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_1/1.0"
         terraform apply -var="site_index=3" -var="project_suffix=site_b_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_1/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -999,7 +990,6 @@ eut-mcn-site-b-1-artifacts:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_1/1.0"
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_1/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1027,7 +1017,6 @@ eut-mcn-site-b-2-deploy:
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_2/1.0"
         terraform apply -var="site_index=4" -var="project_suffix=site_b_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_2/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1055,7 +1044,6 @@ eut-mcn-site-b-2-artifacts:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_2/1.0"
         terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_2/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1084,7 +1072,6 @@ eut-mcn-site-c-1-deploy:
         terraform plan -var="site_index=5" -var="project_suffix=site_c_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE
         #terraform import -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         #terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_1/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1111,7 +1098,6 @@ eut-mcn-site-c-1-artifacts:
         mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_1
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_1/1.0"
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1140,7 +1126,6 @@ eut-mcn-site-c-2-deploy:
         terraform plan -var="site_index=6" -var="project_suffix=site_c_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE
         #terraform import -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
         #terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_2/site.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1167,7 +1152,6 @@ eut-mcn-site-c-2-artifacts:
         mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_2
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_2/1.0"
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1195,7 +1179,6 @@ feature-mcn-network_policy-deploy:
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/network_policy/1.0"
         #terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
         #terraform output > $FEATURES_ROOT_DIR/network_policy/feature.tfvars
-        
   timeout: 30m
   retry:
     max: 1
@@ -1217,7 +1200,6 @@ feature-mcn-forward_proxy_policy-deploy:
         cd $FEATURES_ROOT_DIR/forward_proxy_policy
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/forward_proxy_policy/1.0"
         terraform apply -compact-warnings -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-        
   timeout: 30m
   retry:
     max: 1
@@ -1241,7 +1223,6 @@ test-client-server-site-a-1-east-west-traffic-a-deploy:
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/server/server.tfvars -var="data_file=client_server_site_a_1_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a" -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1268,7 +1249,6 @@ test-client-server-site-a-1-east-west-traffic-a-artifacts:
         cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1296,7 +1276,6 @@ test-client-server-site-a-1-east-west-traffic-b-deploy:
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/server/server.tfvars -var="data_file=client_server_site_a_1_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b" -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1323,7 +1302,6 @@ test-client-server-site-a-1-east-west-traffic-b-artifacts:
         cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1351,7 +1329,6 @@ test-client-server1-site-b-1-east-west-traffic-a-deploy:
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/server/server.tfvars -var="data_file=client_server1_site_b_1_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a" -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1378,7 +1355,6 @@ test-client-server1-site-b-1-east-west-traffic-a-artifacts:
         cd $TESTS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1406,7 +1382,6 @@ test-client-server1-site-b-1-east-west-traffic-b-deploy:
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/server/server.tfvars -var="data_file=client_server1_site_b_1_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b" -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1433,7 +1408,6 @@ test-client-server1-site-b-1-east-west-traffic-b-artifacts:
         cd $TESTS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
         terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1459,7 +1433,6 @@ verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify
         cd $VERIFICATIONS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars -auto-approve
-        
   timeout: 15m
   retry:
     max: 1
@@ -1481,7 +1454,6 @@ verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify
         cd $VERIFICATIONS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars -auto-approve
-        
   timeout: 15m
   retry:
     max: 1
@@ -1503,7 +1475,6 @@ verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verif
         cd $VERIFICATIONS_ROOT_DIR/fortio
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars -auto-approve
-        
   timeout: 15m
   retry:
     max: 1
@@ -1525,7 +1496,6 @@ verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verif
         cd $VERIFICATIONS_ROOT_DIR/iperf
         terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
         terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars -auto-approve
-        
   timeout: 15m
   retry:
     max: 1
@@ -1547,7 +1517,6 @@ feature-mcn-network_policy-destroy:
         cd $FEATURES_ROOT_DIR/network_policy
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/network_policy/1.0"
         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        
   timeout: 30m
   retry:
     max: 1
@@ -1569,7 +1538,6 @@ feature-mcn-forward_proxy_policy-destroy:
         cd $FEATURES_ROOT_DIR/forward_proxy_policy
         terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/forward_proxy_policy/1.0"
         terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        
   timeout: 30m
   retry:
     max: 1
@@ -1591,7 +1559,6 @@ eut-mcn-site-a-1-destroy:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_1/1.0"
         terraform destroy -var="site_index=0" -var="project_suffix=site_a_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1617,7 +1584,6 @@ eut-mcn-site-a-2-destroy:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_2/1.0"
         terraform destroy -var="site_index=1" -var="project_suffix=site_a_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1643,7 +1609,6 @@ eut-mcn-site-a-3-destroy:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_3/1.0"
         terraform destroy -var="site_index=2" -var="project_suffix=site_a_3" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1669,7 +1634,6 @@ eut-mcn-site-b-1-destroy:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_1/1.0"
         terraform destroy -var="site_index=3" -var="project_suffix=site_b_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1695,7 +1659,6 @@ eut-mcn-site-b-2-destroy:
         cd $EUT_ROOT_DIR/mcn/aws
         terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_2/1.0"
         terraform destroy -var="site_index=4" -var="project_suffix=site_b_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1721,7 +1684,6 @@ eut-mcn-site-c-1-destroy:
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_1/1.0"
         terraform plan -var-file=$EUT_ROOT_TF_VAR_FILE
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1747,7 +1709,6 @@ eut-mcn-site-c-2-destroy:
         cd $EUT_ROOT_DIR/mcn/azure
         terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_2/1.0"
         terraform plan -var-file=$EUT_ROOT_TF_VAR_FILE
-        
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1773,7 +1734,6 @@ rte-client-server-site-a-1-client-destroy:
       cd $RTE_ROOT_DIR/client_server/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/site_a_1/share.tfvars -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1799,7 +1759,6 @@ rte-client-server-site-b-1-server-destroy:
       cd $RTE_ROOT_DIR/client_server/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1825,7 +1784,6 @@ rte-client-server-site-c-1-server-destroy:
       cd $RTE_ROOT_DIR/client_server/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1852,7 +1810,6 @@ rte-client-server-aws-share-destroy:
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
       terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=7' -var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":false,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1879,7 +1836,6 @@ rte-client-server-azure-share-destroy:
       cd $RTE_ROOT_DIR/client_server/azure/shared
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/shared"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1905,7 +1861,6 @@ rte-client-server1-site-b-1-client-destroy:
       cd $RTE_ROOT_DIR/client_server1/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_b_1/share.tfvars -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1931,7 +1886,6 @@ rte-client-server1-site-c-1-server-destroy:
       cd $RTE_ROOT_DIR/client_server1/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1958,7 +1912,6 @@ rte-client-server1-aws-share-destroy:
       cd $RTE_ROOT_DIR/client_server1/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
       terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var='subnet_count=7' -var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":false,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -1985,7 +1938,6 @@ rte-client-server1-azure-share-destroy:
       cd $RTE_ROOT_DIR/client_server1/azure/shared
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure/shared"
       terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
-      
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
