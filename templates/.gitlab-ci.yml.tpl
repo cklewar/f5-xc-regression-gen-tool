@@ -3,61 +3,16 @@
 #############################################
 
 stages:
-  - rte-share-deploy
-  - rte-share-artifacts
-  - rte-collect
-  - rte-deploy
-  - rte-artifacts
-  - eut-deploy
-  - eut-artifacts
-  - feature-deploy
-  - regression-test
-  - regression-test-artifacts
-  - regression-test-verify
-  - test-client-server-site-a-2-east-west-traffic-a-apply
-  - test-client-server-site-a-2-east-west-traffic-b-apply
-  - test-client-server-site-a-1-east-west-traffic-a-apply
-  - test-client-server-site-a-1-east-west-traffic-b-apply
-  - test-client-server1-site-b-1-east-west-traffic-a-apply
-  - test-client-server1-site-b-1-east-west-traffic-b-apply
-  - verification-client-server-site-a-2-east-west-traffic-verify-a-apply
-  - verification-client-server-site-a-2-east-west-traffic-verify-b-apply
-  - verification-client-server-site-a-1-east-west-traffic-verify-a-apply
-  - verification-client-server-site-a-1-east-west-traffic-verify-b-apply
-  - verification-client-server1-site-b-1-east-west-traffic-verify-a-apply
-  - verification-client-server1-site-b-1-east-west-traffic-verify-b-apply
-  - feature-destroy
-  - eut-destroy
-  - rte-destroy
-  - rte-share-destroy
-
+  {% for stage in stages -%}
+  - {{ stage }}
+  {% endfor %}
 variables:
-  F5XC_API_TOKEN: "${ENVIRONMENT}_api_token"
-  S3_ROOT: "features/$FEATURE/$ENVIRONMENT/project-a"
-  S3_EUT_ROOT: "$S3_ROOT/regression/eut"
-  S3_EUT_BASE: "$S3_EUT_ROOT/base/mcn"
-  S3_RTE_ROOT: "$S3_ROOT/regression/rte"
-  S3_TESTS_ROOT: "$S3_ROOT/regression/tests"
-  S3_VERIFICATIONS_ROOT: "$S3_ROOT/regression/verification"
-  KEYS_DIR: "${CI_PROJECT_DIR}/keys"
-  PROJECT_VARS_ROOT_DIR: "${CI_PROJECT_DIR}/regression/vars/project-a"
-  ARTIFACTS_ROOT_DIR: "${CI_PROJECT_DIR}/artifacts"
-  EUT_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/base"
-  FEATURES_ROOT_DIR: "${CI_PROJECT_DIR}/regression/eut/features"
-  EUT_ROOT_TF_VAR_FILE: "${EUT_ROOT_DIR}/mcn/terraform.tfvars.json"
-  RTE_ROOT_DIR: "${CI_PROJECT_DIR}/regression/rte"
-  TESTS_ROOT_DIR: "${CI_PROJECT_DIR}/regression/tests"
-  VERIFICATIONS_ROOT_DIR: "${CI_PROJECT_DIR}/regression/verification"
-  SSH_PUBLIC_KEY_FILE: "key.pub"
-  SSH_PUBLIC_KEY_FILE_PATH: "s3://acmecorp-model/production/volterra"
-  SSH_PRIVATE_KEY_FILE: "key"
-  SSH_PRIVATE_KEY_FILE_PATH: "s3://acmecorp-model/production/volterra"
-  P12_FILE: "acmecorp.console.ves.volterra.io.api-creds.p12"
-  P12_FILE_PATH: "s3://acmecorp-model/production/volterra"
-  GIT_SUBMODULE_STRATEGY: "recursive"
-  FEATURE_NETWORK_POLICY_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/network_policy/terraform.tfvars"
-  FEATURE_FORWARD_PROXY_POLICY_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/forward_proxy_policy/terraform.tfvars"
-
+  {% for variable in config.ci.variables -%}
+  {{ variable.name | upper }}: "{{ variable.value }}"
+  {% endfor -%}
+  {% for feature in features -%}
+  FEATURE_{{ feature.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/{{ feature.name }}/terraform.tfvars"
+  {% endfor %}
 .deploy_rules:
   rules:
     - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -117,184 +72,53 @@ variables:
   rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_aws_share_rules:
+{% for rte in rtes -%}
+{% for share in rte.shares %}
+.deploy_{{ share.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_aws_share_rules:
+.destroy_{{ share.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "destroy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_azure_share_rules:
+    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% for component in rte.components %}
+.deploy_{{ component.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
-.destroy_rte_client_server_azure_share_rules:
+.destroy_{{ component.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "destroy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_conn_c_site_a_2_client_rules:
+    - if: $ACTION == "destroy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% for test in rte.tests %}
+.regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}:
   rules:
-    - if: $ACTION == "deploy-rte-client-server-conn-c-site-a-2-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-conn-c-site-a-2-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server_conn_c_site_a_2_client_rules:
+    - if: $ACTION == "test-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% for test in rte.tests -%}
+{%for verification in test.verifications %}
+.regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
   rules:
-    - if: $ACTION == "destroy-rte-client-server-conn-c-site-a-2-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-conn-c-site-a-2-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_conn_c_site_b_1_server_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server-conn-c-site-b-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-conn-c-site-b-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server_conn_c_site_b_1_server_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server-conn-c-site-b-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-conn-c-site-b-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_conn_a_site_a_1_client_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server-conn-a-site-a-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-conn-a-site-a-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server_conn_a_site_a_1_client_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server-conn-a-site-a-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-conn-a-site-a-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_conn_a_site_b_1_server_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server-conn-a-site-b-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-conn-a-site-b-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server_conn_a_site_b_1_server_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server-conn-a-site-b-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-conn-a-site-b-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server_conn_a_site_c_1_server_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server-conn-a-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server-conn-a-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server_conn_a_site_c_1_server_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server-conn-a-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server-conn-a-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_test_client_server_east_west_traffic_a:
-  rules:
-    - if: $ACTION == "test-client-server-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-client-server-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_test_client_server_east_west_traffic_b:
-  rules:
-    - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_test_client_server_east_west_traffic_a:
-  rules:
-    - if: $ACTION == "test-client-server-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-client-server-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_test_client_server_east_west_traffic_b:
-  rules:
-    - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-client-server-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a:
-  rules:
-    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b:
-  rules:
-    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a:
-  rules:
-    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b:
-  rules:
-    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server1_aws_share_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server1_aws_share_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server1-aws-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server1_azure_share_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server1_azure_share_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server1-azure-share" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server1_conn_b_site_b_1_client_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server1-conn-b-site-b-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server1-conn-b-site-b-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server1_conn_b_site_b_1_client_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server1-conn-b-site-b-1-client" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server1-conn-b-site-b-1-client" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.deploy_rte_client_server1_conn_b_site_c_1_server_rules:
-  rules:
-    - if: $ACTION == "deploy-rte-client-server1-conn-b-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-rte-client-server1-conn-b-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.destroy_rte_client_server1_conn_b_site_c_1_server_rules:
-  rules:
-    - if: $ACTION == "destroy-rte-client-server1-conn-b-site-c-1-server" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-rte-client-server1-conn-b-site-c-1-server" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_test_client_server1_east_west_traffic_a:
-  rules:
-    - if: $ACTION == "test-client-server1-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-client-server1-east-west-traffic-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_test_client_server1_east_west_traffic_b:
-  rules:
-    - if: $ACTION == "test-client-server1-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-client-server1-east-west-traffic-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a:
-  rules:
-    - if: $ACTION == "verify-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server1-east-west-traffic-a-east-west-traffic-verify-a" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
-.regression_verification_client_server1_east_west_traffic_b_east_west_traffic_verify_b:
-  rules:
-    - if: $ACTION == "verify-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-client-server1-east-west-traffic-b-east-west-traffic-verify-b" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
-
+    - if: $ACTION == "verify-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% endfor -%}
+{% endfor %}
 .base: &base
   tags:
-    - blue
+    {% for tag in config.ci.tags -%}
+    - {{ tag }}
+    {%- endfor %}
   cache:
     policy: pull
     key: "${CI_COMMIT_SHA}"
-  image: volterra.azurecr.io/ves.io/acmecorp-features:1.5.1
+  image: {{ config.ci.image }}
   variables:
     TF_VAR_feature: $FEATURE
     TF_VAR_environment: $ENVIRONMENT
@@ -312,29 +136,32 @@ variables:
     - terraform version
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
-
-# rte-client-server-aws-share - deploy
-rte-client-server-aws-share-deploy:
+{% for rte in rtes -%}
+{% for share in rte.shares %}
+# {{ share.job | replace(from="_", to="-") }} - deploy
+{{ share.job | replace(from="_", to="-") }}-deploy:
   <<: *base
   stage: rte-share-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
+    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share
-      cd $RTE_ROOT_DIR/client_server/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=7' -var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":true,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
-      terraform output -json > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
+      {%- for script in share.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "apply" %}
+      {%- for command in v %}
+      {{ command }}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[share.provider].timeout }}
   retry:
     max: 1
     when:
@@ -342,119 +169,66 @@ rte-client-server-aws-share-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-aws-share - artifacts
-rte-client-server-aws-share-artifacts:
+# {{ share.job | replace(from="_", to="-") }} - artifacts
+{{ share.job | replace(from="_", to="-") }}-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
+    {%- for rte in rtes %}
+    {%- for share in rte.shares %}
+    - !reference [ .deploy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- endfor %}
   script:
     - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share
-      cd $RTE_ROOT_DIR/client_server/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
+      {%- for script in share.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "artifacts" %}
+      {%- for command in v %}
+      {{ command }}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[share.provider].timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# rte-client-server-azure-share - deploy
-rte-client-server-azure-share-deploy:
-  <<: *base
-  stage: rte-share-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/azure/shared
-      cd $RTE_ROOT_DIR/client_server/azure/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/shared"
-      terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/azure/shared/shared.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-azure-share - artifacts
-rte-client-server-azure-share-artifacts:
-  <<: *base
-  stage: rte-share-artifacts
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/azure/shared
-      cd $RTE_ROOT_DIR/client_server/azure/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/shared"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/azure/shared/shared.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-c-site-a-2-client - deploy
-rte-client-server-conn-c-site-a-2-client:
+{% endfor -%}
+{% for component in rte.components %}
+# {{ component.job | replace(from="_", to="-") }} - deploy
+{{ component.job | replace(from="_", to="-") }}:
   <<: *base
   stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_c_site_a_2_client_rules, rules ]
+    - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_2
-        cd $RTE_ROOT_DIR/client_server/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_2"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_2' -var='destinations=[site_b_1]' -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_2/client.tfvars
-        #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
-        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server_aws_DESTINATION_IPS_ARTIFACTS_FILE
+        {%- for script in component.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[component.provider].timeout }}
   retry:
     max: 1
     when:
@@ -462,28 +236,31 @@ rte-client-server-conn-c-site-a-2-client:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# rte-client-server-conn-c-site-a-2-client - artifacts
-rte-client-server-conn-c-site-a-2-client-artifacts:
+# {{ component.job | replace(from="_", to="-") }} - artifacts
+{{ component.job | replace(from="_", to="-") }}-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+    {%- for test in rte.tests %}
+    - !reference [ .regression_test_{{ component.rte }}_{{ test.name | replace(from="-", to="_") }}, rules ]
+    {%- endfor %}
   stage: rte-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_2
-        cd $RTE_ROOT_DIR/client_server/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_2"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_2/client.tfvars
+        {%- for script in component.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: 5m
   retry:
     max: 1
@@ -491,473 +268,11 @@ rte-client-server-conn-c-site-a-2-client-artifacts:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# rte-client-server-conn-c-site-b-1-server - deploy
-rte-client-server-conn-c-site-b-1-server:
-  <<: *base
-  stage: rte-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_c_site_b_1_server_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=' -var='destinations=[site_a_2]' -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-c-site-b-1-server - artifacts
-rte-client-server-conn-c-site-b-1-server-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-  stage: rte-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 5m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-a-1-client - deploy
-rte-client-server-conn-a-site-a-1-client:
-  <<: *base
-  stage: rte-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_site_a_1_client_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1
-        cd $RTE_ROOT_DIR/client_server/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=[site_b_1, site_c_1]' -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
-        #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
-        #terraform output -json | jq 'with_entries(select(.key | in({"destination_ip":1, "ssh_host":1, "ssh_user":1})))' > $RTE_CLIENT_SERVER_AWS_CONNECTION_ARTIFACTS_FILE
-        #echo "aws_destination_ip=$(terraform output destination_ip)" >> $RTE_client_server_aws_DESTINATION_IPS_ARTIFACTS_FILE
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-a-1-client - artifacts
-rte-client-server-conn-a-site-a-1-client-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-  stage: rte-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1
-        cd $RTE_ROOT_DIR/client_server/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 5m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-b-1-server - deploy
-rte-client-server-conn-a-site-b-1-server:
-  <<: *base
-  stage: rte-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_site_b_1_server_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=' -var='destinations=[site_a_2, site_a_1]' -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-b-1-server - artifacts
-rte-client-server-conn-a-site-b-1-server-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-  stage: rte-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 5m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-c-1-server - deploy
-rte-client-server-conn-a-site-c-1-server:
-  <<: *base
-  stage: rte-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_site_c_1_server_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=' -var='destinations=[site_a_2, site_a_1]' -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-c-1-server - artifacts
-rte-client-server-conn-a-site-c-1-server-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-  stage: rte-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
-        cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 5m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-aws-share - deploy
-rte-client-server1-aws-share-deploy:
-  <<: *base
-  stage: rte-share-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share
-      cd $RTE_ROOT_DIR/client_server1/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
-      terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json  -var='subnet_count=7'-var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":true,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-aws-share - artifacts
-rte-client-server1-aws-share-artifacts:
-  <<: *base
-  stage: rte-share-artifacts
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share
-      cd $RTE_ROOT_DIR/client_server1/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-azure-share - deploy
-rte-client-server1-azure-share-deploy:
-  <<: *base
-  stage: rte-share-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/shared
-      cd $RTE_ROOT_DIR/client_server1/azure/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure/shared"
-      terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/shared/shared.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-azure-share - artifacts
-rte-client-server1-azure-share-artifacts:
-  <<: *base
-  stage: rte-share-artifacts
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server_azure_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_aws_share_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_azure_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/shared
-      cd $RTE_ROOT_DIR/client_server1/azure/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure/shared"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/shared/shared.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-conn-b-site-b-1-client - deploy
-rte-client-server1-conn-b-site-b-1-client:
-  <<: *base
-  stage: rte-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_conn_b_site_b_1_client_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1
-        cd $RTE_ROOT_DIR/client_server1/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars -var='site_name=site_b_1' -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1/client.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-conn-b-site-b-1-client - artifacts
-rte-client-server1-conn-b-site-b-1-client-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
-  stage: rte-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1
-        cd $RTE_ROOT_DIR/client_server1/aws/client
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1/client.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 5m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-conn-b-site-c-1-server - deploy
-rte-client-server1-conn-b-site-c-1-server:
-  <<: *base
-  stage: rte-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_conn_b_site_c_1_server_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
-        cd $RTE_ROOT_DIR/client_server1/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-conn-b-site-c-1-server - artifacts
-rte-client-server1-conn-b-site-c-1-server-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
-  stage: rte-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server
-        cd $RTE_ROOT_DIR/client_server1/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/server/server.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 5m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-a-1 - deploy
-eut-mcn-site-a-1-deploy:
+{% endfor -%}
+{% endfor -%}
+{% for site in eut.sites %}
+# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - deploy
+eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -965,17 +280,20 @@ eut-mcn-site-a-1-deploy:
     - !reference [ .deploy_eut_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_1
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_1/1.0"
-        terraform apply -var="site_index=0" -var="project_suffix=site_a_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_1/site.tfvars
+        {%- for script in site.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
   retry:
     max: 1
     when:
@@ -983,8 +301,8 @@ eut-mcn-site-a-1-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-1 - artifacts
-eut-mcn-site-a-1-artifacts:
+# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - artifacts
+eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:
@@ -993,350 +311,30 @@ eut-mcn-site-a-1-artifacts:
     - !reference [ .destroy_rte_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_1
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_1/1.0"
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_1/site.tfvars
+        {%- for script in site.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# eut mcn - site-a-2 - deploy
-eut-mcn-site-a-2-deploy:
-  <<: *base
-  stage: eut-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_2
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_2/1.0"
-        terraform apply -var="site_index=1" -var="project_suffix=site_a_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_2/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-a-2 - artifacts
-eut-mcn-site-a-2-artifacts:
-  <<: *base
-  stage: eut-artifacts
-  rules:
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_2
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_2/1.0"
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_2/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-a-3 - deploy
-eut-mcn-site-a-3-deploy:
-  <<: *base
-  stage: eut-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_3
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_3/1.0"
-        terraform apply -var="site_index=2" -var="project_suffix=site_a_3" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_3/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-a-3 - artifacts
-eut-mcn-site-a-3-artifacts:
-  <<: *base
-  stage: eut-artifacts
-  rules:
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_3
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_3/1.0"
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_a_3/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-b-1 - deploy
-eut-mcn-site-b-1-deploy:
-  <<: *base
-  stage: eut-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_1
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_1/1.0"
-        terraform apply -var="site_index=3" -var="project_suffix=site_b_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_1/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-b-1 - artifacts
-eut-mcn-site-b-1-artifacts:
-  <<: *base
-  stage: eut-artifacts
-  rules:
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_1
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_1/1.0"
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_1/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-b-2 - deploy
-eut-mcn-site-b-2-deploy:
-  <<: *base
-  stage: eut-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_2
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_2/1.0"
-        terraform apply -var="site_index=4" -var="project_suffix=site_b_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_2/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-b-2 - artifacts
-eut-mcn-site-b-2-artifacts:
-  <<: *base
-  stage: eut-artifacts
-  rules:
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_2
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_2/1.0"
-        terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/aws/site_b_2/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-c-1 - deploy
-eut-mcn-site-c-1-deploy:
-  <<: *base
-  stage: eut-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_1
-        cd $EUT_ROOT_DIR/mcn/azure
-        terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_1/1.0"
-        terraform plan -var="site_index=5" -var="project_suffix=site_c_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE
-        #terraform import -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
-        #terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_1/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-c-1 - artifacts
-eut-mcn-site-c-1-artifacts:
-  <<: *base
-  stage: eut-artifacts
-  rules:
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_1
-        cd $EUT_ROOT_DIR/mcn/azure
-        terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_1/1.0"
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-c-2 - deploy
-eut-mcn-site-c-2-deploy:
-  <<: *base
-  stage: eut-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_2
-        cd $EUT_ROOT_DIR/mcn/azure
-        terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_2/1.0"
-        terraform plan -var="site_index=6" -var="project_suffix=site_c_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE
-        #terraform import -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$S3_EUT_ROOT/mcn/azure/terraform.tfvars.json -var-file=$RTE_SHARED_ARTIFACTS_FILE azurerm_marketplace_agreement.xc /subscriptions/$ARM_SUBSCRIPTION_ID/providers/Microsoft.MarketplaceOrdering/agreements/volterraedgeservices/offers/entcloud_voltmesh_voltstack_node/plans/freeplan_entcloud_voltmesh_voltstack_node
-        #terraform output > $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_2/site.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-c-2 - artifacts
-eut-mcn-site-c-2-artifacts:
-  <<: *base
-  stage: eut-artifacts
-  rules:
-    - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/eut/mcn/azure/site_c_2
-        cd $EUT_ROOT_DIR/mcn/azure
-        terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_2/1.0"
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-
-# feature - mcn - network_policy - deploy
-feature-mcn-network_policy-deploy:
+{% endfor %}
+{% for feature in features %}
+# feature - {{ eut.base.module }} - {{ feature.name }} - deploy
+feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
   <<: *base
   stage: feature-deploy
   rules:
@@ -1344,60 +342,48 @@ feature-mcn-network_policy-deploy:
     - !reference [ .deploy_feature_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/network_policy
-        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/network_policy/1.0"
-        #terraform apply -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-        #terraform output > $FEATURES_ROOT_DIR/network_policy/feature.tfvars
-  timeout: 30m
+        {%- for script in feature.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# feature - mcn - forward_proxy_policy - deploy
-feature-mcn-forward_proxy_policy-deploy:
-  <<: *base
-  stage: feature-deploy
-  rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_feature_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/forward_proxy_policy
-        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/forward_proxy_policy/1.0"
-        terraform apply -compact-warnings -var-file=$EUT_ROOT_TF_VAR_FILE -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server-site-a-2-east-west-traffic-a - deploy
-test-client-server-site-a-2-east-west-traffic-a-deploy:
+{% endfor -%}
+{% for rte in rtes -%}
+{% for test in rte.tests %}
+# test - {{ test.job }} - deploy
+{{ test.job }}-deploy:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}, rules ]
   stage: regression-test
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_a
-        cd $TESTS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_2/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_2/server/server.tfvars -var="data_file=client_server_site_a_2_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_a" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_a/fortio.tfvars
+        {%- for script in test.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ test.ci.timeout }}
   retry:
     max: 1
     when:
@@ -1405,425 +391,74 @@ test-client-server-site-a-2-east-west-traffic-a-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# test - test-client-server-site-a-2-east-west-traffic-a - artifacts
-test-client-server-site-a-2-east-west-traffic-a-artifacts:
+# test - {{ test.job }} - artifacts
+{{ test.job }}-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
+    {%- endfor %}
   stage: regression-test-artifacts
   script:
       - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_a
-        cd $TESTS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_a/fortio.tfvars
+        {%- for script in test.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ test.ci.timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# test - test-client-server-site-a-2-east-west-traffic-b - deploy
-test-client-server-site-a-2-east-west-traffic-b-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-  stage: regression-test
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_b
-        cd $TESTS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_2/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_2/server/server.tfvars -var="data_file=client_server_site_a_2_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_b" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_b/iperf.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server-site-a-2-east-west-traffic-b - artifacts
-test-client-server-site-a-2-east-west-traffic-b-artifacts:
+{% endfor -%}
+{% endfor -%}
+{% for rte in rtes -%}
+{% for test in rte.tests -%}
+{% for verification in test.verifications %}
+# verification - {{ verification.job }} - deploy
+{{ verification.job }}-deploy:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_b
-        cd $TESTS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_b/iperf.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server-site-a-1-east-west-traffic-a - deploy
-test-client-server-site-a-1-east-west-traffic-a-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-  stage: regression-test
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a
-        cd $TESTS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/server/server.tfvars -var="data_file=client_server_site_a_1_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server-site-a-1-east-west-traffic-a - artifacts
-test-client-server-site-a-1-east-west-traffic-a-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a, rules ]
-  stage: regression-test-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a
-        cd $TESTS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server-site-a-1-east-west-traffic-b - deploy
-test-client-server-site-a-1-east-west-traffic-b-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-  stage: regression-test
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b
-        cd $TESTS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/site_a_1/server/server.tfvars -var="data_file=client_server_site_a_1_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server-site-a-1-east-west-traffic-b - artifacts
-test-client-server-site-a-1-east-west-traffic-b-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b
-        cd $TESTS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server1-site-b-1-east-west-traffic-a - deploy
-test-client-server1-site-b-1-east-west-traffic-a-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
-  stage: regression-test
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a
-        cd $TESTS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/server/server.tfvars -var="data_file=client_server1_site_b_1_east_west_traffic_a_fortio.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server1-site-b-1-east-west-traffic-a - artifacts
-test-client-server1-site-b-1-east-west-traffic-a-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a, rules ]
-  stage: regression-test-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a
-        cd $TESTS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_TESTS_ROOT/fortio"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server1-site-b-1-east-west-traffic-b - deploy
-test-client-server1-site-b-1-east-west-traffic-b-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
-  stage: regression-test
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b
-        cd $TESTS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/client/client.tfvars -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/site_b_1/server/server.tfvars -var="data_file=client_server1_site_b_1_east_west_traffic_b_iperf.data" -var="data_dir=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b" -auto-approve
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# test - test-client-server1-site-b-1-east-west-traffic-b - artifacts
-test-client-server1-site-b-1-east-west-traffic-b-artifacts:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server1_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test-artifacts
-  script:
-      - |
-        #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b
-        cd $TESTS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_TESTS_ROOT/iperf"
-        terraform output > $ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# verification - verification-client-server-site-a-2-east-west-traffic-a-east-west-traffic-verify-a - deploy
-verification-client-server-site-a-2-east-west-traffic-a-east-west-traffic-verify-a-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a, rules ]
+    - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
   stage: regression-test-verify
   script:
       - |
-        #!/usr/bin/env bash
-        cd $VERIFICATIONS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_a/fortio.tfvars -auto-approve
-  timeout: 15m
+        {%- for script in verification.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  timeout: {{ verification.ci.timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
 
-# verification - verification-client-server-site-a-2-east-west-traffic-b-east-west-traffic-verify-b - deploy
-verification-client-server-site-a-2-east-west-traffic-b-east-west-traffic-verify-b-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test-verify
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $VERIFICATIONS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_2/east_west_traffic_b/iperf.tfvars -auto-approve
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# verification - verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a - deploy
-verification-client-server-site-a-1-east-west-traffic-a-east-west-traffic-verify-a-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_a_east_west_traffic_verify_a, rules ]
-  stage: regression-test-verify
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $VERIFICATIONS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_a/fortio.tfvars -auto-approve
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# verification - verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b - deploy
-verification-client-server-site-a-1-east-west-traffic-b-east-west-traffic-verify-b-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test-verify
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $VERIFICATIONS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server/site_a_1/east_west_traffic_b/iperf.tfvars -auto-approve
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# verification - verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a - deploy
-verification-client-server1-site-b-1-east-west-traffic-a-east-west-traffic-verify-a-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server1_east_west_traffic_a_east_west_traffic_verify_a, rules ]
-  stage: regression-test-verify
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $VERIFICATIONS_ROOT_DIR/fortio
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/fortio"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_a/fortio.tfvars -auto-approve
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# verification - verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b - deploy
-verification-client-server1-site-b-1-east-west-traffic-b-east-west-traffic-verify-b-deploy:
-  <<: *base
-  rules:
-    - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_client_server1_east_west_traffic_b_east_west_traffic_verify_b, rules ]
-  stage: regression-test-verify
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $VERIFICATIONS_ROOT_DIR/iperf
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/iperf"
-        terraform apply -compact-warnings -var-file=$ARTIFACTS_ROOT_DIR/tests/client_server1/site_b_1/east_west_traffic_b/iperf.tfvars -auto-approve
-  timeout: 15m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# feature - mcn - network_policy - destroy
-feature-mcn-network_policy-destroy:
+{% for feature in features %}
+# feature - {{ eut.base.module }} - {{ feature.name }} - destroy
+feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
   <<: *base
   stage: feature-destroy
   rules:
@@ -1831,41 +466,26 @@ feature-mcn-network_policy-destroy:
     - !reference [ .destroy_feature_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/network_policy
-        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/network_policy/1.0"
-        terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-  timeout: 30m
+        {%- for script in feature.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "destroy" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# feature - mcn - forward_proxy_policy - destroy
-feature-mcn-forward_proxy_policy-destroy:
-  <<: *base
-  stage: feature-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_feature_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $FEATURES_ROOT_DIR/forward_proxy_policy
-        terraform init --backend-config="key=$S3_EUT_ROOT/mcn/features/forward_proxy_policy/1.0"
-        terraform destroy -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-a-1 - destroy
-eut-mcn-site-a-1-destroy:
+{% endfor -%}
+{% for site in eut.sites %}
+# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - destroy
+eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
   <<: *base
   stage: eut-destroy
   rules:
@@ -1873,174 +493,31 @@ eut-mcn-site-a-1-destroy:
     - !reference [ .destroy_eut_rules, rules ]
   script:
       - |
-        #!/usr/bin/env bash
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_1/1.0"
-        terraform destroy -var="site_index=0" -var="project_suffix=site_a_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
+        {%- for script in site.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "destroy" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ eut.module.ci.timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# eut mcn - site-a-2 - destroy
-eut-mcn-site-a-2-destroy:
-  <<: *base
-  stage: eut-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_2/1.0"
-        terraform destroy -var="site_index=1" -var="project_suffix=site_a_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-a-3 - destroy
-eut-mcn-site-a-3-destroy:
-  <<: *base
-  stage: eut-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_a_3/1.0"
-        terraform destroy -var="site_index=2" -var="project_suffix=site_a_3" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-b-1 - destroy
-eut-mcn-site-b-1-destroy:
-  <<: *base
-  stage: eut-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_1/1.0"
-        terraform destroy -var="site_index=3" -var="project_suffix=site_b_1" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-b-2 - destroy
-eut-mcn-site-b-2-destroy:
-  <<: *base
-  stage: eut-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $EUT_ROOT_DIR/mcn/aws
-        terraform init --backend-config="key=$S3_EUT_BASE/aws/site_b_2/1.0"
-        terraform destroy -var="site_index=4" -var="project_suffix=site_b_2" -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$EUT_ROOT_TF_VAR_FILE -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-c-1 - destroy
-eut-mcn-site-c-1-destroy:
-  <<: *base
-  stage: eut-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $EUT_ROOT_DIR/mcn/azure
-        terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_1/1.0"
-        terraform plan -var-file=$EUT_ROOT_TF_VAR_FILE
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# eut mcn - site-c-2 - destroy
-eut-mcn-site-c-2-destroy:
-  <<: *base
-  stage: eut-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_eut_rules, rules ]
-  script:
-      - |
-        #!/usr/bin/env bash
-        cd $EUT_ROOT_DIR/mcn/azure
-        terraform init --backend-config="key=$S3_EUT_BASE/azure/site_c_2/1.0"
-        terraform plan -var-file=$EUT_ROOT_TF_VAR_FILE
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 1h 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-c-site-a-2-client - destroy
-rte-client-server-conn-c-site-a-2-client-destroy:
+{% endfor -%}
+{% for rte in rtes -%}
+{% for component in rte.components %}
+# {{ component.job | replace(from="_", to="-") }} - destroy
+{{ component.job | replace(from="_", to="-") }}-destroy:
   <<: *base
   stage: rte-destroy
   rules:
@@ -2048,272 +525,57 @@ rte-client-server-conn-c-site-a-2-client-destroy:
     - !reference [ .destroy_rte_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/client
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_2"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_2' -auto-approve
+      {%- for script in component.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "destroy" %}
+      {%- for command in v %}
+      {{ command }}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[component.provider].timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# rte-client-server-conn-c-site-b-1-server - destroy
-rte-client-server-conn-c-site-b-1-server-destroy:
-  <<: *base
-  stage: rte-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/server
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-a-1-client - destroy
-rte-client-server-conn-a-site-a-1-client-destroy:
-  <<: *base
-  stage: rte-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/client
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-b-1-server - destroy
-rte-client-server-conn-a-site-b-1-server-destroy:
-  <<: *base
-  stage: rte-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/server
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-conn-a-site-c-1-server - destroy
-rte-client-server-conn-a-site-c-1-server-destroy:
-  <<: *base
-  stage: rte-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/server
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server-aws-share - destroy
-rte-client-server-aws-share-destroy:
+{% endfor -%}
+{% for share in rte.shares %}
+# {{ share.job | replace(from="_", to="-") }} - destroy
+{{ share.job | replace(from="_", to="-") }}-destroy:
   <<: *base
   stage: rte-share-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server_aws_share_rules, rules ]
+    - !reference [ .destroy_{{ share.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=7' -var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":true,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
+      {%- for script in share.scripts %}
+      {%- for k, v in script %}
+      {%- if k == "destroy" %}
+      {%- for command in v %}
+      {{ command }}
+      {%- endfor %}
+      {%- endif %}
+      {%- endfor %}
+      {%- endfor %}
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ rte.ci[share.provider].timeout }}
   retry:
     max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-
-# rte-client-server-azure-share - destroy
-rte-client-server-azure-share-destroy:
-  <<: *base
-  stage: rte-share-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server_azure_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server/azure/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server/azure/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-conn-b-site-b-1-client - destroy
-rte-client-server1-conn-b-site-b-1-client-destroy:
-  <<: *base
-  stage: rte-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/client
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars -var='site_name=site_b_1' -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-conn-b-site-c-1-server - destroy
-rte-client-server1-conn-b-site-c-1-server-destroy:
-  <<: *base
-  stage: rte-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/server
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/server"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-aws-share - destroy
-rte-client-server1-aws-share-destroy:
-  <<: *base
-  stage: rte-share-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server1_aws_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/aws/share
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/share"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var='subnet_count=7' -var='sites=[{"name":"site_a_1","index":0,"has_client":true,"has_server":false},{"name":"site_a_2","index":1,"has_client":true,"has_server":false},{"name":"site_a_3","index":2,"has_client":false,"has_server":false},{"name":"site_b_1","index":3,"has_client":true,"has_server":true},{"name":"site_b_2","index":4,"has_client":false,"has_server":false},{"name":"site_c_1","index":5,"has_client":false,"has_server":true},{"name":"site_c_2","index":6,"has_client":false,"has_server":false}]' -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
-
-# rte-client-server1-azure-share - destroy
-rte-client-server1-azure-share-destroy:
-  <<: *base
-  stage: rte-share-destroy
-  rules:
-    - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_rte_client_server1_azure_share_rules, rules ]
-  script:
-    - |
-      #!/usr/bin/env bash
-      cd $RTE_ROOT_DIR/client_server1/azure/shared
-      terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure/shared"
-      terraform destroy -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/azure/site.tfvars -auto-approve
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
-  timeout: 30m
-  retry:
-    max: 1
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
+{% endfor -%}
+{% endfor -%}
