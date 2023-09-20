@@ -30,7 +30,7 @@ stages:
   - eut-destroy
   - rte-destroy
   - rte-share-destroy
-  
+
 variables:
   F5XC_API_TOKEN: "${ENVIRONMENT}_api_token"
   S3_ROOT: "features/$FEATURE/$ENVIRONMENT/project-a"
@@ -57,7 +57,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: "recursive"
   FEATURE_NETWORK_POLICY_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/network_policy/terraform.tfvars"
   FEATURE_FORWARD_PROXY_POLICY_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/forward_proxy_policy/terraform.tfvars"
-  
+
 .deploy_rules:
   rules:
     - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -506,7 +506,7 @@ rte-client-server-conn-c-site-b-1-server:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=' -var='destinations=[site_a_2]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
   artifacts:
     paths:
@@ -564,7 +564,7 @@ rte-client-server-conn-a-site-a-1-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=[site_c_1, site_b_1]' -auto-approve
+        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=[site_b_1, site_c_1]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
         #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
@@ -626,7 +626,7 @@ rte-client-server-conn-a-site-b-1-server:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=' -var='destinations=[site_a_2, site_a_1]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
   artifacts:
     paths:
@@ -684,7 +684,7 @@ rte-client-server-conn-a-site-c-1-server:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -auto-approve
+        terraform apply -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=' -var='destinations=[site_a_2, site_a_1]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
   artifacts:
     paths:

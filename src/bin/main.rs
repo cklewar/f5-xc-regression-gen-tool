@@ -1985,8 +1985,8 @@ impl Regression {
                 //Process connection destinations
                 for dst in dsts.iter() {
                     let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let dst_site = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite);
-                    let dst_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let dst_site = self.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite);
+                    let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let dst_provider = self.get_object_neighbour_with_properties_out(&dst_site.vertex.id, EdgeTypes::UsesProvider);
                     let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let comp_dst = self.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst);
@@ -2012,10 +2012,10 @@ impl Regression {
                                 let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                                 let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
 
-                                // error!("RTE: {:?} -- DST_NAME: {:?} -- CONNECTION: {:?} -- SERVER_DESTINATIONS_RT: {:?}", &rte_name, dst_name, conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(), &server_destinations);
                                 ctx.rte = Option::from(rte_name.to_string());
                                 ctx.eut = Option::from(eut_name.to_string());
                                 ctx.project = Option::from(self.config.project.clone());
+                                ctx.site = Option::from(dst_site_name.to_string());
                                 ctx.destinations = Option::from(server_destinations.clone());
 
                                 let mut commands: Vec<String> = Vec::new();
