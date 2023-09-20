@@ -11,7 +11,7 @@ Supported command line arguments:
 --config <provide regression environment configuration file>
  */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::option::Option;
 use std::string::ToString;
@@ -732,7 +732,6 @@ impl ScriptTestRenderContext {
     }
 }
 
-
 #[derive(Serialize, Debug)]
 struct ScriptRteRenderContext {
     eut: Option<String>,
@@ -741,6 +740,7 @@ struct ScriptRteRenderContext {
     release: Option<String>,
     project: Option<RegressionConfigProject>,
     provider: String,
+    destinations: Option<HashSet<String>>,
 }
 
 impl ScriptRteRenderContext {
@@ -752,6 +752,7 @@ impl ScriptRteRenderContext {
             site: None,
             release: None,
             project: None,
+            destinations: None,
         }
     }
 
@@ -1153,7 +1154,7 @@ impl Regression {
                                         self.add_object_properties(&src_o, &json!({KEY_NAME: &source, KEY_RTE: &r.as_object().
                                             unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
                                         self.add_object_properties(&src_o, &json!({
-                                            KEY_GVID: format!("{}_{}_{}", "connection_src", &source, &r.as_object().unwrap().
+                                            KEY_GVID: format!("{}_{}_{}_{}", "connection_src", &c_name.replace("-","_"), &source, &r.as_object().unwrap().
                                                 get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                             KEY_GV_LABEL: source
                                         }), PropertyType::Gv);
@@ -1179,7 +1180,7 @@ impl Regression {
                                             self.add_object_properties(&dst_o, &json!({KEY_NAME: &d, KEY_RTE: &r.as_object().
                                                 unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
                                             self.add_object_properties(&dst_o, &json!({
-                                                         KEY_GVID: format!("{}_{}_{}", "connection_dst", d.as_str().unwrap(), &r.as_object().
+                                                         KEY_GVID: format!("{}_{}_{}_{}", "connection_dst", &c_name.replace("-","_"), d.as_str().unwrap(), &r.as_object().
                                                             unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                          KEY_GV_LABEL: d.as_str().unwrap()
                                                      }), PropertyType::Gv);
@@ -1689,6 +1690,7 @@ impl Regression {
         let mut objs: Vec<VertexProperties> = Vec::new();
 
         for item in indradb::util::extract_edges(o.unwrap()).unwrap().iter() {
+            //error!("ITEM: {:?}", &item);
             objs.push(self.get_object_with_properties(&item.outbound_id));
         }
         objs
@@ -1797,7 +1799,7 @@ impl Regression {
 
             //Process feature scripts
             for script in feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                 let mut ctx: ScriptFeatureRenderContext = ScriptFeatureRenderContext::new(eut_name.to_string());
                 ctx.name = Option::from(f_name.to_string());
@@ -1863,7 +1865,6 @@ impl Regression {
                     }
                 }
                 data_rc.push(srpsd_rc);
-
             }
 
             let _provider = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::NeedsProvider);
@@ -1917,7 +1918,11 @@ impl Regression {
                 });
             }
 
+            //Connection DST rt set
+            let mut server_destinations: HashSet<String> = HashSet::new();
+            //Process connections
             for conn in connections.iter() {
+                let connection_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let src = self.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
                 let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let src_site = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite);
@@ -1926,18 +1931,25 @@ impl Regression {
                 let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let comp_src = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc);
                 let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &src_name, &comp_src_name);
+                let rte_job_name = format!("{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &src_name, &comp_src_name);
 
                 //Process rte src component scripts
                 let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+
+                //Process client destination list
+                let mut client_destinations: HashSet<String> = HashSet::new();
+                let dsts = self.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
+                for dst in dsts.iter() {
+                    client_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+                }
 
                 for p in provider.iter() {
                     let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                     for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                         if src_p_name == p_name {
-                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
                             let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
 
@@ -1945,6 +1957,7 @@ impl Regression {
                             ctx.eut = Option::from(eut_name.to_string());
                             ctx.site = Option::from(src_site_name.to_string());
                             ctx.project = Option::from(self.config.project.clone());
+                            ctx.destinations = Option::from(client_destinations.clone());
 
                             let mut commands: Vec<String> = Vec::new();
                             for command in ctx.render_script(&ctx, &contents).lines() {
@@ -1969,7 +1982,7 @@ impl Regression {
                 };
                 rte_crcs.components.push(rte_crc);
 
-                let dsts = self.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
+                //Process connection destinations
                 for dst in dsts.iter() {
                     let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let dst_site = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite);
@@ -1978,7 +1991,13 @@ impl Regression {
                     let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let comp_dst = self.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst);
                     let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let rte_job_name = format!("{}_{}_{}_{}", KEY_RTE, &rte_name, &dst_name, &comp_dst_name);
+                    let rte_job_name = format!("{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_name, &comp_dst_name);
+
+                    //Process server destination list
+                    let rt_dsts = self.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
+                    for dst in rt_dsts.iter() {
+                        server_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+                    }
 
                     //Process rte dst component scripts
                     let scripts_path = comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
@@ -1989,13 +2008,15 @@ impl Regression {
 
                         for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                             if dst_p_name == p_name {
-                                let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+                                let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                                 let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                                 let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
 
+                                // error!("RTE: {:?} -- DST_NAME: {:?} -- CONNECTION: {:?} -- SERVER_DESTINATIONS_RT: {:?}", &rte_name, dst_name, conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(), &server_destinations);
                                 ctx.rte = Option::from(rte_name.to_string());
                                 ctx.eut = Option::from(eut_name.to_string());
                                 ctx.project = Option::from(self.config.project.clone());
+                                ctx.destinations = Option::from(server_destinations.clone());
 
                                 let mut commands: Vec<String> = Vec::new();
                                 for command in ctx.render_script(&ctx, &contents).lines() {
@@ -2037,7 +2058,7 @@ impl Regression {
                     let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+                        let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
 
@@ -2073,7 +2094,7 @@ impl Regression {
                         let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                         for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                            let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get("file").unwrap().as_str().unwrap());
+                            let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                             let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
 
@@ -2119,6 +2140,7 @@ impl Regression {
                     rte_crcs.tests.push(rterc);
                 }
             }
+            //error!("RTE: {:?} -- SERVER_DESTINATIONS_RT: {:?}", &rte_name, &server_destinations);
             rtes_rc.push(rte_crcs);
         }
 
