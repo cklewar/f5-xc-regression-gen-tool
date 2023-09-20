@@ -353,9 +353,7 @@ rte-client-server-aws-share-artifacts:
     - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
     - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -410,12 +408,7 @@ rte-client-server-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_c_aws_site_a_2_client_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
     - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
@@ -775,9 +768,7 @@ rte-client-server1-aws-share-artifacts:
     - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
     - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
       #!/usr/bin/env bash
@@ -832,12 +823,7 @@ rte-client-server1-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_c_aws_site_a_2_client_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
-    - !reference [ .deploy_rte_client_server_conn_a_aws_site_b_1_server_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
-    - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
     - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
