@@ -400,7 +400,7 @@ rte-client-server-site-a-1-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
         #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
@@ -688,7 +688,7 @@ rte-client-server1-site-b-1-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1
         cd $RTE_ROOT_DIR/client_server1/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/aws/client/site_b_1"
-        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/site_b_1/share.tfvars -auto-approve
+        terraform apply -compact-warnings -var-file=$RTE_ROOT_DIR/client_server1/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/share/share.tfvars -var='site_name=site_b_1' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/aws/client/site_b_1/client.tfvars
   artifacts:
     paths:
