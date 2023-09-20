@@ -534,10 +534,10 @@ rte-client-server-conn-c-aws-site-b-1-server-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1
         cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server/site_b_1"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1/server.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -654,10 +654,10 @@ rte-client-server-conn-a-aws-site-b-1-server-artifacts:
   script:
       - |
         #!/usr/bin/env bash
-        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server
+        mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1
         cd $RTE_ROOT_DIR/client_server/aws/server
-        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/server.tfvars
+        terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server/site_b_1"
+        terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1/server.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
