@@ -1491,12 +1491,12 @@ impl Regression {
 
         //Rte Stages Deploy
         let rte_stage_deploy = self.add_ci_stages(&ci, &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
-        //Eut Stages Deploy
-        let eut_stage_deploy = self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Feature Stages Deploy
-        let feature_stage_deploy = self.add_ci_stages(&eut_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let feature_stage_deploy = self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
+        //Eut Stages Deploy
+        let eut_stage_deploy = self.add_ci_stages(&feature_stage_deploy.unwrap(), &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Test Stages Deploy
-        let mut test_stage_deploy = self.add_ci_stages(&feature_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let mut test_stage_deploy = self.add_ci_stages(&eut_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
@@ -1786,7 +1786,7 @@ impl Regression {
                 scripts.push(data);
             }
             let eut_s_rc = EutSiteRenderContext {
-                job: format!("{}_{}_{}", KEY_EUT, &eut_name, &site_name),
+                job: format!("{}_{}_{}", KEY_EUT, &eut_name, &site_name).replace("_", "-"),
                 name: site_name.to_string(),
                 index: i,
                 scripts,
@@ -1930,7 +1930,7 @@ impl Regression {
                 }
 
                 rte_crcs.shares.push(RteProviderShareRenderContext {
-                    job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE),
+                    job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace("_", "-"),
                     rte: rte_name.to_string(),
                     eut: eut_name.to_string(),
                     provider: p_name.to_string(),
@@ -1951,7 +1951,7 @@ impl Regression {
                 let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let comp_src = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc);
                 let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name);
+                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace("_", "-");
 
                 //Process rte src component scripts
                 let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
@@ -2011,7 +2011,7 @@ impl Regression {
                     let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let comp_dst = self.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst);
                     let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name);
+                    let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace("_", "-");
 
                     //Process server destination list
                     let rt_dsts = self.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
@@ -2052,7 +2052,7 @@ impl Regression {
                     }
 
                     let rte_crc = RteComponentRenderContext {
-                        job: rte_job_name.clone(),
+                        job: rte_job_name.to_string(),
                         rte: rte_name.to_string(),
                         site: dst_site_name.to_string(),
                         name: comp_dst_name.to_string(),

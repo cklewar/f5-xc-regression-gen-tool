@@ -72,41 +72,52 @@ variables:
   rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% for feature in features %}
+.deploy_{{ feature.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "deploy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_{{ feature.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "destroy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
 {% for rte in rtes -%}
 {% for share in rte.shares %}
 .deploy_{{ share.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ share.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ share.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_{{ share.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-{{ share.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ share.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ share.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for component in rte.components %}
 .deploy_{{ component.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "deploy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_{{ component.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "destroy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-{{ component.job | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests %}
-.regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}:
+.regression_test_{{ test.job | replace(from="-", to="_") }}:
   rules:
-    - if: $ACTION == "test-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests -%}
-{%for verification in test.verifications %}
-.regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}:
+{% for verification in test.verifications %}
+.regression_verification_{{ verification.job | replace(from="-", to="_") }}:
   rules:
-    - if: $ACTION == "verify-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-{{ test.rte | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-{{ verification.name | replace(from="_", to="-") }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
 {% endfor %}
@@ -331,15 +342,16 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-{% endfor %}
+{% endfor -%}
 {% for feature in features %}
-# {{ feature.job }} - deploy
+# feature - {{ feature.job }} - deploy
 {{ feature.job }}-deploy:
   <<: *base
   stage: feature-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_feature_rules, rules ]
+    - !reference [ .deploy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
         {%- for script in feature.scripts %}
@@ -457,13 +469,14 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
 {% endfor -%}
 
 {% for feature in features %}
-# feature - {{ eut.base.module }} - {{ feature.name }} - destroy
-feature-{{ eut.base.module }}-{{ feature.name }}-destroy:
+# feature - {{ feature.job }} - destroy
+{{ feature.job }}-destroy:
   <<: *base
   stage: feature-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_feature_rules, rules ]
+    - !reference [ .destroy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
         {%- for script in feature.scripts %}
