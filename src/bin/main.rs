@@ -659,7 +659,9 @@ struct ScriptFeatureRenderContext {
     name: Option<String>,
     sites: Option<String>,
     release: Option<String>,
+    project: Option<RegressionConfigProject>,
     provider: Option<Vec<String>>,
+
 }
 
 impl ScriptFeatureRenderContext {
@@ -669,6 +671,7 @@ impl ScriptFeatureRenderContext {
             name: None,
             sites: None,
             release: None,
+            project: None,
             provider: None,
         }
     }
@@ -1823,6 +1826,7 @@ impl Regression {
                 ctx.sites = Option::from(serde_json::to_string(&feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap()).unwrap());
                 ctx.release = Option::from(feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
                 ctx.provider = Option::from(eut_provider_p_base.clone());
+                ctx.project = Option::from(self.config.project.clone());
 
                 let mut commands: Vec<String> = Vec::new();
                 for command in ctx.render_script(&ctx, &contents).lines() {
