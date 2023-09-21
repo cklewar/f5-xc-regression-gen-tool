@@ -107,14 +107,14 @@ variables:
     - if: $ACTION == "destroy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests %}
-.regression_test_{{ test.job | replace(from="-", to="_") }}:
+.regression_{{ test.job | replace(from="-", to="_") }}:
   rules:
     - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests -%}
 {% for verification in test.verifications %}
-.regression_verification_{{ verification.job | replace(from="-", to="_") }}:
+.regression_{{ verification.job | replace(from="-", to="_") }}:
   rules:
     - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
@@ -378,7 +378,7 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_test_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}, rules ]
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}, rules ]
   stage: regression-test
   script:
       - |
@@ -409,7 +409,7 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
   rules:
     - !reference [ .regression_verification_rules, rules ]
     {%- for verification in test.verifications %}
-    - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
+    - !reference [ .regression_{{ verification.job | replace(from="-", to="_") }}, rules ]
     {%- endfor %}
   stage: regression-test-artifacts
   script:
@@ -444,7 +444,7 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
   <<: *base
   rules:
     - !reference [ .regression_verification_rules, rules ]
-    - !reference [ .regression_verification_{{ test.rte }}_{{ test.name | replace(from="-", to="_") }}_{{ verification.name | replace(from="-", to="_") }}, rules ]
+    - !reference [ .regression_{{ verification.job | replace(from="-", to="_") }}, rules ]
   stage: regression-test-verify
   script:
       - |
