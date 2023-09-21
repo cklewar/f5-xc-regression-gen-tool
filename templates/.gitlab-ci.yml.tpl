@@ -333,8 +333,8 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
       - runner_system_failure
 {% endfor %}
 {% for feature in features %}
-# feature - {{ eut.base.module }} - {{ feature.name }} - deploy
-feature-{{ eut.base.module }}-{{ feature.name }}-deploy:
+# {{ feature.job }} - deploy
+{{ feature.job }}-deploy:
   <<: *base
   stage: feature-deploy
   rules:

@@ -76,7 +76,7 @@ const PROPERTY_TYPE_BASE: &str = "base";
 const PROPERTY_TYPE_MODULE: &str = "module";
 
 // Key order
-const EUT_KEY_ORDER: &[&str] = &["ci", "features", "name", "provider", "release", "sites", "rtes", "scripts", "scripts_path"];
+const EUT_KEY_ORDER: &[&str] = &["ci", "provider", "sites", "features", "name", "release", "rtes", "scripts", "scripts_path"];
 
 //Objects types
 const VERTEX_TYPE_CI: &str = "ci";
@@ -136,6 +136,7 @@ const EDGE_TYPE_HAS_CONNECTION_SRC: &str = "has_connection_src";
 const EDGE_TYPE_HAS_CONNECTION_DST: &str = "has_connection_dst";
 const EDGE_TYPE_HAS_DEPLOY_STAGES: &str = "has_deploy_stages";
 const EDGE_TYPE_HAS_DESTROY_STAGES: &str = "has_destroy_stages";
+const EDGE_TYPE_FEATURE_REFERS_SITE: &str = "feature_refers_site";
 
 enum PropertyType {
     Gv,
@@ -203,6 +204,7 @@ enum EdgeTypes {
     HasConnectionSrc,
     HasConnectionDst,
     HasDestroyStages,
+    FeatureRefersSite,
 }
 
 impl VertexTypes {
@@ -335,6 +337,7 @@ impl EdgeTypes {
             EdgeTypes::ProvidesProvider => EDGE_TYPE_PROVIDES_PROVIDER,
             EdgeTypes::HasConnectionSrc => EDGE_TYPE_HAS_CONNECTION_SRC,
             EdgeTypes::HasConnectionDst => EDGE_TYPE_HAS_CONNECTION_DST,
+            EdgeTypes::FeatureRefersSite => EDGE_TYPE_FEATURE_REFERS_SITE,
         }
     }
 }
@@ -398,6 +401,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::StageDestroy.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
+        map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
         map
     };
@@ -523,6 +527,7 @@ pub struct RegressionConfig {
 #[derive(Serialize, Debug)]
 struct FeatureRenderContext {
     ci: Map<String, Value>,
+    job: String,
     eut: String,
     name: String,
     release: String,
@@ -652,6 +657,7 @@ impl ScriptEutRenderContext {
 struct ScriptFeatureRenderContext {
     eut: String,
     name: Option<String>,
+    sites: Option<String>,
     release: Option<String>,
     provider: Option<Vec<String>>,
 }
@@ -661,6 +667,7 @@ impl ScriptFeatureRenderContext {
         Self {
             eut,
             name: None,
+            sites: None,
             release: None,
             provider: None,
         }
@@ -669,7 +676,7 @@ impl ScriptFeatureRenderContext {
     pub fn render_script(&self, context: &ScriptFeatureRenderContext, input: &String) -> String {
         info!("Render regression pipeline file feature script section...");
         let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
+        let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
         info!("Render regression pipeline file feature script section -> Done.");
         rendered
     }
@@ -1024,54 +1031,63 @@ impl Regression {
                     }), PropertyType::Gv);
 
                     for f in obj.as_array().unwrap().iter() {
-                        for (k, v) in f.as_object().unwrap().iter() {
-                            let f_o = self.create_object(VertexTypes::get_type_by_key(k));
-                            self.create_relationship(&o, &f_o);
-                            self.add_object_properties(&f_o, &json!({KEY_NAME: &v.as_str().unwrap()}), PropertyType::Base);
-                            self.add_object_properties(&f_o, &json!({
-                                    KEY_GVID: format!("{}_{}_{}", self.config.eut.module, k, v.as_str().unwrap()),
-                                    KEY_GV_LABEL: &v.as_str().unwrap()
-                                }), PropertyType::Gv);
+                        let f_module = f.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                        let f_sites = f.as_object().unwrap().get("sites").unwrap().as_array().unwrap();
+                        let _sites = self.get_object_neighbour_out(&eut.id, EdgeTypes::HasSites);
+                        let sites = self.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
+                        let f_o = self.create_object(VertexTypes::Feature);
+                        self.create_relationship(&o, &f_o);
+                        self.add_object_properties(&f_o, f.as_object().unwrap(), PropertyType::Base);
+                        self.add_object_properties(&f_o, &json!({
+                                KEY_GVID: format!("{}_{}_{}", KEY_FEATURE, self.config.eut.module, f_module),
+                                KEY_GV_LABEL: &f_module
+                            }), PropertyType::Gv);
 
-                            let f_p = self.get_object_properties(&f_o).unwrap().props;
-                            let name = f_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                        //Feature -> Site
+                        for s in sites.iter() {
+                            let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().
+                                unwrap().get(KEY_NAME).unwrap();
 
-                            // FEATURE MODULE CFG
-                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&f_o), &name);
-                            for (k, v) in cfg.as_object().unwrap().iter() {
-                                match k {
-                                    k if k == KEY_SCRIPTS_PATH => {
-                                        let f_o_p = self.get_object_properties(&f_o).unwrap().props;
-                                        let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.add_object_properties(&f_o, &p, PropertyType::Module);
-                                    }
-                                    k if k == KEY_RELEASE => {
-                                        let f_o_p = self.get_object_properties(&f_o).unwrap().props;
-                                        let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.add_object_properties(&f_o, &p, PropertyType::Module);
-                                    }
-                                    k if k == KEY_NAME => {
-                                        let f_o_p = self.get_object_properties(&f_o).unwrap().props;
-                                        let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.add_object_properties(&f_o, &p, PropertyType::Module);
-                                    }
-                                    k if k == KEY_CI => {
-                                        let f_o_p = self.get_object_properties(&f_o).unwrap().props;
-                                        let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.add_object_properties(&f_o, &p, PropertyType::Module);
-                                    }
-                                    k if k == KEY_SCRIPTS => {
-                                        let f_o_p = self.get_object_properties(&f_o).unwrap().props;
-                                        let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.add_object_properties(&f_o, &p, PropertyType::Module);
-                                    }
-                                    _ => {}
+                            if f_sites.contains(site_name) {
+                                self.create_relationship(&f_o, &s.vertex);
+                            }
+                        }
+
+                        // FEATURE MODULE CFG
+                        let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&f_o), &f_module);
+                        for (k, v) in cfg.as_object().unwrap().iter() {
+                            match k {
+                                k if k == KEY_SCRIPTS_PATH => {
+                                    let f_o_p = self.get_object_properties(&f_o).unwrap().props;
+                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                    self.add_object_properties(&f_o, &p, PropertyType::Module);
                                 }
+                                k if k == KEY_RELEASE => {
+                                    let f_o_p = self.get_object_properties(&f_o).unwrap().props;
+                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                    self.add_object_properties(&f_o, &p, PropertyType::Module);
+                                }
+                                k if k == KEY_NAME => {
+                                    let f_o_p = self.get_object_properties(&f_o).unwrap().props;
+                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                    self.add_object_properties(&f_o, &p, PropertyType::Module);
+                                }
+                                k if k == KEY_CI => {
+                                    let f_o_p = self.get_object_properties(&f_o).unwrap().props;
+                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                    self.add_object_properties(&f_o, &p, PropertyType::Module);
+                                }
+                                k if k == KEY_SCRIPTS => {
+                                    let f_o_p = self.get_object_properties(&f_o).unwrap().props;
+                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                    self.add_object_properties(&f_o, &p, PropertyType::Module);
+                                }
+                                _ => {}
                             }
                         }
                     }
@@ -1691,7 +1707,6 @@ impl Regression {
         let mut objs: Vec<VertexProperties> = Vec::new();
 
         for item in indradb::util::extract_edges(o.unwrap()).unwrap().iter() {
-            //error!("ITEM: {:?}", &item);
             objs.push(self.get_object_with_properties(&item.outbound_id));
         }
         objs
@@ -1795,7 +1810,7 @@ impl Regression {
 
         for feature in features.iter() {
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-            let f_name = feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+            let f_name = feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
             let scripts_path = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
             //Process feature scripts
@@ -1803,11 +1818,13 @@ impl Regression {
                 let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                 let mut ctx: ScriptFeatureRenderContext = ScriptFeatureRenderContext::new(eut_name.to_string());
+
                 ctx.name = Option::from(f_name.to_string());
+                ctx.sites = Option::from(serde_json::to_string(&feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap()).unwrap());
                 ctx.release = Option::from(feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
                 ctx.provider = Option::from(eut_provider_p_base.clone());
-                let mut commands: Vec<String> = Vec::new();
 
+                let mut commands: Vec<String> = Vec::new();
                 for command in ctx.render_script(&ctx, &contents).lines() {
                     commands.push(format!("{:indent$}{}", "", command, indent = 0));
                 }
@@ -1820,6 +1837,7 @@ impl Regression {
 
             let frc = FeatureRenderContext {
                 ci: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                job: format!("{}_{}_{}", KEY_FEATURE, &eut_name, &f_name).replace("_", "-"),
                 eut: eut_name.to_string(),
                 name: f_name,
                 release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
@@ -2142,7 +2160,6 @@ impl Regression {
                     rte_crcs.tests.push(rterc);
                 }
             }
-            //error!("RTE: {:?} -- SERVER_DESTINATIONS_RT: {:?}", &rte_name, &server_destinations);
             rtes_rc.push(rte_crcs);
         }
 
