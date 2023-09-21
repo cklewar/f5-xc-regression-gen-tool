@@ -484,10 +484,10 @@ rte-client-server-conn-c-aws-site-a-2-client-artifacts:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_b, rules ]
   stage: rte-artifacts
   script:
       - |
@@ -542,10 +542,10 @@ rte-client-server-conn-c-aws-site-b-1-server-artifacts:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_b, rules ]
   stage: rte-artifacts
   script:
       - |
@@ -604,10 +604,10 @@ rte-client-server-conn-a-aws-site-a-1-client-artifacts:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_b, rules ]
   stage: rte-artifacts
   script:
       - |
@@ -662,10 +662,10 @@ rte-client-server-conn-a-aws-site-b-1-server-artifacts:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_b, rules ]
   stage: rte-artifacts
   script:
       - |
@@ -722,10 +722,10 @@ rte-client-server-conn-a-azure-site-c-1-server-artifacts:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_2_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server_site_a_1_east_west_traffic_b, rules ]
   stage: rte-artifacts
   script:
       - |
@@ -890,8 +890,8 @@ rte-client-server1-conn-b-aws-site-b-1-client-artifacts:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server1_site_b_1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server1_site_b_1_east_west_traffic_b, rules ]
   stage: rte-artifacts
   script:
       - |
@@ -946,8 +946,8 @@ rte-client-server1-conn-b-azure-site-c-1-server-artifacts:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_a, rules ]
-    - !reference [ .regression_test_client_server1_east_west_traffic_b, rules ]
+    - !reference [ .regression_test_client_server1_site_b_1_east_west_traffic_a, rules ]
+    - !reference [ .regression_test_client_server1_site_b_1_east_west_traffic_b, rules ]
   stage: rte-artifacts
   script:
       - |

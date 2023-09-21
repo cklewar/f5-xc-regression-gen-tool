@@ -254,7 +254,7 @@ variables:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
     {%- for test in rte.tests %}
-    - !reference [ .regression_test_{{ component.rte }}_{{ test.name | replace(from="-", to="_") }}, rules ]
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}, rules ]
     {%- endfor %}
   stage: rte-artifacts
   script:
