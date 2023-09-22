@@ -296,8 +296,8 @@ variables:
 {% endfor -%}
 {% endfor -%}
 {% for site in eut.sites %}
-# eut {{ site.job }} - deploy
-eut-{{ site.job }}-deploy:
+# eut - {{ site.job }} - deploy
+{{ site.job }}-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -327,8 +327,8 @@ eut-{{ site.job }}-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - artifacts
-eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-artifacts:
+# eut - {{ site.job }} - artifacts
+{{ site.job }}-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:

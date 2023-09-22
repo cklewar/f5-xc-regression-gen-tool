@@ -664,7 +664,7 @@ rte-client-server-conn-a-aws-site-a-1-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-        terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_b_1","site_c_1"]' -auto-approve
+        terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_c_1","site_b_1"]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
         #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
@@ -726,7 +726,7 @@ rte-client-server-conn-a-aws-site-b-1-server:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server/site_b_1"
-        terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=["site_a_1","site_a_2"]' -auto-approve
+        terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=["site_a_2","site_a_1"]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1/server.tfvars
   artifacts:
     paths:
@@ -1066,8 +1066,8 @@ rte-client-server1-conn-b-azure-site-c-1-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut eut-mcn-site-a-1 - deploy
-eut-eut-mcn-site-a-1-deploy:
+# eut - eut-mcn-site-a-1 - deploy
+eut-mcn-site-a-1-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -1094,7 +1094,7 @@ eut-eut-mcn-site-a-1-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-1 - artifacts
+# eut - eut-mcn-site-a-1 - artifacts
 eut-mcn-site-a-1-artifacts:
   <<: *base
   stage: eut-artifacts
@@ -1121,8 +1121,8 @@ eut-mcn-site-a-1-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut eut-mcn-site-a-2 - deploy
-eut-eut-mcn-site-a-2-deploy:
+# eut - eut-mcn-site-a-2 - deploy
+eut-mcn-site-a-2-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -1149,7 +1149,7 @@ eut-eut-mcn-site-a-2-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-2 - artifacts
+# eut - eut-mcn-site-a-2 - artifacts
 eut-mcn-site-a-2-artifacts:
   <<: *base
   stage: eut-artifacts
@@ -1176,8 +1176,8 @@ eut-mcn-site-a-2-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut eut-mcn-site-a-3 - deploy
-eut-eut-mcn-site-a-3-deploy:
+# eut - eut-mcn-site-a-3 - deploy
+eut-mcn-site-a-3-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -1204,7 +1204,7 @@ eut-eut-mcn-site-a-3-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-3 - artifacts
+# eut - eut-mcn-site-a-3 - artifacts
 eut-mcn-site-a-3-artifacts:
   <<: *base
   stage: eut-artifacts
@@ -1231,8 +1231,8 @@ eut-mcn-site-a-3-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut eut-mcn-site-b-1 - deploy
-eut-eut-mcn-site-b-1-deploy:
+# eut - eut-mcn-site-b-1 - deploy
+eut-mcn-site-b-1-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -1259,7 +1259,7 @@ eut-eut-mcn-site-b-1-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-b-1 - artifacts
+# eut - eut-mcn-site-b-1 - artifacts
 eut-mcn-site-b-1-artifacts:
   <<: *base
   stage: eut-artifacts
@@ -1286,8 +1286,8 @@ eut-mcn-site-b-1-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut eut-mcn-site-b-2 - deploy
-eut-eut-mcn-site-b-2-deploy:
+# eut - eut-mcn-site-b-2 - deploy
+eut-mcn-site-b-2-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -1314,7 +1314,7 @@ eut-eut-mcn-site-b-2-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-b-2 - artifacts
+# eut - eut-mcn-site-b-2 - artifacts
 eut-mcn-site-b-2-artifacts:
   <<: *base
   stage: eut-artifacts
@@ -1341,8 +1341,8 @@ eut-mcn-site-b-2-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut eut-mcn-site-c-1 - deploy
-eut-eut-mcn-site-c-1-deploy:
+# eut - eut-mcn-site-c-1 - deploy
+eut-mcn-site-c-1-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -1370,7 +1370,7 @@ eut-eut-mcn-site-c-1-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-c-1 - artifacts
+# eut - eut-mcn-site-c-1 - artifacts
 eut-mcn-site-c-1-artifacts:
   <<: *base
   stage: eut-artifacts
@@ -1396,8 +1396,8 @@ eut-mcn-site-c-1-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut eut-mcn-site-c-2 - deploy
-eut-eut-mcn-site-c-2-deploy:
+# eut - eut-mcn-site-c-2 - deploy
+eut-mcn-site-c-2-deploy:
   <<: *base
   stage: eut-deploy
   rules:
@@ -1425,7 +1425,7 @@ eut-eut-mcn-site-c-2-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-c-2 - artifacts
+# eut - eut-mcn-site-c-2 - artifacts
 eut-mcn-site-c-2-artifacts:
   <<: *base
   stage: eut-artifacts
@@ -2224,7 +2224,7 @@ rte-client-server-conn-a-aws-site-a-1-client-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_b_1","site_c_1"]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_c_1","site_b_1"]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -2249,7 +2249,7 @@ rte-client-server-conn-a-aws-site-b-1-server-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=["site_a_1","site_a_2"]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/eut/mcn/aws/site.tfvars -var='site_name=site_b_1' -var='destinations=["site_a_2","site_a_1"]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
