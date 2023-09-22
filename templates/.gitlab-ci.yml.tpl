@@ -303,7 +303,7 @@ eut-{{ site.job }}-deploy:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
-    - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}, rules ]
+    - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
         {%- for script in site.scripts %}
