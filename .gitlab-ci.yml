@@ -664,7 +664,7 @@ rte-client-server-conn-a-aws-site-a-1-client:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1
         cd $RTE_ROOT_DIR/client_server/aws/client
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-        terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_b_1","site_c_1"]' -auto-approve
+        terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_c_1","site_b_1"]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/client/site_a_1/client.tfvars
         #terraform output aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
         #terraform output -json aws_workload_vpc_ids > $RTE_CLIENT_SERVER_AWS_VPC_IDS_ARTIFACTS_FILE
@@ -941,7 +941,7 @@ rte-client-server1-azure-share-artifacts:
       mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/share
       cd $RTE_ROOT_DIR/client_server1/azure/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server1/azure/share"
-      terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/share/share.tfvars
+      # terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server1/azure/share/share.tfvars
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -2224,7 +2224,7 @@ rte-client-server-conn-a-aws-site-a-1-client-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/client
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/client/site_a_1"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_b_1","site_c_1"]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_a_1' -var='destinations=["site_c_1","site_b_1"]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
