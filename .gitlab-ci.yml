@@ -138,6 +138,76 @@ variables:
     - if: $ACTION == "destroy-feature-mcn-forward-proxy-policy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-feature-mcn-forward-proxy-policy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
+.deploy_eut_mcn_site_a_1_rules:
+  rules:
+    - if: $ACTION == "deploy-eut-mcn-site-a-1" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut-mcn-site-a-1" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_mcn_site_a_1_rules:
+  rules:
+    - if: $ACTION == "destroy-eut-mcn-site-a-1" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut-mcn-site-a-1" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_eut_mcn_site_a_2_rules:
+  rules:
+    - if: $ACTION == "deploy-eut-mcn-site-a-2" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut-mcn-site-a-2" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_mcn_site_a_2_rules:
+  rules:
+    - if: $ACTION == "destroy-eut-mcn-site-a-2" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut-mcn-site-a-2" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_eut_mcn_site_a_3_rules:
+  rules:
+    - if: $ACTION == "deploy-eut-mcn-site-a-3" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut-mcn-site-a-3" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_mcn_site_a_3_rules:
+  rules:
+    - if: $ACTION == "destroy-eut-mcn-site-a-3" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut-mcn-site-a-3" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_eut_mcn_site_b_1_rules:
+  rules:
+    - if: $ACTION == "deploy-eut-mcn-site-b-1" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut-mcn-site-b-1" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_mcn_site_b_1_rules:
+  rules:
+    - if: $ACTION == "destroy-eut-mcn-site-b-1" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut-mcn-site-b-1" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_eut_mcn_site_b_2_rules:
+  rules:
+    - if: $ACTION == "deploy-eut-mcn-site-b-2" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut-mcn-site-b-2" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_mcn_site_b_2_rules:
+  rules:
+    - if: $ACTION == "destroy-eut-mcn-site-b-2" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut-mcn-site-b-2" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_eut_mcn_site_c_1_rules:
+  rules:
+    - if: $ACTION == "deploy-eut-mcn-site-c-1" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut-mcn-site-c-1" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_mcn_site_c_1_rules:
+  rules:
+    - if: $ACTION == "destroy-eut-mcn-site-c-1" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut-mcn-site-c-1" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_eut_mcn_site_c_2_rules:
+  rules:
+    - if: $ACTION == "deploy-eut-mcn-site-c-2" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut-mcn-site-c-2" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_mcn_site_c_2_rules:
+  rules:
+    - if: $ACTION == "destroy-eut-mcn-site-c-2" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut-mcn-site-c-2" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .deploy_rte_client_server_aws_share_rules:
   rules:
     - if: $ACTION == "deploy-rte-client-server-aws-share" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -368,6 +438,13 @@ rte-client-server-aws-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_3_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_2_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_c_aws_site_a_2_client_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_c_aws_site_b_1_server_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_aws_site_a_1_client_rules, rules ]
@@ -426,6 +503,13 @@ rte-client-server-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_3_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_2_rules, rules ]
     - !reference [ .deploy_rte_client_server_conn_a_azure_site_c_1_server_rules, rules ]
   script:
     - |
@@ -781,6 +865,13 @@ rte-client-server1-aws-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_3_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_2_rules, rules ]
     - !reference [ .deploy_rte_client_server1_conn_b_aws_site_b_1_client_rules, rules ]
   script:
     - |
@@ -836,6 +927,13 @@ rte-client-server1-azure-share-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_3_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_2_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_1_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_2_rules, rules ]
     - !reference [ .deploy_rte_client_server1_conn_b_azure_site_c_1_server_rules, rules ]
   script:
     - |
@@ -968,13 +1066,14 @@ rte-client-server1-conn-b-azure-site-c-1-server-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-1 - deploy
-eut-mcn-site-a-1-deploy:
+# eut eut-mcn-site-a-1 - deploy
+eut-eut-mcn-site-a-1-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_1, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1022,13 +1121,14 @@ eut-mcn-site-a-1-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-2 - deploy
-eut-mcn-site-a-2-deploy:
+# eut eut-mcn-site-a-2 - deploy
+eut-eut-mcn-site-a-2-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_2, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1076,13 +1176,14 @@ eut-mcn-site-a-2-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-3 - deploy
-eut-mcn-site-a-3-deploy:
+# eut eut-mcn-site-a-3 - deploy
+eut-eut-mcn-site-a-3-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_a_3, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1130,13 +1231,14 @@ eut-mcn-site-a-3-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-b-1 - deploy
-eut-mcn-site-b-1-deploy:
+# eut eut-mcn-site-b-1 - deploy
+eut-eut-mcn-site-b-1-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_1, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1184,13 +1286,14 @@ eut-mcn-site-b-1-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-b-2 - deploy
-eut-mcn-site-b-2-deploy:
+# eut eut-mcn-site-b-2 - deploy
+eut-eut-mcn-site-b-2-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_b_2, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1238,13 +1341,14 @@ eut-mcn-site-b-2-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-c-1 - deploy
-eut-mcn-site-c-1-deploy:
+# eut eut-mcn-site-c-1 - deploy
+eut-eut-mcn-site-c-1-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_1, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1292,13 +1396,14 @@ eut-mcn-site-c-1-artifacts:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-c-2 - deploy
-eut-mcn-site-c-2-deploy:
+# eut eut-mcn-site-c-2 - deploy
+eut-eut-mcn-site-c-2-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_eut_mcn_site_c_2, rules ]
   script:
       - |
         #!/usr/bin/env bash

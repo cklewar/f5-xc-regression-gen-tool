@@ -83,6 +83,17 @@ variables:
     - if: $ACTION == "destroy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
+{% for site in eut.sites %}
+.deploy_{{ site.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "deploy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_{{ site.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "destroy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
 {% for rte in rtes -%}
 {% for share in rte.shares %}
 .deploy_{{ share.job | replace(from="-", to="_") }}_rules:
@@ -181,12 +192,15 @@ variables:
       - runner_system_failure
 
 # {{ share.job | replace(from="_", to="-") }} - artifacts
-{{ share.job | replace(from="_", to="-") }}-artifacts:
+{{ share.job }}-artifacts:
   <<: *base
   stage: rte-share-artifacts
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rte_rules, rules ]
+    {%- for site in eut.sites %}
+    - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- for component in rte.components %}
     {%- if component.provider == share.provider and rte.name == share.rte %}
     - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
@@ -282,13 +296,14 @@ variables:
 {% endfor -%}
 {% endfor -%}
 {% for site in eut.sites %}
-# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - deploy
-eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-deploy:
+# eut {{ site.job }} - deploy
+eut-{{ site.job }}-deploy:
   <<: *base
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}, rules ]
   script:
       - |
         {%- for script in site.scripts %}
