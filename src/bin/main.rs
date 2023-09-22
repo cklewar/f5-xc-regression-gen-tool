@@ -626,9 +626,10 @@ struct EutFeatureRenderContext {
 struct ScriptEutRenderContext {
     name: Option<String>,
     site: Option<String>,
+    rtes: Option<Vec<String>>,
     index: Option<usize>,
-    project: RegressionConfigProject,
     release: Option<String>,
+    project: RegressionConfigProject,
     provider: Option<String>,
 }
 
@@ -638,6 +639,7 @@ impl ScriptEutRenderContext {
             project,
             name: None,
             site: None,
+            rtes: None,
             index: None,
             release: None,
             provider: None,
@@ -1747,6 +1749,7 @@ impl Regression {
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
         let eut_name = eut_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
 
+        //Process eut provider
         let _eut_providers = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasProviders);
         let eut_provider = self.get_object_neighbours_with_properties_out(&_eut_providers.id, EdgeTypes::ProvidesProvider);
 
@@ -1755,58 +1758,8 @@ impl Regression {
             let name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             eut_provider_p_base.push(String::from(name));
         }
-        //Process eut sites
-        let mut eut_sites: Vec<EutSiteRenderContext> = vec![];
-        let _sites = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);
-        let sites = self.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
-        for (i, s) in sites.iter().enumerate() {
-            let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-            let s_p = self.get_object_neighbour_with_properties_out(&s.vertex.id, EdgeTypes::UsesProvider);
-            let provider_name = s_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-            //Process eut site scripts
-            let scripts_path = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-            let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-            for script in eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, eut_name.to_string(), scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
-                let mut ctx: ScriptEutRenderContext = ScriptEutRenderContext::new(self.config.project.clone());
-                ctx.name = Option::from(eut_name.to_string());
-                ctx.site = Option::from(site_name.to_string());
-                ctx.index = Option::from(i);
-                ctx.release = Option::from(eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
-                ctx.provider = Option::from(provider_name.to_string());
-                let mut commands: Vec<String> = Vec::new();
-
-                for command in ctx.render_script(&ctx, &contents).lines() {
-                    commands.push(format!("{:indent$}{}", "", command, indent = 0));
-                }
-
-                let data: HashMap<String, Vec<String>> = [
-                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                ].into_iter().collect();
-                scripts.push(data);
-            }
-            let eut_s_rc = EutSiteRenderContext {
-                job: format!("{}_{}_{}", KEY_EUT, &eut_name, &site_name).replace("_", "-"),
-                name: site_name.to_string(),
-                index: i,
-                scripts,
-                provider: provider_name.to_string(),
-            };
-
-            eut_sites.push(eut_s_rc);
-        }
-
-        let eut_rc = EutRenderContext {
-            base: eut_p_base.clone(),
-            module: eut_p_module.clone(),
-            provider: eut_provider_p_base.clone(),
-            project: self.config.project.clone(),
-            sites: eut_sites,
-        };
-
+        //Process features
         let _features = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasFeatures);
         let features = self.get_object_neighbours_with_properties_out(&_features.id, EdgeTypes::HasFeature);
         let mut features_rc: Vec<FeatureRenderContext> = Vec::new();
@@ -1850,12 +1803,21 @@ impl Regression {
             features_rc.push(frc);
         }
 
+        //Get EUT sites
+        let _sites = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);
+        let sites = self.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
+
+        //Get EUT rtes
         let _rtes = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::UsesRtes);
         let rtes = self.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
+
+        //Process eut rtes
         let mut rtes_rc: Vec<RteRenderContext> = Vec::new();
+        let mut rte_names: Vec<String> = Vec::new();
 
         for rte in rtes.iter() {
             let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+            rte_names.push(rte_name.to_string());
             let _c = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
             let connections = self.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
             let mut rte_crcs = RteRenderContext {
@@ -2166,6 +2128,57 @@ impl Regression {
             }
             rtes_rc.push(rte_crcs);
         }
+
+        //Process eut sites
+        let mut eut_sites: Vec<EutSiteRenderContext> = vec![];
+        for (i, s) in sites.iter().enumerate() {
+            let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let s_p = self.get_object_neighbour_with_properties_out(&s.vertex.id, EdgeTypes::UsesProvider);
+            let provider_name = s_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+            //Process eut site scripts
+            let scripts_path = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+            let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+            for script in eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, eut_name.to_string(), scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
+                let mut ctx: ScriptEutRenderContext = ScriptEutRenderContext::new(self.config.project.clone());
+
+                ctx.name = Option::from(eut_name.to_string());
+                ctx.site = Option::from(site_name.to_string());
+                ctx.index = Option::from(i);
+                ctx.release = Option::from(eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
+                ctx.provider = Option::from(provider_name.to_string());
+                ctx.rtes = Option::from(rte_names.clone());
+
+                let mut commands: Vec<String> = Vec::new();
+                for command in ctx.render_script(&ctx, &contents).lines() {
+                    commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                }
+
+                let data: HashMap<String, Vec<String>> = [
+                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                ].into_iter().collect();
+                scripts.push(data);
+            }
+            let eut_s_rc = EutSiteRenderContext {
+                job: format!("{}_{}_{}", KEY_EUT, &eut_name, &site_name).replace("_", "-"),
+                name: site_name.to_string(),
+                index: i,
+                scripts,
+                provider: provider_name.to_string(),
+            };
+
+            eut_sites.push(eut_s_rc);
+        }
+
+        let eut_rc = EutRenderContext {
+            base: eut_p_base.clone(),
+            module: eut_p_module.clone(),
+            provider: eut_provider_p_base.clone(),
+            project: self.config.project.clone(),
+            sites: eut_sites,
+        };
 
         let mut stages: Vec<String> = Vec::new();
         let mut deploy_stages: Vec<String> = Vec::new();
