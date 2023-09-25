@@ -778,8 +778,9 @@ impl ScriptRteRenderContext {
     }
 }
 
-#[derive(Serialize, Debug)]
-struct ScriptRteProviderShareDataRenderContext {
+#[derive(Serialize, Clone, Debug)]
+struct ScriptRteSiteShareDataRenderContext {
+    rte: String,
     name: String,
     index: usize,
     has_client: bool,
@@ -787,11 +788,17 @@ struct ScriptRteProviderShareDataRenderContext {
 }
 
 #[derive(Serialize, Debug)]
+struct ScriptRteSitesShareDataRenderContext {
+    sites: HashMap<String, ScriptRteSiteShareDataRenderContext>,
+}
+
+#[derive(Serialize, Debug)]
 struct ScriptRteProviderShareRenderContext {
     eut: Option<String>,
     rte: Option<String>,
-    data: Option<String>,
+    map: Option<String>,
     vars: Option<RegressionConfigProjectVars>,
+    sites: Option<String>,
     counter: Option<usize>,
     project: String,
     provider: Option<String>,
@@ -803,8 +810,9 @@ impl ScriptRteProviderShareRenderContext {
             project,
             eut: None,
             rte: None,
+            map: None,
             vars: None,
-            data: None,
+            sites: None,
             counter: None,
             provider: None,
         }
@@ -1811,6 +1819,102 @@ impl Regression {
         let _rtes = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::UsesRtes);
         let rtes = self.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
 
+        //###############################################################################################################################
+        //###############################################################################################################################
+        //###############################################################################################################################
+        //###############################################################################################################################
+
+        //Process rte share data script render context
+        let mut srsd = HashMap::new();
+        let mut site_count: usize = 0;
+
+        for rte in rtes.iter() {
+            let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+            srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
+
+            let _c = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+            let connections = self.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
+
+            for conn in connections.iter() {
+                let src = self.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
+                let src_site = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite);
+                let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                match srsd.get_mut(rte_name) {
+                    Some(rte) => {
+                        match rte.sites.get_mut(src_site_name) {
+                            Some(site) => {
+                                if site.has_client == false {
+                                    site.has_client = true
+                                }
+                            }
+                            None => {
+                                let srssd_rc = ScriptRteSiteShareDataRenderContext {
+                                    rte: rte_name.to_string(),
+                                    name: src_site_name.to_string(),
+                                    index: site_count,
+                                    has_client: true,
+                                    has_server: false,
+                                };
+
+                                rte.sites.entry(src_site_name.to_string()).or_insert(srssd_rc);
+                                site_count = site_count + 1;
+
+                                let dsts = self.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
+                                for dst in dsts.iter() {
+                                    let dst_site = self.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite);
+                                    let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                                    match rte.sites.get_mut(dst_site_name) {
+                                        Some(site) => {
+                                            if site.has_server == false {
+                                                site.has_server = true
+                                            }
+                                        }
+                                        None => {
+                                            let srssd_rc = ScriptRteSiteShareDataRenderContext {
+                                                rte: rte_name.to_string(),
+                                                name: dst_site_name.to_string(),
+                                                index: site_count,
+                                                has_client: false,
+                                                has_server: true,
+                                            };
+                                            rte.sites.entry(dst_site_name.to_string()).or_insert(srssd_rc);
+                                            site_count = site_count + 1;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    None => error!("RTE {} does not exist", rte_name),
+                }
+            }
+        }
+
+        //error!("SRSD: {:#?}", &srsd);
+
+        let mut rte_to_site_map: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut srsd_rc: Vec<ScriptRteSiteShareDataRenderContext> = Vec::new();
+
+        for (rte, data) in srsd.iter() {
+            let mut sites: HashSet<String> = HashSet::new();
+
+            for (site, data) in data.sites.iter() {
+                sites.insert(site.to_string());
+                srsd_rc.push(data.clone());
+            }
+
+            rte_to_site_map.entry(rte.to_string()).or_insert(sites);
+        }
+        // error!("RTE_TO_SITE_MAP: {:?}", &rte_to_site_map);
+        //error!("SRSD_RC: {:#?}", &srsd_rc);
+
+        //###############################################################################################################################
+        //###############################################################################################################################
+        //###############################################################################################################################
+        //###############################################################################################################################
+
         //Process eut rtes
         let mut rtes_rc: Vec<RteRenderContext> = Vec::new();
         let mut rte_names: Vec<String> = Vec::new();
@@ -1818,8 +1922,7 @@ impl Regression {
         for rte in rtes.iter() {
             let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
             rte_names.push(rte_name.to_string());
-            let _c = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
-            let connections = self.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
+
             let mut rte_crcs = RteRenderContext {
                 ci: HashMap::new(),
                 name: rte_name.to_string(),
@@ -1827,31 +1930,6 @@ impl Regression {
                 shares: vec![],
                 components: Default::default(),
             };
-
-            //Process provider share data render context
-            let mut data_rc: Vec<ScriptRteProviderShareDataRenderContext> = Vec::new();
-            for (i, site) in sites.iter().enumerate() {
-                let components = self.get_object_neighbours_with_properties_in(&site.vertex.id, EdgeTypes::RefersSite);
-                let mut srpsd_rc = ScriptRteProviderShareDataRenderContext {
-                    name: site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                    index: i,
-                    has_client: false,
-                    has_server: false,
-                };
-
-                for c in components.iter() {
-                    match VertexTypes::get_type_by_key(c.vertex.t.as_str()) {
-                        VertexTypes::ConnectionSrc => {
-                            srpsd_rc.has_client = true
-                        }
-                        VertexTypes::ConnectionDst => {
-                            srpsd_rc.has_server = true
-                        }
-                        _ => {}
-                    }
-                }
-                data_rc.push(srpsd_rc);
-            }
 
             let _provider = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::NeedsProvider);
             let provider = self.get_object_neighbours_with_properties_out(&_provider.id, EdgeTypes::ProvidesProvider);
@@ -1878,9 +1956,10 @@ impl Regression {
 
                     ctx.rte = Option::from(rte_name.to_string());
                     ctx.eut = Option::from(eut_name.to_string());
+                    ctx.map = Option::from(serde_json::to_string(&rte_to_site_map).unwrap());
                     ctx.vars = Option::from(self.config.project.vars.clone());
-                    ctx.data = Option::from(serde_json::to_string(&data_rc).unwrap());
-                    ctx.counter = Option::from(data_rc.len());
+                    ctx.sites = Option::from(serde_json::to_string(&srsd_rc).unwrap());
+                    ctx.counter = Option::from(site_count);
                     ctx.provider = Option::from(p_name.to_string());
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1906,7 +1985,10 @@ impl Regression {
 
             //Connection DST rt set
             let mut server_destinations: HashSet<String> = HashSet::new();
+
             //Process connections
+            let _c = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+            let connections = self.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
             for conn in connections.iter() {
                 let connection_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let src = self.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
@@ -2203,7 +2285,7 @@ impl Regression {
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
-        error!("{:#?}", context);
+        //error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }
