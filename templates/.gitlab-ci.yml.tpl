@@ -540,13 +540,14 @@ variables:
       - runner_system_failure
 {% endfor -%}
 {% for site in eut.sites %}
-# eut {{ eut.module.name }} - {{ site.name | replace(from="_", to="-") }} - destroy
-eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
+# eut {{ site.job }} - destroy
+{{ site.name }}-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
         {%- for script in site.scripts %}

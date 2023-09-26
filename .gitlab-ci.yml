@@ -397,7 +397,7 @@ rte-client-server-aws-share-deploy:
       mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=5' -var='sites=[{"rte":"client_server","name":"site_a_3","index":1,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_b_1","index":0,"has_client":true,"has_server":true},{"rte":"client_server","name":"site_a_1","index":3,"has_client":true,"has_server":false},{"rte":"client_server","name":"site_c_1","index":4,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_a_2","index":2,"has_client":true,"has_server":false}]' -auto-approve
+      terraform apply -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=5' -var='sites=[{"rte":"client_server","name":"site_a_3","index":1,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_c_1","index":4,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_a_1","index":3,"has_client":true,"has_server":false},{"rte":"client_server","name":"site_a_2","index":2,"has_client":true,"has_server":false},{"rte":"client_server","name":"site_b_1","index":0,"has_client":true,"has_server":true}]' -auto-approve
       terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars
   artifacts:
     paths:
@@ -845,7 +845,7 @@ rte-client-server-conn-a-aws-site-b-1-server:
         mkdir -p $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1
         cd $RTE_ROOT_DIR/client_server/aws/server
         terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server/site_b_1"
-        terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=["site_a_1","site_a_2","site_b_1"]' -auto-approve
+        terraform apply -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='site_name=site_b_1' -var='destinations=["site_a_2","site_b_1","site_a_1"]' -auto-approve
         terraform output > $ARTIFACTS_ROOT_DIR/rte/client_server/aws/server/site_b_1/server.tfvars
   artifacts:
     paths:
@@ -1918,13 +1918,14 @@ feature-mcn-forward-proxy-policy-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-1 - destroy
-eut-mcn-site-a-1-destroy:
+# eut eut-mcn-site-a-1 - destroy
+site_a_1-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_eut_mcn_site_a_1_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1943,13 +1944,14 @@ eut-mcn-site-a-1-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-2 - destroy
-eut-mcn-site-a-2-destroy:
+# eut eut-mcn-site-a-2 - destroy
+site_a_2-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_eut_mcn_site_a_2_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1968,13 +1970,14 @@ eut-mcn-site-a-2-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-a-3 - destroy
-eut-mcn-site-a-3-destroy:
+# eut eut-mcn-site-a-3 - destroy
+site_a_3-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_eut_mcn_site_a_3_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -1993,13 +1996,14 @@ eut-mcn-site-a-3-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-b-1 - destroy
-eut-mcn-site-b-1-destroy:
+# eut eut-mcn-site-b-1 - destroy
+site_b_1-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_eut_mcn_site_b_1_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -2018,13 +2022,14 @@ eut-mcn-site-b-1-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-b-2 - destroy
-eut-mcn-site-b-2-destroy:
+# eut eut-mcn-site-b-2 - destroy
+site_b_2-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_eut_mcn_site_b_2_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -2043,13 +2048,14 @@ eut-mcn-site-b-2-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-c-1 - destroy
-eut-mcn-site-c-1-destroy:
+# eut eut-mcn-site-c-1 - destroy
+site_c_1-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_eut_mcn_site_c_1_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -2068,13 +2074,14 @@ eut-mcn-site-c-1-destroy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut mcn - site-c-2 - destroy
-eut-mcn-site-c-2-destroy:
+# eut eut-mcn-site-c-2 - destroy
+site_c_2-destroy:
   <<: *base
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .destroy_eut_mcn_site_c_2_rules, rules ]
   script:
       - |
         #!/usr/bin/env bash
@@ -2236,7 +2243,7 @@ rte-client-server-conn-a-aws-site-b-1-server-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/server
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/server"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='destinations=["site_a_1","site_a_2","site_b_1"]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var-file=$ARTIFACTS_ROOT_DIR/rte/client_server/aws/share/share.tfvars -var='destinations=["site_a_2","site_b_1","site_a_1"]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
@@ -2288,7 +2295,7 @@ rte-client-server-aws-share-destroy:
       #!/usr/bin/env bash
       cd $RTE_ROOT_DIR/client_server/aws/share
       terraform init --backend-config="key=$S3_RTE_ROOT/client_server/aws/share"
-      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=5' -var='sites=[{"rte":"client_server","name":"site_a_3","index":1,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_b_1","index":0,"has_client":true,"has_server":true},{"rte":"client_server","name":"site_a_1","index":3,"has_client":true,"has_server":false},{"rte":"client_server","name":"site_c_1","index":4,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_a_2","index":2,"has_client":true,"has_server":false}]' -auto-approve
+      terraform destroy -compact-warnings -var-file=$PROJECT_VARS_ROOT_DIR/terraform.tfvars.json -var-file=$RTE_ROOT_DIR/client_server/terraform.tfvars.json -var='subnet_count=5' -var='sites=[{"rte":"client_server","name":"site_a_3","index":1,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_c_1","index":4,"has_client":false,"has_server":true},{"rte":"client_server","name":"site_a_1","index":3,"has_client":true,"has_server":false},{"rte":"client_server","name":"site_a_2","index":2,"has_client":true,"has_server":false},{"rte":"client_server","name":"site_b_1","index":0,"has_client":true,"has_server":true}]' -auto-approve
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
