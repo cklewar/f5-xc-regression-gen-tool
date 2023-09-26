@@ -1819,11 +1819,6 @@ impl Regression {
         let _rtes = self.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::UsesRtes);
         let rtes = self.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
 
-        //###############################################################################################################################
-        //###############################################################################################################################
-        //###############################################################################################################################
-        //###############################################################################################################################
-
         //Process rte share data script render context
         let mut srsd = HashMap::new();
         let mut site_count: usize = 0;
@@ -1892,11 +1887,9 @@ impl Regression {
             }
         }
 
-        //error!("SRSD: {:#?}", &srsd);
-
-        let mut rte_to_site_map: HashMap<String, HashSet<String>> = HashMap::new();
+        //Build rte_to_site_map structure and add ScriptRteSiteShareDataRenderContext context
         let mut srsd_rc: Vec<ScriptRteSiteShareDataRenderContext> = Vec::new();
-
+        let mut rte_to_site_map: HashMap<String, HashSet<String>> = HashMap::new();
         for (rte, data) in srsd.iter() {
             let mut sites: HashSet<String> = HashSet::new();
 
@@ -1907,13 +1900,6 @@ impl Regression {
 
             rte_to_site_map.entry(rte.to_string()).or_insert(sites);
         }
-        // error!("RTE_TO_SITE_MAP: {:?}", &rte_to_site_map);
-        //error!("SRSD_RC: {:#?}", &srsd_rc);
-
-        //###############################################################################################################################
-        //###############################################################################################################################
-        //###############################################################################################################################
-        //###############################################################################################################################
 
         //Process eut rtes
         let mut rtes_rc: Vec<RteRenderContext> = Vec::new();
@@ -1989,6 +1975,8 @@ impl Regression {
             //Process connections
             let _c = self.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
             let connections = self.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
+            let mut site_to_rte_map: HashMap<String, HashSet<String>> = HashMap::new();
+
             for conn in connections.iter() {
                 let connection_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let src = self.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc);
@@ -2000,6 +1988,11 @@ impl Regression {
                 let comp_src = self.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc);
                 let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace("_", "-");
+
+                //Process site_to_rte_map
+                let mut _rtes: HashSet<String> = HashSet::new();
+                _rtes.insert(rte_name.to_string());
+                site_to_rte_map.entry(src_site_name.to_string()).or_insert(_rtes);
 
                 //Process rte src component scripts
                 let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
@@ -2156,6 +2149,7 @@ impl Regression {
                                                  &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                  v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         ).replace("_", "-");
+
                         //Process test scripts
                         let v_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                         let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
