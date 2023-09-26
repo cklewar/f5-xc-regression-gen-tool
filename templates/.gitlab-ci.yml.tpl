@@ -542,7 +542,7 @@ variables:
 {% endfor -%}
 {% for site in eut.sites %}
 # eut {{ site.job }} - destroy
-{{ site.name }}-destroy:
+{{ site.job }}-destroy:
   <<: *base
   stage: eut-destroy
   rules:
