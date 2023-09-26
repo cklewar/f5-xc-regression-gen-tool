@@ -204,6 +204,7 @@ variables:
     {%- for component in rte.components %}
     {%- if component.provider == share.provider and rte.name == share.rte %}
     - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endif %}
     {%- endfor %}
   script:
