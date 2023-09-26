@@ -392,8 +392,6 @@ variables:
   <<: *base
   stage: feature-deploy
   rules:
-    - !reference [ .deploy_rules, rules ]
-    - !reference [ .deploy_feature_rules, rules ]
     {%- for site in eut.sites %}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
