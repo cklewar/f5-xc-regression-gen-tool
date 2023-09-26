@@ -633,6 +633,7 @@ struct ScriptEutRenderContext {
     site: Option<String>,
     rtes: Option<Vec<String>>,
     index: Option<usize>,
+    counter: Option<usize>,
     release: Option<String>,
     project: RegressionConfigProject,
     provider: Option<String>,
@@ -647,6 +648,7 @@ impl ScriptEutRenderContext {
             site: None,
             rtes: None,
             index: None,
+            counter: None,
             release: None,
             provider: None,
         }
@@ -2249,13 +2251,14 @@ impl Regression {
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let mut ctx: ScriptEutRenderContext = ScriptEutRenderContext::new(self.config.project.clone());
 
+                ctx.rte = Option::from(rte_name.to_string());
+                ctx.rtes = Option::from(rte_names.clone());
                 ctx.name = Option::from(eut_name.to_string());
                 ctx.site = Option::from(site_name.to_string());
                 ctx.index = Option::from(i);
+                ctx.counter = Option::from(sites.len());
                 ctx.release = Option::from(eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
                 ctx.provider = Option::from(provider_name.to_string());
-                ctx.rte = Option::from(rte_name.to_string());
-                ctx.rtes = Option::from(rte_names.clone());
 
                 let mut commands: Vec<String> = Vec::new();
                 for command in ctx.render_script(&ctx, &contents).lines() {
