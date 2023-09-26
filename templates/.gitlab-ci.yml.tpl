@@ -200,6 +200,7 @@ variables:
     - !reference [ .deploy_rte_rules, rules ]
     {%- for site in eut.sites %}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- for component in rte.components %}
     {%- if component.provider == share.provider and rte.name == share.rte %}
