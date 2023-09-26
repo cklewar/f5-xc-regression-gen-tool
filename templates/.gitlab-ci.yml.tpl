@@ -551,7 +551,7 @@ eut-{{ eut.module.name }}-{{ site.name | replace(from="_", to="-") }}-destroy:
   rules:
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
-    - !reference [ .destroy_{{ component.job | replace(from="-", to="_") }}_rules ]
+    - !reference [ .destroy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |
       {%- for script in component.scripts %}
