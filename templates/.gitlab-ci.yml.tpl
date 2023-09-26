@@ -386,6 +386,35 @@ variables:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+
+# feature - {{ feature.job }} - artifacts
+{{ feature.job }}-artifacts:
+  <<: *base
+  stage: feature-deploy
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_feature_rules, rules ]
+    {%- for site in eut.sites %}
+    - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+  script:
+      - |
+        {%- for script in feature.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  timeout: {{ feature.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
 {% endfor -%}
 {% for rte in rtes -%}
 {% for test in rte.tests %}
