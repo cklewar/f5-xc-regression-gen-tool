@@ -863,7 +863,7 @@ impl Regression {
         context.insert("collector", &cfg.collector);
         context.insert(KEY_VERIFICATIONS, &cfg.verifications);
 
-        let eutc = _tera.render("regression.json", &context).unwrap();
+        let eutc = _tera.render("mcn.json", &context).unwrap();
         info!("Render regression configuration file -> Done.");
 
         info!("Loading regression configuration data...");
