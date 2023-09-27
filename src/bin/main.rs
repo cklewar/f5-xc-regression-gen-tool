@@ -418,6 +418,7 @@ struct Cli {
     /// Regression configuration file
     #[arg(short, long)]
     config: String,
+    ci_file_path: String,
     /// Write CI pipeline file
     #[arg(long)]
     write_ci: bool,
@@ -2340,12 +2341,12 @@ impl Regression {
         j.to_string()
     }
 
-    pub fn to_file(&self, data: &str, file: &str) {
+    pub fn to_file(&self, data: &str, path: &str, file: &str) {
         let mut f = std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
-            .open(file)
+            .open(format!("{path}/{file}"))
             .expect("Couldn't open file");
 
         f.write_all(data.as_bytes()).expect("panic while writing to file");
@@ -2465,7 +2466,7 @@ fn main() {
     let p = r.init();
 
     if cli.write_ci {
-        r.to_file(&r.render(&r.build_context(p)), PIPELINE_FILE_NAME);
+        r.to_file(&r.render(&r.build_context(p)), cli.ci_file_path.as_str(),PIPELINE_FILE_NAME);
     }
     if cli.write_json {
         r.to_json();
@@ -2475,6 +2476,6 @@ fn main() {
         info!("{}", r.render(&r.build_context(p)));
     }
     if cli.write_gv {
-        r.to_file(&r.to_gv(), &"graph.gv");
+        r.to_file(&r.to_gv(), "./out", &"graph.gv");
     }
 }
