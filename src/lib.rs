@@ -1301,7 +1301,7 @@ impl<'a> Regression<'a> {
                     let t_stage_name = format!("{}-{}-{}-{}-{}",
                                                KEY_TEST,
                                                rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                               c_src.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                               c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                KEY_APPLY
                     ).replace("_", "-");
@@ -1313,7 +1313,7 @@ impl<'a> Regression<'a> {
                         let v_stage_name = format!("{}-{}-{}-{}-{}",
                                                    KEY_VERIFICATION,
                                                    rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                                   c_src.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    &v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    KEY_APPLY
                         ).replace("_", "-");
@@ -1506,7 +1506,8 @@ impl<'a> Regression<'a> {
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
-        let eut_name = eut_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+        error!("EUT: {:#?}", &eut_p_base);
+        let eut_name = eut_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
 
         //Process eut provider
         let _eut_providers = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasProviders);
@@ -1514,7 +1515,8 @@ impl<'a> Regression<'a> {
 
         let mut eut_provider_p_base = Vec::new();
         for p in eut_provider.iter() {
-            let name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            error!("EUT_P: {:?}",  p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap());
+            let name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             eut_provider_p_base.push(String::from(name));
         }
 
@@ -1525,7 +1527,7 @@ impl<'a> Regression<'a> {
 
         for feature in features.iter() {
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-            let f_name = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+            let f_name = feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
             let scripts_path = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
             //Process feature scripts
@@ -1535,7 +1537,7 @@ impl<'a> Regression<'a> {
                 let mut ctx: ScriptFeatureRenderContext = ScriptFeatureRenderContext::new(eut_name.to_string());
 
                 ctx.name = Option::from(f_name.to_string());
-                ctx.sites = Option::from(serde_json::to_string(&feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap()).unwrap());
+                ctx.sites = Option::from(serde_json::to_string(&feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap()).unwrap());
                 ctx.release = Option::from(feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
                 ctx.provider = Option::from(eut_provider_p_base.clone());
                 ctx.project = Option::from(self.config.project.clone());
@@ -1575,7 +1577,7 @@ impl<'a> Regression<'a> {
         let mut site_count: usize = 0;
 
         for rte in rtes.iter() {
-            let rte_name = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+            let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
             srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
 
             let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
@@ -1584,7 +1586,7 @@ impl<'a> Regression<'a> {
             for conn in connections.iter() {
                 let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
                 let src_site = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite).unwrap();
-                let src_site_name = src_site.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                 match srsd.get_mut(rte_name) {
                     Some(rte) => {
@@ -1609,7 +1611,7 @@ impl<'a> Regression<'a> {
                                 let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
                                 for dst in dsts.iter() {
                                     let dst_site = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite).unwrap();
-                                    let dst_site_name = dst_site.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                    let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                                     match rte.sites.get_mut(dst_site_name) {
                                         Some(site) => {
@@ -1657,7 +1659,7 @@ impl<'a> Regression<'a> {
         let mut rte_names: Vec<String> = Vec::new();
 
         for rte in rtes.iter() {
-            let rte_name = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+            let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
             rte_names.push(rte_name.to_string());
 
             let mut rte_crcs = RteRenderContext {
@@ -1676,17 +1678,18 @@ impl<'a> Regression<'a> {
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 rte_crcs.ci.insert(p_name.to_string(),
                                    RteCiRenderContext {
-                                       timeout: ci_p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
-                                       variables: ci_p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
+                                       timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
+                                       variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
                                    },
                 );
 
                 //Process provider share scripts render context
                 let share_p = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare).unwrap();
-                let scripts_path = share_p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                error!("SHARE_P: {:#?}", &share_p.props);
+                let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
-                for script in share_p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                     let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
@@ -1729,15 +1732,15 @@ impl<'a> Regression<'a> {
             let mut site_to_rte_map: HashMap<String, HashSet<String>> = HashMap::new();
 
             for conn in connections.iter() {
-                let connection_name = conn.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let connection_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
-                let src_name = src.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let src_site = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite).unwrap();
-                let src_site_name = src_site.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let src_provider = self.db.get_object_neighbour_with_properties_out(&src_site.vertex.id, EdgeTypes::UsesProvider).unwrap();
-                let src_p_name = src_provider.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let comp_src = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
-                let comp_src_name = &comp_src.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace("_", "-");
 
                 //Process site_to_rte_map
@@ -1746,20 +1749,20 @@ impl<'a> Regression<'a> {
                 site_to_rte_map.entry(src_site_name.to_string()).or_insert(_rtes);
 
                 //Process rte src component scripts
-                let scripts_path = comp_src.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
                 //Process client destination list
                 let mut client_destinations: HashSet<String> = HashSet::new();
                 let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
                 for dst in dsts.iter() {
-                    client_destinations.insert(dst.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+                    client_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
                 }
 
                 for p in provider.iter() {
                     let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
-                    for script in comp_src.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                         if src_p_name == p_name {
                             let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
@@ -1796,29 +1799,29 @@ impl<'a> Regression<'a> {
 
                 //Process connection destinations
                 for dst in dsts.iter() {
-                    let dst_name = dst.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let dst_site = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite).unwrap();
-                    let dst_site_name = dst_site.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let dst_provider = self.db.get_object_neighbour_with_properties_out(&dst_site.vertex.id, EdgeTypes::UsesProvider).unwrap();
-                    let dst_p_name = dst_provider.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let comp_dst = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst).unwrap();
-                    let comp_dst_name = &comp_dst.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace("_", "-");
 
                     //Process server destination list
                     let rt_dsts = self.db.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
                     for dst in rt_dsts.iter() {
-                        server_destinations.insert(dst.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+                        server_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
                     }
 
                     //Process rte dst component scripts
-                    let scripts_path = comp_dst.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                    let scripts_path = comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
                     for p in provider.iter() {
                         let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
-                        for script in comp_dst.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                        for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                             if dst_p_name == p_name {
                                 let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                                 let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
@@ -1866,7 +1869,7 @@ impl<'a> Regression<'a> {
 
                     //Process test scripts
                     let t_name = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let t_module = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                     let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1903,7 +1906,7 @@ impl<'a> Regression<'a> {
 
                         //Process test scripts
                         let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                        let v_module = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                        let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                         for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1929,23 +1932,23 @@ impl<'a> Regression<'a> {
                         }
 
                         let rte_vrc = RteVerificationRenderContext {
-                            ci: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                            ci: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
                             test: t_name.to_string(),
                             rte: rte_name.to_string(),
                             job: v_job_name,
                             name: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                            module: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                            module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                             scripts,
                         };
                         verifications.push(rte_vrc);
                     }
 
                     let rterc = RteTestRenderContext {
-                        ci: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                        ci: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
                         rte: rte_name.to_string(),
                         job: t_job_name,
                         name: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                        module: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                        module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                         provider: src_name.to_string(),
                         scripts,
                         verifications,
@@ -1959,15 +1962,15 @@ impl<'a> Regression<'a> {
         //Process eut sites
         let mut eut_sites: Vec<EutSiteRenderContext> = vec![];
         for (i, s) in sites.iter().enumerate() {
-            let site_name = s.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             let s_p = self.db.get_object_neighbour_with_properties_out(&s.vertex.id, EdgeTypes::UsesProvider).unwrap();
-            let provider_name = s_p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let provider_name = s_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             let r_p = self.db.get_object_neighbour_with_properties_out(&s.vertex.id, EdgeTypes::SiteRefersRte);
             let mut rte_name: String = Default::default();
 
             match r_p {
                 Some(v) => {
-                    rte_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+                    rte_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
                 }
                 None => (),
             }
@@ -2025,9 +2028,9 @@ impl<'a> Regression<'a> {
         let project_ci = self.db.get_object_neighbour_out(&project.vertex.id, EdgeTypes::HasCi);
         let s_deploy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDeployStages).unwrap();
         let s_destroy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDestroyStages).unwrap();
-        deploy_stages.push(s_deploy.props.get(PropertyType::Module.index()).unwrap().value.as_str().unwrap().to_string());
+        deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
         self.get_next_stage(&s_deploy.vertex.id, &mut deploy_stages);
-        deploy_stages.push(s_destroy.props.get(PropertyType::Module.index()).unwrap().value.as_str().unwrap().to_string());
+        deploy_stages.push(s_destroy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
         self.get_next_stage(&s_destroy.vertex.id, &mut destroy_stages);
 
         stages.append(&mut deploy_stages);
@@ -2048,7 +2051,7 @@ impl<'a> Regression<'a> {
 
     fn get_next_stage(&self, id: &Uuid, data: &mut Vec<String>) {
         for stage in self.db.get_object_neighbours_with_properties_out(&id, EdgeTypes::NextStage).iter() {
-            data.push(stage.props.get(PropertyType::Module.index()).unwrap().value.as_str().unwrap().to_string());
+            data.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
             self.get_next_stage(&stage.vertex.id, data);
         }
     }
