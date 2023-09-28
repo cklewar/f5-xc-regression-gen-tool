@@ -8,6 +8,7 @@ pub const KEY_SRC: &str = "src";
 pub const KEY_DST: &str = "dst";
 pub const KEY_FILE: &str = "file";
 pub const KEY_RTES: &str = "rtes";
+pub const KEY_TYPE: &str = "type";
 pub const KEY_TEST: &str = "test";
 pub const KEY_TESTS: &str = "tests";
 pub const KEY_GVID: &str = "id";

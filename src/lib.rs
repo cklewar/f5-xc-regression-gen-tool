@@ -705,480 +705,12 @@ impl<'a> Regression<'a> {
         }
     }
 
-    fn call_rte<'b>(&self, v: &str, rte: &Value, eut: &Vertex, connection: &Vertex) {
+    fn call_rte(&self, v: &str, r_o: &Vertex) {
         match v {
-            v if v == RTE_TYPE_A => self.init_rte_type_a(rte, eut, connection),
-            v if v == RTE_TYPE_B => self.init_rte_type_b(rte, eut, connection),
-            _ => ()
+            v if v == RTE_TYPE_A => self.init_rte_type_a(r_o),
+            v if v == RTE_TYPE_B => self.init_rte_type_b(r_o),
+            _ => error!("Unknown RTE type found: {:?}", v)
         }
-    }
-
-    fn init_rte_type_a(&self, rte: &Value, eut: &Vertex, connection: &Vertex) {
-        error!("Initialize RTE Type A");
-        let r_o = self.db.create_object(VertexTypes::Rte);
-        self.db.create_relationship(&connection, &r_o);
-        self.db.add_object_properties(&r_o, &json!({
-                            KEY_GVID: format!("{}_{}", KEY_RTE, &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()),
-                            KEY_GV_LABEL: &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()
-                        }), PropertyType::Gv);
-
-        let rte_p_o = self.db.create_object(VertexTypes::Providers);
-        self.db.create_relationship(&r_o, &rte_p_o);
-        self.db.add_object_properties(&rte_p_o, &json!({
-                            KEY_GVID: format!("{}_{}_{}", KEY_RTE, KEY_PROVIDERS, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                            KEY_GV_LABEL: KEY_PROVIDERS
-                        }), PropertyType::Gv);
-
-        // REL: RTE -> Features
-        let eut_f_o = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasFeatures);
-        self.db.create_relationship(&r_o, &eut_f_o);
-
-        for (k, v) in rte.as_object().unwrap().iter() {
-            match k {
-                k if k == KEY_MODULE => {
-                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
-                    let mut p = r_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                    p.insert(k.clone(), v.clone());
-                    self.db.add_object_properties(&r_o, &p, PropertyType::Base);
-                }
-                //Collector
-                k if k == "collector" => {
-                    let c_o = self.db.create_object(VertexTypes::get_type_by_key(k));
-                    self.db.create_relationship(&r_o, &c_o);
-                    self.db.add_object_properties(&c_o, &json!({
-                                                KEY_GVID: format!("{}_{}", &k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                KEY_GV_LABEL: &c_o.t.as_str()
-                                            }), PropertyType::Gv);
-                }
-                //Connections
-                k if k == KEY_CONNECTIONS => {
-                    let cs_o = self.db.create_object(VertexTypes::get_type_by_key(k));
-                    self.db.add_object_properties(&cs_o, &json!({
-                                                KEY_GVID: format!("{}_{}", &k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                KEY_GV_LABEL: &cs_o.t.as_str()
-                                            }), PropertyType::Gv);
-                    self.db.create_relationship(&r_o, &cs_o);
-
-                    for item in v.as_array().unwrap().iter() {
-                        //Connection
-                        let c_o = self.db.create_object(VertexTypes::Connection);
-                        self.db.create_relationship(&cs_o, &c_o);
-                        let c_name = item.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                        self.db.add_object_properties(&c_o, &json!({KEY_NAME: c_name}), PropertyType::Base);
-                        self.db.add_object_properties(&c_o, &json!({
-                                                KEY_GVID: format!("{}_{}_{}", KEY_CONNECTION, c_name.replace("-", "_"), &rte.as_object().
-                                                    unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                KEY_GV_LABEL: c_name
-                                            }), PropertyType::Gv);
-
-                        //Connection Source
-                        let source = item.as_object().unwrap().get(KEY_SOURCE).unwrap().as_str().unwrap();
-                        let src_o = self.db.create_object(VertexTypes::ConnectionSrc);
-                        self.db.create_relationship(&c_o, &src_o);
-                        self.db.add_object_properties(&src_o, &json!({KEY_NAME: &source, KEY_RTE: &rte.as_object().
-                                            unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
-                        self.db.add_object_properties(&src_o, &json!({
-                                            KEY_GVID: format!("{}_{}_{}_{}", "connection_src", &c_name.replace("-","_"), &source, &rte.as_object().unwrap().
-                                                get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                            KEY_GV_LABEL: source
-                                        }), PropertyType::Gv);
-
-                        let _sites = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasSites);
-                        let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
-
-                        //Connection Source -> Site
-                        for s in sites.iter() {
-                            let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().
-                                unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-                            if site_name == source {
-                                self.db.create_relationship(&src_o, &s.vertex);
-                                //site --> rte
-                                self.db.create_relationship(&s.vertex, &r_o);
-                            }
-                        }
-
-                        //Connection Destinations
-                        let destinations = item.as_object().unwrap().get("destinations").unwrap().as_array().unwrap();
-                        for d in destinations.iter() {
-                            let dst_o = self.db.create_object(VertexTypes::ConnectionDst);
-                            self.db.create_relationship(&src_o, &dst_o);
-                            self.db.add_object_properties(&dst_o, &json!({KEY_NAME: &d, KEY_RTE: &rte.as_object().
-                                                unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
-                            self.db.add_object_properties(&dst_o, &json!({
-                                                         KEY_GVID: format!("{}_{}_{}_{}", "connection_dst", &c_name.replace("-","_"), d.as_str().unwrap(), &rte.as_object().
-                                                            unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                         KEY_GV_LABEL: d.as_str().unwrap()
-                                                     }), PropertyType::Gv);
-
-                            //Connection Destination -> Site
-                            for s in sites.iter() {
-                                let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().
-                                    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-                                if site_name == d {
-                                    self.db.create_relationship(&dst_o, &s.vertex);
-                                    //site --> rte
-                                    self.db.create_relationship(&s.vertex, &r_o);
-                                }
-                            }
-                        }
-
-                        //Tests
-                        let tests = item.as_object().unwrap().get(KEY_TESTS).unwrap().as_array().unwrap();
-                        for test in tests.iter() {
-                            let t_o = self.db.create_object(VertexTypes::Test);
-                            self.db.create_relationship(&src_o, &t_o);
-
-                            for (k, v) in test.as_object().unwrap().iter() {
-                                match k {
-                                    k if k == KEY_NAME => {
-                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.insert(k.clone(), v.clone());
-                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
-                                    }
-                                    k if k == KEY_MODULE => {
-                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.insert(k.clone(), v.clone());
-                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
-                                    }
-                                    k if k == "parallel" => {
-                                        let mut t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.insert(k.clone(), v.clone());
-                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
-                                        t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let t_name = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                                        let t_module = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                                        self.db.add_object_properties(&t_o, &json!({
-                                                                             KEY_GVID: format!("{}_{}_{}", t_o.t.as_str(), t_name.replace("-", "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                             KEY_GV_LABEL: format!("t_{}", t_module)
-                                                                         }), PropertyType::Gv);
-                                    }
-                                    k if k == KEY_CI => {
-                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.as_object().unwrap().clone()}).as_object().unwrap().clone());
-                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
-                                    }
-                                    k if k == KEY_VERIFICATIONS => {
-                                        for v in v.as_array().unwrap().iter() {
-                                            let v_o = self.db.create_object(VertexTypes::Verification);
-                                            self.db.create_relationship(&t_o, &v_o);
-                                            let v_name = v.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                                            let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                                            self.db.add_object_properties(&v_o, v, PropertyType::Base);
-                                            self.db.add_object_properties(&v_o, &json!({
-                                                                                 KEY_GVID: format!("{}_{}_{}", v_o.t.as_str(), v_name.replace("-", "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                                 KEY_GV_LABEL: format!("v_{}", v_module)
-                                                                             }), PropertyType::Gv);
-                                            // Verification module cfg
-                                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&v_o), &v_module);
-                                            for (k, v) in cfg.as_object().unwrap().iter() {
-                                                match k {
-                                                    k if k == KEY_NAME => {
-                                                        let v_o_p = self.db.get_object_properties(&v_o).unwrap().props;
-                                                        let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                        self.db.add_object_properties(&v_o, &p, PropertyType::Module);
-                                                    }
-                                                    k if k == KEY_SCRIPTS => {
-                                                        let v_o_p = self.db.get_object_properties(&v_o).unwrap().props;
-                                                        let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                        self.db.add_object_properties(&v_o, &p, PropertyType::Module);
-                                                    }
-                                                    k if k == KEY_SCRIPTS_PATH => {
-                                                        let v_o_p = self.db.get_object_properties(&v_o).unwrap().props;
-                                                        let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                        self.db.add_object_properties(&v_o, &p, PropertyType::Module);
-                                                    }
-                                                    _ => {}
-                                                }
-                                            }
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
-                            //Test module cfg
-                            let t_p = self.db.get_object_properties(&t_o).unwrap().props;
-                            let module = t_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&t_o), &module);
-                            for (k, v) in cfg.as_object().unwrap().iter() {
-                                match k {
-                                    k if k == KEY_NAME => {
-                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let mut p = t_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.db.add_object_properties(&t_o, &p, PropertyType::Module);
-                                    }
-                                    k if k == KEY_SCRIPTS => {
-                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let mut p = t_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.db.add_object_properties(&t_o, &p, PropertyType::Module);
-                                    }
-                                    k if k == KEY_SCRIPTS_PATH => {
-                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
-                                        let mut p = t_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                        self.db.add_object_properties(&t_o, &p, PropertyType::Module);
-                                    }
-                                    _ => {}
-                                }
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-        //Rte module cfg
-        let r_p = self.db.get_object_properties(&r_o).unwrap().props;
-        let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-        let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
-
-        for (k, v) in cfg.as_object().unwrap().iter() {
-            match k {
-                k if k == KEY_NAME => {
-                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
-                    let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                    p.append(&mut json!({k: v}).as_object().unwrap().clone());
-                    self.db.add_object_properties(&r_o, &p, PropertyType::Module);
-                }
-                k if k == KEY_PROVIDER => {
-                    for (p, v) in v.as_object().unwrap().iter() {
-                        let o = self.db.create_object(VertexTypes::RteProvider);
-                        self.db.create_relationship(&rte_p_o, &o);
-                        self.db.add_object_properties(&o, &json!({KEY_NAME: p}), PropertyType::Module);
-                        self.db.add_object_properties(&o, &json!({
-                                                KEY_GVID: format!("{}_{}_{}", KEY_PROVIDER, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                KEY_GV_LABEL: p
-                                            }), PropertyType::Gv);
-
-                        for (k, v) in v.as_object().unwrap().iter() {
-                            match k {
-                                k if k == KEY_CI => {
-                                    let p_ci_o = self.db.create_object(VertexTypes::Ci);
-                                    self.db.create_relationship(&o, &p_ci_o);
-                                    self.db.add_object_properties(&p_ci_o, &json!({
-                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                            KEY_GV_LABEL: k
-                                                        }), PropertyType::Gv);
-                                    self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
-                                }
-                                k if k == KEY_SHARE => {
-                                    let s_o = self.db.create_object(VertexTypes::Share);
-                                    self.db.create_relationship(&o, &s_o);
-                                    self.db.add_object_properties(&s_o, &json!({
-                                                        KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                        KEY_GV_LABEL: k
-                                                    }), PropertyType::Gv);
-                                    self.db.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
-                                }
-                                k if k == KEY_COMPONENTS => {
-                                    let c_o = self.db.create_object(VertexTypes::Components);
-                                    self.db.create_relationship(&o, &c_o);
-                                    self.db.add_object_properties(&c_o, &json!({
-                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, p, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                            KEY_GV_LABEL: k
-                                                        }), PropertyType::Gv);
-
-                                    for (k, v) in v.as_object().unwrap().iter() {
-                                        match k {
-                                            k if k == KEY_SRC => {
-                                                let c_src_o = self.db.create_object(VertexTypes::ComponentSrc);
-                                                self.db.create_relationship(&c_o, &c_src_o);
-                                                self.db.add_object_properties(&c_src_o, &json!({
-                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                        KEY_GV_LABEL: k
-                                                                    }), PropertyType::Gv);
-
-                                                for (k, v) in v.as_object().unwrap().iter() {
-                                                    let c_src_o_p = self.db.get_object_properties(&c_src_o).unwrap().props;
-                                                    match k {
-                                                        k if k == KEY_NAME => {
-                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
-                                                        }
-                                                        k if k == KEY_SCRIPTS => {
-                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
-                                                        }
-                                                        k if k == KEY_SCRIPTS_PATH => {
-                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
-                                                        }
-                                                        _ => {}
-                                                    }
-                                                }
-                                            }
-                                            k if k == KEY_DST => {
-                                                let c_dst_o = self.db.create_object(VertexTypes::ComponentDst);
-                                                self.db.create_relationship(&c_o, &c_dst_o);
-                                                self.db.add_object_properties(&c_dst_o, &json!({
-                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                        KEY_GV_LABEL: k
-                                                                    }), PropertyType::Gv);
-
-                                                for (k, v) in v.as_object().unwrap().iter() {
-                                                    let c_dst_o_p = self.db.get_object_properties(&c_dst_o).unwrap().props;
-                                                    match k {
-                                                        k if k == KEY_NAME => {
-                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
-                                                        }
-                                                        k if k == KEY_SCRIPTS => {
-                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
-                                                        }
-                                                        k if k == KEY_SCRIPTS_PATH => {
-                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
-                                                        }
-                                                        _ => {}
-                                                    }
-                                                }
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-        // Connection -> Component
-        let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
-        let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
-        let _p = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::NeedsProvider);
-        let rte_provider = self.db.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
-
-        for c in connections.iter() {
-            let c_s = self.db.get_object_neighbour_with_properties_out(&c.id, EdgeTypes::HasConnectionSrc).unwrap();
-            error!("C_S: {:#?}", &c_s);
-            let site = self.db.get_object_neighbour_out(&c_s.vertex.id, EdgeTypes::RefersSite);
-            let site_provider = self.db.get_object_neighbour_with_properties_out(&site.id, EdgeTypes::UsesProvider).unwrap();
-            let s_p_name = site_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().
-                unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-            let _c_d_s: Vec<VertexProperties> = self.db.get_object_neighbours_with_properties_out(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
-            for p in rte_provider.iter() {
-                let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
-                let component_src = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentSrc);
-                let r_p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().
-                    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                if s_p_name == r_p_name {
-                    self.db.create_relationship(&c_s.vertex, &component_src);
-                }
-            }
-            //CONNECTION DSTs
-            for c_d in _c_d_s.iter() {
-                for p in rte_provider.iter() {
-                    let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
-                    let component_dst = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentDst);
-                    self.db.create_relationship(&c_d.vertex, &component_dst);
-                }
-            }
-        }
-    }
-
-    fn init_rte_type_b(&self, rte: &Value, eut: &Vertex, connection: &Vertex) {
-        error!("INIT TYPE B RTE");
-    }
-
-    fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
-        info!("Loading regression configuration data...");
-        let data: String = String::from(format!("{path}/{file}"));
-        let raw = std::fs::read_to_string(&data).unwrap();
-        let cfg = serde_json::from_str::<RegressionConfig>(&raw).unwrap();
-        info!("Loading regression configuration data -> Done.");
-
-        info!("Render regression configuration file...");
-        let mut _tera = Tera::new("../../regression/config/*").unwrap();
-        let mut context = Context::new();
-        context.insert(KEY_EUT, &cfg.eut);
-        context.insert(KEY_RTE, &cfg.rte);
-        context.insert(KEY_TESTS, &cfg.tests);
-        context.insert(KEY_PROJECT, &cfg.project);
-        context.insert(KEY_FEATURES, &cfg.features);
-        context.insert("collector", &cfg.collector);
-        context.insert(KEY_VERIFICATIONS, &cfg.verifications);
-
-        let eutc = _tera.render(&file, &context).unwrap();
-        info!("Render regression configuration file -> Done.");
-
-        info!("Loading regression configuration data...");
-        let cfg = serde_json::from_str::<RegressionConfig>(&eutc).unwrap();
-        info!("Loading regression configuration data -> Done.");
-
-        cfg
-    }
-
-    fn load_object_config(&self, _type: &str, module: &str) -> Value {
-        info!("Loading module <{module}> configuration data...");
-        let file: String;
-        match _type {
-            KEY_EUT => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_RTE => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_FEATURE => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_TEST => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_VERIFICATION => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
-            }
-            _ => {
-                return Null;
-            }
-        }
-
-        let raw = std::fs::read_to_string(&String::from(&file)).unwrap();
-        let cfg: Value = serde_json::from_str(&raw).unwrap();
-        info!("Loading module <{module}> configuration data -> Done.");
-        cfg
-    }
-
-    fn add_ci_stages(&self, ancestor: &Vertex, stages: &Vec<String>, object_type: &VertexTypes) -> Option<Vertex> {
-        let mut curr = Vertex { id: Default::default(), t: Default::default() };
-
-        for (i, stage) in stages.iter().enumerate() {
-            let new = self.db.create_object(object_type.clone());
-            self.db.add_object_properties(&new, &stage, PropertyType::Base);
-            self.db.add_object_properties(&new, &json!({
-                KEY_GVID: stage.replace("-", "_"),
-                KEY_GV_LABEL: stage,
-            }), PropertyType::Gv);
-
-            if i == 0 {
-                self.db.create_relationship(&ancestor, &new);
-                curr = new.clone();
-            } else {
-                self.db.create_relationship(&curr, &new);
-                curr = new.clone();
-            }
-        }
-        Some(curr)
     }
 
     pub fn init(&self) -> Uuid {
@@ -1385,10 +917,356 @@ impl<'a> Regression<'a> {
                     self.db.create_relationship(&eut, &o);
 
                     for rte in obj.as_array().unwrap().iter() {
-                        let module = rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                        //let connection =
-                        error!("RTE: {:#?}", rte.as_object().unwrap());
-                        //self.call_rte(, &rte, &eut)
+                        let r_o = self.db.create_object(VertexTypes::Rte);
+                        self.db.create_relationship(&o, &r_o);
+                        self.db.add_object_properties(&r_o, &json!({
+                            KEY_GVID: format!("{}_{}", KEY_RTE, &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()),
+                            KEY_GV_LABEL: &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()
+                        }), PropertyType::Gv);
+
+                        let rte_p_o = self.db.create_object(VertexTypes::Providers);
+                        self.db.create_relationship(&r_o, &rte_p_o);
+                        self.db.add_object_properties(&rte_p_o, &json!({
+                            KEY_GVID: format!("{}_{}_{}", KEY_RTE, KEY_PROVIDERS, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                            KEY_GV_LABEL: KEY_PROVIDERS
+                        }), PropertyType::Gv);
+
+                        //RTE -> Features
+                        let eut_f_o = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasFeatures);
+                        self.db.create_relationship(&r_o, &eut_f_o);
+
+                        //Rte
+                        for (k, v) in rte.as_object().unwrap().iter() {
+                            match k {
+                                k if k == KEY_MODULE => {
+                                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
+                                    let mut p = r_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.insert(k.clone(), v.clone());
+                                    self.db.add_object_properties(&r_o, &p, PropertyType::Base);
+                                }
+                                //Collector
+                                k if k == "collector" => {
+                                    let c_o = self.db.create_object(VertexTypes::get_type_by_key(k));
+                                    self.db.create_relationship(&r_o, &c_o);
+                                    self.db.add_object_properties(&c_o, &json!({
+                                                KEY_GVID: format!("{}_{}", &k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: &c_o.t.as_str()
+                                            }), PropertyType::Gv);
+                                }
+                                //Connections
+                                k if k == KEY_CONNECTIONS => {
+                                    let cs_o = self.db.create_object(VertexTypes::get_type_by_key(k));
+                                    self.db.add_object_properties(&cs_o, &json!({
+                                                KEY_GVID: format!("{}_{}", &k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: &cs_o.t.as_str()
+                                            }), PropertyType::Gv);
+                                    self.db.create_relationship(&r_o, &cs_o);
+
+                                    for item in v.as_array().unwrap().iter() {
+                                        //Connection
+                                        let c_o = self.db.create_object(VertexTypes::Connection);
+                                        self.db.create_relationship(&cs_o, &c_o);
+                                        let c_name = item.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                        self.db.add_object_properties(&c_o, &json!({KEY_NAME: c_name}), PropertyType::Base);
+                                        self.db.add_object_properties(&c_o, &json!({
+                                                KEY_GVID: format!("{}_{}_{}", KEY_CONNECTION, c_name.replace("-", "_"), &rte.as_object().
+                                                    unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: c_name
+                                            }), PropertyType::Gv);
+
+                                        //Connection Source
+                                        let source = item.as_object().unwrap().get(KEY_SOURCE).unwrap().as_str().unwrap();
+                                        let src_o = self.db.create_object(VertexTypes::ConnectionSrc);
+                                        self.db.create_relationship(&c_o, &src_o);
+                                        self.db.add_object_properties(&src_o, &json!({KEY_NAME: &source, KEY_RTE: &rte.as_object().
+                                            unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
+                                        self.db.add_object_properties(&src_o, &json!({
+                                            KEY_GVID: format!("{}_{}_{}_{}", "connection_src", &c_name.replace("-","_"), &source, &rte.as_object().unwrap().
+                                                get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                            KEY_GV_LABEL: source
+                                        }), PropertyType::Gv);
+
+                                        let _sites = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasSites);
+                                        let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
+
+                                        //Connection Source -> Site
+                                        for s in sites.iter() {
+                                            let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().
+                                                unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                                            if site_name == source {
+                                                self.db.create_relationship(&src_o, &s.vertex);
+                                                //site --> rte
+                                                self.db.create_relationship(&s.vertex, &r_o);
+                                            }
+                                        }
+
+                                        //Connection Destinations
+                                        let destinations = item.as_object().unwrap().get("destinations").unwrap().as_array().unwrap();
+                                        for d in destinations.iter() {
+                                            let dst_o = self.db.create_object(VertexTypes::ConnectionDst);
+                                            self.db.create_relationship(&src_o, &dst_o);
+                                            self.db.add_object_properties(&dst_o, &json!({KEY_NAME: &d, KEY_RTE: &rte.as_object().
+                                                unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
+                                            self.db.add_object_properties(&dst_o, &json!({
+                                                         KEY_GVID: format!("{}_{}_{}_{}", "connection_dst", &c_name.replace("-","_"), d.as_str().unwrap(), &rte.as_object().
+                                                            unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                         KEY_GV_LABEL: d.as_str().unwrap()
+                                                     }), PropertyType::Gv);
+
+                                            //Connection Destination -> Site
+                                            for s in sites.iter() {
+                                                let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().
+                                                    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                                                if site_name == d {
+                                                    self.db.create_relationship(&dst_o, &s.vertex);
+                                                    //site --> rte
+                                                    self.db.create_relationship(&s.vertex, &r_o);
+                                                }
+                                            }
+                                        }
+
+                                        //Tests
+                                        let tests = item.as_object().unwrap().get(KEY_TESTS).unwrap().as_array().unwrap();
+                                        for test in tests.iter() {
+                                            let t_o = self.db.create_object(VertexTypes::Test);
+                                            self.db.create_relationship(&src_o, &t_o);
+
+                                            for (k, v) in test.as_object().unwrap().iter() {
+                                                match k {
+                                                    k if k == KEY_NAME => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.insert(k.clone(), v.clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
+                                                    }
+                                                    k if k == KEY_MODULE => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.insert(k.clone(), v.clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
+                                                    }
+                                                    k if k == "parallel" => {
+                                                        let mut t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.insert(k.clone(), v.clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
+                                                        t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let t_name = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                                        let t_module = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                                                        self.db.add_object_properties(&t_o, &json!({
+                                                                             KEY_GVID: format!("{}_{}_{}", t_o.t.as_str(), t_name.replace("-", "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                             KEY_GV_LABEL: format!("t_{}", t_module)
+                                                                         }), PropertyType::Gv);
+                                                    }
+                                                    k if k == KEY_CI => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.append(&mut json!({k: v.as_object().unwrap().clone()}).as_object().unwrap().clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
+                                                    }
+                                                    k if k == KEY_VERIFICATIONS => {
+                                                        for v in v.as_array().unwrap().iter() {
+                                                            let v_o = self.db.create_object(VertexTypes::Verification);
+                                                            self.db.create_relationship(&t_o, &v_o);
+                                                            let v_name = v.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                                            let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                                                            self.db.add_object_properties(&v_o, v, PropertyType::Base);
+                                                            self.db.add_object_properties(&v_o, &json!({
+                                                                                 KEY_GVID: format!("{}_{}_{}", v_o.t.as_str(), v_name.replace("-", "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                                 KEY_GV_LABEL: format!("v_{}", v_module)
+                                                                             }), PropertyType::Gv);
+                                                            // Verification module cfg
+                                                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&v_o), &v_module);
+                                                            for (k, v) in cfg.as_object().unwrap().iter() {
+                                                                match k {
+                                                                    k if k == KEY_NAME => {
+                                                                        let v_o_p = self.db.get_object_properties(&v_o).unwrap().props;
+                                                                        let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                        self.db.add_object_properties(&v_o, &p, PropertyType::Module);
+                                                                    }
+                                                                    k if k == KEY_SCRIPTS => {
+                                                                        let v_o_p = self.db.get_object_properties(&v_o).unwrap().props;
+                                                                        let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                        self.db.add_object_properties(&v_o, &p, PropertyType::Module);
+                                                                    }
+                                                                    k if k == KEY_SCRIPTS_PATH => {
+                                                                        let v_o_p = self.db.get_object_properties(&v_o).unwrap().props;
+                                                                        let mut p = v_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                        self.db.add_object_properties(&v_o, &p, PropertyType::Module);
+                                                                    }
+                                                                    _ => {}
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                            //Test module cfg
+                                            let t_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                            let module = t_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&t_o), &module);
+                                            for (k, v) in cfg.as_object().unwrap().iter() {
+                                                match k {
+                                                    k if k == KEY_NAME => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Module);
+                                                    }
+                                                    k if k == KEY_SCRIPTS => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Module);
+                                                    }
+                                                    k if k == KEY_SCRIPTS_PATH => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Module);
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        //Rte module cfg
+                        let r_p = self.db.get_object_properties(&r_o).unwrap().props;
+                        let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                        let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
+
+                        for (k, v) in cfg.as_object().unwrap().iter() {
+                            match k {
+                                k if k == KEY_NAME => {
+                                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
+                                    let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.append(&mut json!({k: v}).as_object().unwrap().clone());
+                                    self.db.add_object_properties(&r_o, &p, PropertyType::Module);
+                                }
+                                k if k == KEY_PROVIDER => {
+                                    for (p, v) in v.as_object().unwrap().iter() {
+                                        let o = self.db.create_object(VertexTypes::RteProvider);
+                                        self.db.create_relationship(&rte_p_o, &o);
+                                        self.db.add_object_properties(&o, &json!({KEY_NAME: p}), PropertyType::Module);
+                                        self.db.add_object_properties(&o, &json!({
+                                                KEY_GVID: format!("{}_{}_{}", KEY_PROVIDER, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                KEY_GV_LABEL: p
+                                            }), PropertyType::Gv);
+
+                                        for (k, v) in v.as_object().unwrap().iter() {
+                                            match k {
+                                                k if k == KEY_CI => {
+                                                    let p_ci_o = self.db.create_object(VertexTypes::Ci);
+                                                    self.db.create_relationship(&o, &p_ci_o);
+                                                    self.db.add_object_properties(&p_ci_o, &json!({
+                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            KEY_GV_LABEL: k
+                                                        }), PropertyType::Gv);
+                                                    self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
+                                                }
+                                                k if k == KEY_SHARE => {
+                                                    let s_o = self.db.create_object(VertexTypes::Share);
+                                                    self.db.create_relationship(&o, &s_o);
+                                                    self.db.add_object_properties(&s_o, &json!({
+                                                        KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                        KEY_GV_LABEL: k
+                                                    }), PropertyType::Gv);
+                                                    self.db.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
+                                                }
+                                                k if k == KEY_COMPONENTS => {
+                                                    let c_o = self.db.create_object(VertexTypes::Components);
+                                                    self.db.create_relationship(&o, &c_o);
+                                                    self.db.add_object_properties(&c_o, &json!({
+                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, p, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                            KEY_GV_LABEL: k
+                                                        }), PropertyType::Gv);
+
+                                                    for (k, v) in v.as_object().unwrap().iter() {
+                                                        match k {
+                                                            k if k == KEY_SRC => {
+                                                                let c_src_o = self.db.create_object(VertexTypes::ComponentSrc);
+                                                                self.db.create_relationship(&c_o, &c_src_o);
+                                                                self.db.add_object_properties(&c_src_o, &json!({
+                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        KEY_GV_LABEL: k
+                                                                    }), PropertyType::Gv);
+
+                                                                for (k, v) in v.as_object().unwrap().iter() {
+                                                                    let c_src_o_p = self.db.get_object_properties(&c_src_o).unwrap().props;
+                                                                    match k {
+                                                                        k if k == KEY_NAME => {
+                                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
+                                                                        }
+                                                                        k if k == KEY_SCRIPTS => {
+                                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
+                                                                        }
+                                                                        k if k == KEY_SCRIPTS_PATH => {
+                                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
+                                                                        }
+                                                                        _ => {}
+                                                                    }
+                                                                }
+                                                            }
+                                                            k if k == KEY_DST => {
+                                                                let c_dst_o = self.db.create_object(VertexTypes::ComponentDst);
+                                                                self.db.create_relationship(&c_o, &c_dst_o);
+                                                                self.db.add_object_properties(&c_dst_o, &json!({
+                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                        KEY_GV_LABEL: k
+                                                                    }), PropertyType::Gv);
+
+                                                                for (k, v) in v.as_object().unwrap().iter() {
+                                                                    let c_dst_o_p = self.db.get_object_properties(&c_dst_o).unwrap().props;
+                                                                    match k {
+                                                                        k if k == KEY_NAME => {
+                                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
+                                                                        }
+                                                                        k if k == KEY_SCRIPTS => {
+                                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
+                                                                        }
+                                                                        k if k == KEY_SCRIPTS_PATH => {
+                                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
+                                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
+                                                                        }
+                                                                        _ => {}
+                                                                    }
+                                                                }
+                                                            }
+                                                            _ => {}
+                                                        }
+                                                    }
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        let rte_type = cfg.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
+                        self.call_rte(rte_type, &r_o);
                     }
                 }
                 _ => {}
@@ -1417,6 +1295,7 @@ impl<'a> Regression<'a> {
             let _conns = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
             for conn in _conns.iter() {
                 let c_src = self.db.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc).unwrap();
+                error!("CONNECTION_SRC: {:#?}", &c_src.props);
                 let tests = self.db.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
                 for t in tests.iter() {
                     let t_stage_name = format!("{}-{}-{}-{}-{}",
@@ -1466,6 +1345,157 @@ impl<'a> Regression<'a> {
         self.add_ci_stages(&stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         project.id
+    }
+
+    fn init_rte_type_a(&self, r_o: &Vertex) {
+        // Connection -> Component
+        let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
+        let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
+        let _p = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::NeedsProvider);
+        let rte_provider = self.db.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
+
+        for c in connections.iter() {
+            let c_s = self.db.get_object_neighbour_with_properties_out(&c.id, EdgeTypes::HasConnectionSrc).unwrap();
+            let site = self.db.get_object_neighbour_out(&c_s.vertex.id, EdgeTypes::RefersSite);
+            let site_provider = self.db.get_object_neighbour_with_properties_out(&site.id, EdgeTypes::UsesProvider).unwrap();
+            let s_p_name = site_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().
+                unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+            let _c_d_s: Vec<VertexProperties> = self.db.get_object_neighbours_with_properties_out(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
+            for p in rte_provider.iter() {
+                let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
+                let component_src = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentSrc);
+                let r_p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().
+                    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                if s_p_name == r_p_name {
+                    self.db.create_relationship(&c_s.vertex, &component_src);
+                }
+            }
+            //CONNECTION DSTs
+            for c_d in _c_d_s.iter() {
+                for p in rte_provider.iter() {
+                    let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
+                    let component_dst = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentDst);
+                    self.db.create_relationship(&c_d.vertex, &component_dst);
+                }
+            }
+        }
+    }
+
+    fn init_rte_type_b(&self, r_o: &Vertex) {
+        error!("INIT TYPE B RTE {:?}", r_o);
+        // Connection -> Component
+        let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
+        let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
+        let _p = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::NeedsProvider);
+        let rte_provider = self.db.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
+
+        for c in connections.iter() {
+            let c_s = self.db.get_object_neighbour_with_properties_out(&c.id, EdgeTypes::HasConnectionSrc).unwrap();
+            //let site = self.db.get_object_neighbour_out(&c_s.vertex.id, EdgeTypes::RefersSite);
+            //let site_provider = self.db.get_object_neighbour_with_properties_out(&site.id, EdgeTypes::UsesProvider).unwrap();
+            /*let s_p_name = site_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().
+            /    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();*/
+
+            let _c_d_s: Vec<VertexProperties> = self.db.get_object_neighbours_with_properties_out(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
+            for p in rte_provider.iter() {
+                let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
+                //let component_src = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentSrc);
+                /*let r_p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().
+                    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();*/
+                /*if s_p_name == r_p_name {
+                    self.db.create_relationship(&c_s.vertex, &component_src);
+                }*/
+            }
+            //CONNECTION DSTs
+            for c_d in _c_d_s.iter() {
+                for p in rte_provider.iter() {
+                    let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
+                    let component_dst = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentDst);
+                    self.db.create_relationship(&c_d.vertex, &component_dst);
+                }
+            }
+        }
+    }
+
+    fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
+        info!("Loading regression configuration data...");
+        let data: String = String::from(format!("{path}/{file}"));
+        let raw = std::fs::read_to_string(&data).unwrap();
+        let cfg = serde_json::from_str::<RegressionConfig>(&raw).unwrap();
+        info!("Loading regression configuration data -> Done.");
+
+        info!("Render regression configuration file...");
+        let mut _tera = Tera::new("../../regression/config/*").unwrap();
+        let mut context = Context::new();
+        context.insert(KEY_EUT, &cfg.eut);
+        context.insert(KEY_RTE, &cfg.rte);
+        context.insert(KEY_TESTS, &cfg.tests);
+        context.insert(KEY_PROJECT, &cfg.project);
+        context.insert(KEY_FEATURES, &cfg.features);
+        context.insert("collector", &cfg.collector);
+        context.insert(KEY_VERIFICATIONS, &cfg.verifications);
+
+        let eutc = _tera.render(&file, &context).unwrap();
+        info!("Render regression configuration file -> Done.");
+
+        info!("Loading regression configuration data...");
+        let cfg = serde_json::from_str::<RegressionConfig>(&eutc).unwrap();
+        info!("Loading regression configuration data -> Done.");
+
+        cfg
+    }
+
+    fn load_object_config(&self, _type: &str, module: &str) -> Value {
+        info!("Loading module <{module}> configuration data...");
+        let file: String;
+        match _type {
+            KEY_EUT => {
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
+            }
+            KEY_RTE => {
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
+            }
+            KEY_FEATURE => {
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
+            }
+            KEY_TEST => {
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
+            }
+            KEY_VERIFICATION => {
+                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
+            }
+            _ => {
+                return Null;
+            }
+        }
+
+        let raw = std::fs::read_to_string(&String::from(&file)).unwrap();
+        let cfg: Value = serde_json::from_str(&raw).unwrap();
+        info!("Loading module <{module}> configuration data -> Done.");
+        cfg
+    }
+
+    fn add_ci_stages(&self, ancestor: &Vertex, stages: &Vec<String>, object_type: &VertexTypes) -> Option<Vertex> {
+        let mut curr = Vertex { id: Default::default(), t: Default::default() };
+
+        for (i, stage) in stages.iter().enumerate() {
+            let new = self.db.create_object(object_type.clone());
+            self.db.add_object_properties(&new, &stage, PropertyType::Base);
+            self.db.add_object_properties(&new, &json!({
+                KEY_GVID: stage.replace("-", "_"),
+                KEY_GV_LABEL: stage,
+            }), PropertyType::Gv);
+
+            if i == 0 {
+                self.db.create_relationship(&ancestor, &new);
+                curr = new.clone();
+            } else {
+                self.db.create_relationship(&curr, &new);
+                curr = new.clone();
+            }
+        }
+        Some(curr)
     }
 
     pub fn build_context(&self, id: Uuid) -> Context {
