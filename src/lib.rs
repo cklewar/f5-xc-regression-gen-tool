@@ -705,10 +705,27 @@ impl<'a> Regression<'a> {
         }
     }
 
-    fn call_rte(&self, v: &str, r_o: &Vertex) {
+    fn call_rte_init(&self, v: &str, r_o: &Vertex) {
         match v {
             v if v == RTE_TYPE_A => self.init_rte_type_a(r_o),
             v if v == RTE_TYPE_B => self.init_rte_type_b(r_o),
+            _ => error!("Unknown RTE type found: {:?}", v)
+        }
+    }
+
+    fn call_rte_build(&self, v: &str, rte: &VertexProperties, site_count: usize, srsd: &mut HashMap<String, ScriptRteSitesShareDataRenderContext>) {
+        match v {
+            v if v == RTE_TYPE_A => self.build_rte_type_a_context(rte, site_count, srsd),
+            v if v == RTE_TYPE_B => self.build_rte_type_b_context(rte, site_count, srsd),
+            _ => error!("Unknown RTE type found: {:?}", v)
+        }
+    }
+
+    fn call_rte_build_connection_context(&self, v: &str, eut_name: &str, rte_name: &str, rte: &VertexProperties, provider: Vec<VertexProperties>,
+                                           rte_crcs: &mut RteRenderContext, rtes_rc: &mut Vec<RteRenderContext>) {
+        match v {
+            //v if v == RTE_TYPE_A => self.build_rte_type_a_context(eut_name, rte_name, rte, provider, rte_crcs, rtes_rc),
+            v if v == RTE_TYPE_B => self.build_rte_type_b_connection_context(eut_name, rte_name, rte, provider, rte_crcs, rtes_rc),
             _ => error!("Unknown RTE type found: {:?}", v)
         }
     }
@@ -1266,7 +1283,7 @@ impl<'a> Regression<'a> {
                             }
                         }
                         let rte_type = cfg.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
-                        self.call_rte(rte_type, &r_o);
+                        self.call_rte_init(rte_type, &r_o);
                     }
                 }
                 _ => {}
@@ -1295,7 +1312,6 @@ impl<'a> Regression<'a> {
             let _conns = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
             for conn in _conns.iter() {
                 let c_src = self.db.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc).unwrap();
-                error!("CONNECTION_SRC: {:#?}", &c_src.props);
                 let tests = self.db.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
                 for t in tests.iter() {
                     let t_stage_name = format!("{}-{}-{}-{}-{}",
@@ -1506,7 +1522,6 @@ impl<'a> Regression<'a> {
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
-        error!("EUT: {:#?}", &eut_p_base);
         let eut_name = eut_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
 
         //Process eut provider
@@ -1573,71 +1588,13 @@ impl<'a> Regression<'a> {
         let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
 
         //Process rte share data script render context
-        let mut srsd = HashMap::new();
-        let mut site_count: usize = 0;
+        let site_count: usize = 0;
+        let mut srsd: HashMap<String, ScriptRteSitesShareDataRenderContext> = HashMap::new();
 
         for rte in rtes.iter() {
-            let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-            srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
-
-            let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
-            let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
-
-            for conn in connections.iter() {
-                let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
-                let src_site = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite).unwrap();
-                let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-                match srsd.get_mut(rte_name) {
-                    Some(rte) => {
-                        match rte.sites.get_mut(src_site_name) {
-                            Some(site) => {
-                                if site.has_client == false {
-                                    site.has_client = true
-                                }
-                            }
-                            None => {
-                                let srssd_rc = ScriptRteSiteShareDataRenderContext {
-                                    rte: rte_name.to_string(),
-                                    name: src_site_name.to_string(),
-                                    index: site_count,
-                                    has_client: true,
-                                    has_server: false,
-                                };
-
-                                rte.sites.entry(src_site_name.to_string()).or_insert(srssd_rc);
-                                site_count = site_count + 1;
-
-                                let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
-                                for dst in dsts.iter() {
-                                    let dst_site = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite).unwrap();
-                                    let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-                                    match rte.sites.get_mut(dst_site_name) {
-                                        Some(site) => {
-                                            if site.has_server == false {
-                                                site.has_server = true
-                                            }
-                                        }
-                                        None => {
-                                            let srssd_rc = ScriptRteSiteShareDataRenderContext {
-                                                rte: rte_name.to_string(),
-                                                name: dst_site_name.to_string(),
-                                                index: site_count,
-                                                has_client: false,
-                                                has_server: true,
-                                            };
-                                            rte.sites.entry(dst_site_name.to_string()).or_insert(srssd_rc);
-                                            site_count = site_count + 1;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    None => error!("RTE {} does not exist", rte_name),
-                }
-            }
+            //Change rte_type
+            let rte_type = "rte_type_b"; //rte.props.get(PropertyType::Base.index()).unwrap().as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
+            self.call_rte_build(rte_type, &rte, site_count, &mut srsd);
         }
 
         //Build rte_to_site_map structure and add ScriptRteSiteShareDataRenderContext context
@@ -1685,12 +1642,12 @@ impl<'a> Regression<'a> {
 
                 //Process provider share scripts render context
                 let share_p = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare).unwrap();
-                error!("SHARE_P: {:#?}", &share_p.props);
                 let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
                 for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+
                     let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                     let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
 
@@ -1723,239 +1680,9 @@ impl<'a> Regression<'a> {
                 });
             }
 
-            //Connection DST rt set
-            let mut server_destinations: HashSet<String> = HashSet::new();
-
             //Process connections
-            let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
-            let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
-            let mut site_to_rte_map: HashMap<String, HashSet<String>> = HashMap::new();
-
-            for conn in connections.iter() {
-                let connection_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
-                let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let src_site = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite).unwrap();
-                let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let src_provider = self.db.get_object_neighbour_with_properties_out(&src_site.vertex.id, EdgeTypes::UsesProvider).unwrap();
-                let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let comp_src = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
-                let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace("_", "-");
-
-                //Process site_to_rte_map
-                let mut _rtes: HashSet<String> = HashSet::new();
-                _rtes.insert(rte_name.to_string());
-                site_to_rte_map.entry(src_site_name.to_string()).or_insert(_rtes);
-
-                //Process rte src component scripts
-                let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-
-                //Process client destination list
-                let mut client_destinations: HashSet<String> = HashSet::new();
-                let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
-                for dst in dsts.iter() {
-                    client_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
-                }
-
-                for p in provider.iter() {
-                    let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-                    for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        if src_p_name == p_name {
-                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                            let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
-                            let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
-
-                            ctx.rte = Option::from(rte_name.to_string());
-                            ctx.eut = Option::from(eut_name.to_string());
-                            ctx.site = Option::from(src_site_name.to_string());
-                            ctx.project = Option::from(self.config.project.clone());
-                            ctx.destinations = Option::from(serde_json::to_string(&client_destinations).unwrap());
-
-                            let mut commands: Vec<String> = Vec::new();
-                            for command in ctx.render_script(&ctx, &contents).lines() {
-                                commands.push(format!("{:indent$}{}", "", command, indent = 0));
-                            }
-
-                            let data: HashMap<String, Vec<String>> = [
-                                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                            ].into_iter().collect();
-                            scripts.push(data);
-                        }
-                    }
-                }
-
-                let rte_crc = RteComponentRenderContext {
-                    job: rte_job_name.clone(),
-                    rte: rte_name.to_string(),
-                    name: comp_src_name.to_string(),
-                    site: src_site_name.to_string(),
-                    provider: src_p_name.to_string(),
-                    scripts,
-                };
-                rte_crcs.components.push(rte_crc);
-
-                //Process connection destinations
-                for dst in dsts.iter() {
-                    let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let dst_site = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite).unwrap();
-                    let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let dst_provider = self.db.get_object_neighbour_with_properties_out(&dst_site.vertex.id, EdgeTypes::UsesProvider).unwrap();
-                    let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let comp_dst = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst).unwrap();
-                    let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace("_", "-");
-
-                    //Process server destination list
-                    let rt_dsts = self.db.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
-                    for dst in rt_dsts.iter() {
-                        server_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
-                    }
-
-                    //Process rte dst component scripts
-                    let scripts_path = comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-
-                    for p in provider.iter() {
-                        let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-                        for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                            if dst_p_name == p_name {
-                                let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                                let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
-                                let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
-
-                                ctx.rte = Option::from(rte_name.to_string());
-                                ctx.eut = Option::from(eut_name.to_string());
-                                ctx.project = Option::from(self.config.project.clone());
-                                ctx.site = Option::from(dst_site_name.to_string());
-                                ctx.destinations = Option::from(serde_json::to_string(&server_destinations).unwrap());
-
-                                let mut commands: Vec<String> = Vec::new();
-                                for command in ctx.render_script(&ctx, &contents).lines() {
-                                    commands.push(format!("{:indent$}{}", "", command, indent = 0));
-                                }
-
-                                let data: HashMap<String, Vec<String>> = [
-                                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                                ].into_iter().collect();
-                                scripts.push(data);
-                            }
-                        }
-                    }
-
-                    let rte_crc = RteComponentRenderContext {
-                        job: rte_job_name.to_string(),
-                        rte: rte_name.to_string(),
-                        site: dst_site_name.to_string(),
-                        name: comp_dst_name.to_string(),
-                        provider: dst_p_name.to_string(),
-                        scripts,
-                    };
-                    rte_crcs.components.push(rte_crc);
-                }
-
-                //Tests
-                let tests_p = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::Runs);
-                for t in tests_p.iter() {
-                    let t_job_name = format!("{}_{}_{}_{}",
-                                             KEY_TEST,
-                                             rte_name,
-                                             src_name,
-                                             t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
-                    ).replace("_", "-");
-
-                    //Process test scripts
-                    let t_name = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                    let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-                    for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                        let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
-                        let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
-
-                        ctx.rte = Option::from(rte_name.to_string());
-                        ctx.name = Option::from(t_name.to_string());
-                        ctx.module = Option::from(t_module.to_string());
-
-                        let mut commands: Vec<String> = Vec::new();
-                        for command in ctx.render_script(&ctx, &contents).lines() {
-                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
-                        }
-
-                        let data: HashMap<String, Vec<String>> = [
-                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                        ].into_iter().collect();
-                        scripts.push(data);
-                    }
-
-                    //Verifications
-                    let verifications_p = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
-                    let mut verifications: Vec<RteVerificationRenderContext> = Vec::new();
-                    for v in verifications_p.iter() {
-                        let v_job_name = format!("{}_{}_{}_{}_{}",
-                                                 KEY_VERIFICATION,
-                                                 rte_name,
-                                                 src_name,
-                                                 &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                                 v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                        ).replace("_", "-");
-
-                        //Process test scripts
-                        let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                        let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                        let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-                        let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-                        for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                            let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                            let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
-                            let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
-
-                            ctx.rte = Option::from(rte_name.to_string());
-                            ctx.name = Option::from(v_name.to_string());
-                            ctx.module = Option::from(v_module.to_string());
-                            ctx.test_name = Option::from(t_name.to_string());
-                            ctx.test_module = Option::from(t_module.to_string());
-
-                            let mut commands: Vec<String> = Vec::new();
-                            for command in ctx.render_script(&ctx, &contents).lines() {
-                                commands.push(format!("{:indent$}{}", "", command, indent = 0));
-                            }
-
-                            let data: HashMap<String, Vec<String>> = [
-                                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                            ].into_iter().collect();
-                            scripts.push(data);
-                        }
-
-                        let rte_vrc = RteVerificationRenderContext {
-                            ci: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
-                            test: t_name.to_string(),
-                            rte: rte_name.to_string(),
-                            job: v_job_name,
-                            name: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                            module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
-                            scripts,
-                        };
-                        verifications.push(rte_vrc);
-                    }
-
-                    let rterc = RteTestRenderContext {
-                        ci: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
-                        rte: rte_name.to_string(),
-                        job: t_job_name,
-                        name: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                        module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
-                        provider: src_name.to_string(),
-                        scripts,
-                        verifications,
-                    };
-                    rte_crcs.tests.push(rterc);
-                }
-            }
+            let rte_type = "rte_type_b"; //rte.props.get(PropertyType::Base.index()).unwrap().as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
+            self.call_rte_build_connection_context(rte_type, &eut_name, rte_name, rte, provider, &mut rte_crcs, &mut rtes_rc);
             rtes_rc.push(rte_crcs);
         }
 
@@ -2047,6 +1774,552 @@ impl<'a> Regression<'a> {
         //error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
+    }
+
+    fn build_rte_type_a_context(&self, rte: &VertexProperties, mut site_count: usize, srsd: &mut HashMap<String, ScriptRteSitesShareDataRenderContext>) {
+        let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+        srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
+
+        let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+        let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
+
+        for conn in connections.iter() {
+            let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
+            let src_site = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite).unwrap();
+            let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+            match srsd.get_mut(rte_name) {
+                Some(rte) => {
+                    match rte.sites.get_mut(src_site_name) {
+                        Some(site) => {
+                            if site.has_client == false {
+                                site.has_client = true
+                            }
+                        }
+                        None => {
+                            let srssd_rc = ScriptRteSiteShareDataRenderContext {
+                                rte: rte_name.to_string(),
+                                name: src_site_name.to_string(),
+                                index: site_count,
+                                has_client: true,
+                                has_server: false,
+                            };
+
+                            rte.sites.entry(src_site_name.to_string()).or_insert(srssd_rc);
+                            site_count = site_count + 1;
+
+                            let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
+                            for dst in dsts.iter() {
+                                let dst_site = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite).unwrap();
+                                let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                                match rte.sites.get_mut(dst_site_name) {
+                                    Some(site) => {
+                                        if site.has_server == false {
+                                            site.has_server = true
+                                        }
+                                    }
+                                    None => {
+                                        let srssd_rc = ScriptRteSiteShareDataRenderContext {
+                                            rte: rte_name.to_string(),
+                                            name: dst_site_name.to_string(),
+                                            index: site_count,
+                                            has_client: false,
+                                            has_server: true,
+                                        };
+                                        rte.sites.entry(dst_site_name.to_string()).or_insert(srssd_rc);
+                                        site_count = site_count + 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                None => error!("RTE {} does not exist", rte_name),
+            }
+        }
+    }
+
+    fn build_rte_type_b_context(&self, rte: &VertexProperties, mut site_count: usize, srsd: &mut HashMap<String, ScriptRteSitesShareDataRenderContext>) {
+        let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+        srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
+
+        let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+        let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
+
+        for conn in connections.iter() {
+            error!("CONN: {:?}", conn);
+
+            match srsd.get_mut(rte_name) {
+                Some(rte) => {
+                    let srssd_rc = ScriptRteSiteShareDataRenderContext {
+                        rte: rte_name.to_string(),
+                        name: "test_me_now".to_string(),
+                        index: site_count,
+                        has_client: true,
+                        has_server: false,
+                    };
+                    rte.sites.entry("test_me_now".to_string()).or_insert(srssd_rc);
+                    site_count = site_count + 1;
+                }
+                None => error!("RTE {} does not exist", rte_name),
+            }
+        }
+    }
+
+    fn build_rte_type_a_connection_context(&self, eut_name: &str, rte_name: &str, rte: &VertexProperties, provider: Vec<VertexProperties>,
+                                           rte_crcs: &mut RteRenderContext, rtes_rc: &mut Vec<RteRenderContext>) {
+
+        //Connection DST rt set
+        let mut server_destinations: HashSet<String> = HashSet::new();
+
+        let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+        let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
+        let mut site_to_rte_map: HashMap<String, HashSet<String>> = HashMap::new();
+
+        for conn in connections.iter() {
+            let connection_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
+            let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let src_site = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::RefersSite).unwrap();
+            let src_site_name = src_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let src_provider = self.db.get_object_neighbour_with_properties_out(&src_site.vertex.id, EdgeTypes::UsesProvider).unwrap();
+            let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let comp_src = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
+            let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace("_", "-");
+
+            //Process site_to_rte_map
+            let mut _rtes: HashSet<String> = HashSet::new();
+            _rtes.insert(rte_name.to_string());
+            site_to_rte_map.entry(src_site_name.to_string()).or_insert(_rtes);
+
+            //Process rte src component scripts
+            let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+            let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+
+            //Process client destination list
+            let mut client_destinations: HashSet<String> = HashSet::new();
+            let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
+            for dst in dsts.iter() {
+                client_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+            }
+
+            for p in provider.iter() {
+                let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    if src_p_name == p_name {
+                        let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
+                        let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
+
+                        ctx.rte = Option::from(rte_name.to_string());
+                        ctx.eut = Option::from(eut_name.to_string());
+                        ctx.site = Option::from(src_site_name.to_string());
+                        ctx.project = Option::from(self.config.project.clone());
+                        ctx.destinations = Option::from(serde_json::to_string(&client_destinations).unwrap());
+
+                        let mut commands: Vec<String> = Vec::new();
+                        for command in ctx.render_script(&ctx, &contents).lines() {
+                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        }
+
+                        let data: HashMap<String, Vec<String>> = [
+                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                        ].into_iter().collect();
+                        scripts.push(data);
+                    }
+                }
+            }
+
+            let rte_crc = RteComponentRenderContext {
+                job: rte_job_name.clone(),
+                rte: rte_name.to_string(),
+                name: comp_src_name.to_string(),
+                site: src_site_name.to_string(),
+                provider: src_p_name.to_string(),
+                scripts,
+            };
+            rte_crcs.components.push(rte_crc);
+
+            //Process connection destinations
+            for dst in dsts.iter() {
+                let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let dst_site = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite).unwrap();
+                let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let dst_provider = self.db.get_object_neighbour_with_properties_out(&dst_site.vertex.id, EdgeTypes::UsesProvider).unwrap();
+                let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let comp_dst = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst).unwrap();
+                let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace("_", "-");
+
+                //Process server destination list
+                let rt_dsts = self.db.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
+                for dst in rt_dsts.iter() {
+                    server_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+                }
+
+                //Process rte dst component scripts
+                let scripts_path = comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+
+                for p in provider.iter() {
+                    let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                    for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                        if dst_p_name == p_name {
+                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                            let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
+                            let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
+
+                            ctx.rte = Option::from(rte_name.to_string());
+                            ctx.eut = Option::from(eut_name.to_string());
+                            ctx.project = Option::from(self.config.project.clone());
+                            ctx.site = Option::from(dst_site_name.to_string());
+                            ctx.destinations = Option::from(serde_json::to_string(&server_destinations).unwrap());
+
+                            let mut commands: Vec<String> = Vec::new();
+                            for command in ctx.render_script(&ctx, &contents).lines() {
+                                commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                            }
+
+                            let data: HashMap<String, Vec<String>> = [
+                                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                            ].into_iter().collect();
+                            scripts.push(data);
+                        }
+                    }
+                }
+
+                let rte_crc = RteComponentRenderContext {
+                    job: rte_job_name.to_string(),
+                    rte: rte_name.to_string(),
+                    site: dst_site_name.to_string(),
+                    name: comp_dst_name.to_string(),
+                    provider: dst_p_name.to_string(),
+                    scripts,
+                };
+                rte_crcs.components.push(rte_crc);
+            }
+
+            //Tests
+            let tests_p = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::Runs);
+            for t in tests_p.iter() {
+                let t_job_name = format!("{}_{}_{}_{}",
+                                         KEY_TEST,
+                                         rte_name,
+                                         src_name,
+                                         t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
+                ).replace("_", "-");
+
+                //Process test scripts
+                let t_name = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
+                    let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
+
+                    ctx.rte = Option::from(rte_name.to_string());
+                    ctx.name = Option::from(t_name.to_string());
+                    ctx.module = Option::from(t_module.to_string());
+
+                    let mut commands: Vec<String> = Vec::new();
+                    for command in ctx.render_script(&ctx, &contents).lines() {
+                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    }
+
+                    let data: HashMap<String, Vec<String>> = [
+                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                    ].into_iter().collect();
+                    scripts.push(data);
+                }
+
+                //Verifications
+                let verifications_p = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
+                let mut verifications: Vec<RteVerificationRenderContext> = Vec::new();
+                for v in verifications_p.iter() {
+                    let v_job_name = format!("{}_{}_{}_{}_{}",
+                                             KEY_VERIFICATION,
+                                             rte_name,
+                                             src_name,
+                                             &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                             v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    ).replace("_", "-");
+
+                    //Process test scripts
+                    let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                    for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                        let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
+                        let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
+
+                        ctx.rte = Option::from(rte_name.to_string());
+                        ctx.name = Option::from(v_name.to_string());
+                        ctx.module = Option::from(v_module.to_string());
+                        ctx.test_name = Option::from(t_name.to_string());
+                        ctx.test_module = Option::from(t_module.to_string());
+
+                        let mut commands: Vec<String> = Vec::new();
+                        for command in ctx.render_script(&ctx, &contents).lines() {
+                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        }
+
+                        let data: HashMap<String, Vec<String>> = [
+                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                        ].into_iter().collect();
+                        scripts.push(data);
+                    }
+
+                    let rte_vrc = RteVerificationRenderContext {
+                        ci: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                        test: t_name.to_string(),
+                        rte: rte_name.to_string(),
+                        job: v_job_name,
+                        name: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                        module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                        scripts,
+                    };
+                    verifications.push(rte_vrc);
+                }
+
+                let rterc = RteTestRenderContext {
+                    ci: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                    rte: rte_name.to_string(),
+                    job: t_job_name,
+                    name: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                    provider: src_name.to_string(),
+                    scripts,
+                    verifications,
+                };
+                rte_crcs.tests.push(rterc);
+            }
+        }
+    }
+
+    fn build_rte_type_b_connection_context(&self, eut_name: &str, rte_name: &str, rte: &VertexProperties, provider: Vec<VertexProperties>,
+                                           rte_crcs: &mut RteRenderContext, rtes_rc: &mut Vec<RteRenderContext>) {
+        let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+        let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
+
+        for conn in connections.iter() {
+            //let connection_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
+            let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            //let comp_src = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
+            //let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            //Change: job name
+            //let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, rte_name, &connection_name, "aws", &src_name, "src_comp_type_b").replace("_", "-");
+
+            //Process rte src component scripts
+            //let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+            //let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+
+            //Process client destination list
+            /*let mut client_destinations: HashSet<String> = HashSet::new();
+            let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
+            for dst in dsts.iter() {
+                client_destinations.insert(dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
+            }
+
+            for p in provider.iter() {
+                let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    //if src_p_name == p_name {
+                    let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
+                    let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
+
+                    ctx.rte = Option::from(rte_name.to_string());
+                    ctx.eut = Option::from(eut_name.to_string());
+                    //ctx.site = Option::from(src_site_name.to_string());
+                    ctx.project = Option::from(self.config.project.clone());
+                    ctx.destinations = Option::from(serde_json::to_string(&client_destinations).unwrap());
+
+                    let mut commands: Vec<String> = Vec::new();
+                    for command in ctx.render_script(&ctx, &contents).lines() {
+                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    }
+
+                    let data: HashMap<String, Vec<String>> = [
+                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                    ].into_iter().collect();
+                    scripts.push(data);
+                    //}
+                }
+            }*/
+
+            /*let rte_crc = RteComponentRenderContext {
+                job: rte_job_name.clone(),
+                rte: rte_name.to_string(),
+                name: comp_src_name.to_string(),
+                //site: src_site_name.to_string(),
+                // provider: src_p_name.to_string(),
+                site: "".to_string(),
+                scripts,
+                provider: "".to_string(),
+            };
+            rte_crcs.components.push(rte_crc);*/
+
+            //Process connection destinations
+            /*for dst in dsts.iter() {
+                let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let comp_dst = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst).unwrap();
+                let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, "aws", &dst_name, &comp_dst_name).replace("_", "-");
+
+                //Process rte dst component scripts
+                let scripts_path = comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+
+                for p in provider.iter() {
+                    let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+                    for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                        //if dst_p_name == p_name {
+                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                            let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
+                            let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
+
+                            ctx.rte = Option::from(rte_name.to_string());
+                            ctx.eut = Option::from(eut_name.to_string());
+                            ctx.project = Option::from(self.config.project.clone());
+                            // ctx.site = Option::from(dst_site_name.to_string());
+                            // ctx.destinations = Option::from(serde_json::to_string(&server_destinations).unwrap());
+
+                            let mut commands: Vec<String> = Vec::new();
+                            for command in ctx.render_script(&ctx, &contents).lines() {
+                                commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                            }
+
+                            let data: HashMap<String, Vec<String>> = [
+                                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                            ].into_iter().collect();
+                            scripts.push(data);
+                        //}
+                    }
+                }
+
+                let rte_crc = RteComponentRenderContext {
+                    job: rte_job_name.to_string(),
+                    rte: rte_name.to_string(),
+                    //site: dst_site_name.to_string(),
+                    name: comp_dst_name.to_string(),
+                    //provider: dst_p_name.to_string(),
+                    site: "".to_string(),
+                    scripts,
+                    provider: "".to_string(),
+                };
+                rte_crcs.components.push(rte_crc);
+            }*/
+
+            //Tests
+            let tests_p = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::Runs);
+            for t in tests_p.iter() {
+                let t_job_name = format!("{}_{}_{}_{}",
+                                         KEY_TEST,
+                                         rte_name,
+                                         src_name,
+                                         t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
+                ).replace("_", "-");
+
+                //Process test scripts
+                let t_name = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
+                    let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
+
+                    ctx.rte = Option::from(rte_name.to_string());
+                    ctx.name = Option::from(t_name.to_string());
+                    ctx.module = Option::from(t_module.to_string());
+
+                    let mut commands: Vec<String> = Vec::new();
+                    for command in ctx.render_script(&ctx, &contents).lines() {
+                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    }
+
+                    let data: HashMap<String, Vec<String>> = [
+                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                    ].into_iter().collect();
+                    scripts.push(data);
+                }
+
+                //Verifications
+                let verifications_p = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
+                let mut verifications: Vec<RteVerificationRenderContext> = Vec::new();
+                for v in verifications_p.iter() {
+                    let v_job_name = format!("{}_{}_{}_{}_{}",
+                                             KEY_VERIFICATION,
+                                             rte_name,
+                                             src_name,
+                                             &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                             v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    ).replace("_", "-");
+
+                    //Process test scripts
+                    let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                    for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                        let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
+                        let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
+
+                        ctx.rte = Option::from(rte_name.to_string());
+                        ctx.name = Option::from(v_name.to_string());
+                        ctx.module = Option::from(v_module.to_string());
+                        ctx.test_name = Option::from(t_name.to_string());
+                        ctx.test_module = Option::from(t_module.to_string());
+
+                        let mut commands: Vec<String> = Vec::new();
+                        for command in ctx.render_script(&ctx, &contents).lines() {
+                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        }
+
+                        let data: HashMap<String, Vec<String>> = [
+                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                        ].into_iter().collect();
+                        scripts.push(data);
+                    }
+
+                    let rte_vrc = RteVerificationRenderContext {
+                        ci: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                        test: t_name.to_string(),
+                        rte: rte_name.to_string(),
+                        job: v_job_name,
+                        name: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                        module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                        scripts,
+                    };
+                    verifications.push(rte_vrc);
+                }
+
+                let rterc = RteTestRenderContext {
+                    ci: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                    rte: rte_name.to_string(),
+                    job: t_job_name,
+                    name: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                    provider: src_name.to_string(),
+                    scripts,
+                    verifications,
+                };
+                rte_crcs.tests.push(rterc);
+            }
+        }
     }
 
     fn get_next_stage(&self, id: &Uuid, data: &mut Vec<String>) {
