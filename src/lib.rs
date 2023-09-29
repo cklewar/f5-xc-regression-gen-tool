@@ -1364,6 +1364,7 @@ impl<'a> Regression<'a> {
     }
 
     fn init_rte_type_a(&self, r_o: &Vertex) {
+        error!("INIT TYPE A RTE");
         // Connection -> Component
         let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
         let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
