@@ -1675,7 +1675,7 @@ impl<'a> Regression<'a> {
             }
 
             //Process connections
-            let rte_type = "rte_type_b"; //rte.props.get(PropertyType::Base.index()).unwrap().as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
+            let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
             self.call_rte_build_connection_context(rte_type, &eut_name, rte_name, rte, provider, &mut rte_crcs);
             rtes_rc.push(rte_crcs);
         }
@@ -1846,12 +1846,12 @@ impl<'a> Regression<'a> {
                 Some(rte) => {
                     let srssd_rc = ScriptRteSiteShareDataRenderContext {
                         rte: rte_name.to_string(),
-                        name: "test_me_now".to_string(),
+                        name: "dummy".to_string(),
                         index: site_count,
                         has_client: true,
                         has_server: false,
                     };
-                    rte.sites.entry("test_me_now".to_string()).or_insert(srssd_rc);
+                    rte.sites.entry("dummy".to_string()).or_insert(srssd_rc);
                     site_count = site_count + 1;
                 }
                 None => error!("RTE {} does not exist", rte_name),
@@ -2223,9 +2223,7 @@ impl<'a> Regression<'a> {
 
     #[allow(dead_code)]
     pub fn to_json(&self) -> String {
-        let j = json!({
-                KEY_CONFIG: &self.config,
-            });
+        let j = json!({KEY_CONFIG: &self.config,});
         j.to_string()
     }
 
