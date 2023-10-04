@@ -1170,6 +1170,12 @@ impl<'a> Regression<'a> {
                                     p.append(&mut json!({k: v}).as_object().unwrap().clone());
                                     self.db.add_object_properties(&r_o, &p, PropertyType::Module);
                                 }
+                                k if k == KEY_TYPE => {
+                                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
+                                    let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                                    p.append(&mut json!({k: v}).as_object().unwrap().clone());
+                                    self.db.add_object_properties(&r_o, &p, PropertyType::Module);
+                                }
                                 k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
                                         let o = self.db.create_object(VertexTypes::RteProvider);
@@ -1409,21 +1415,11 @@ impl<'a> Regression<'a> {
 
         for c in connections.iter() {
             let c_s = self.db.get_object_neighbour_with_properties_out(&c.id, EdgeTypes::HasConnectionSrc).unwrap();
-            //let site = self.db.get_object_neighbour_out(&c_s.vertex.id, EdgeTypes::RefersSite);
-            //let site_provider = self.db.get_object_neighbour_with_properties_out(&site.id, EdgeTypes::UsesProvider).unwrap();
-            /*let s_p_name = site_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().
-            /    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();*/
-
             let _c_d_s: Vec<VertexProperties> = self.db.get_object_neighbours_with_properties_out(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
             for p in rte_provider.iter() {
                 let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
-                //let component_src = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentSrc);
-                /*let r_p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().
-                    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();*/
-                /*if s_p_name == r_p_name {
-                    self.db.create_relationship(&c_s.vertex, &component_src);
-                }*/
             }
+
             //CONNECTION DSTs
             for c_d in _c_d_s.iter() {
                 for p in rte_provider.iter() {
@@ -1592,8 +1588,7 @@ impl<'a> Regression<'a> {
         let mut srsd: HashMap<String, ScriptRteSitesShareDataRenderContext> = HashMap::new();
 
         for rte in rtes.iter() {
-            //Change rte_type
-            let rte_type = "rte_type_b"; //rte.props.get(PropertyType::Base.index()).unwrap().as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
+            let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
             self.call_rte_build(rte_type, &rte, site_count, &mut srsd);
         }
 
