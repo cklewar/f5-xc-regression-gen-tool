@@ -4,6 +4,7 @@ use std::io::Write;
 use indradb::{Vertex, VertexProperties};
 use lazy_static::lazy_static;
 use log::{error, info};
+use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::{json, Map, to_value, Value};
 use serde_json::Value::Null;
@@ -1020,26 +1021,27 @@ impl<'a> Regression<'a> {
 
                                         //Connection Destinations
                                         let destinations = item.as_object().unwrap().get("destinations").unwrap().as_array().unwrap();
-                                        for d in destinations.iter() {
-                                            let dst_o = self.db.create_object(VertexTypes::ConnectionDst);
-                                            self.db.create_relationship(&src_o, &dst_o);
-                                            self.db.add_object_properties(&dst_o, &json!({KEY_NAME: &d, KEY_RTE: &rte.as_object().
-                                                unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
-                                            self.db.add_object_properties(&dst_o, &json!({
-                                                         KEY_GVID: format!("{}_{}_{}_{}", "connection_dst", &c_name.replace("-","_"), d.as_str().unwrap(), &rte.as_object().
-                                                            unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                         KEY_GV_LABEL: d.as_str().unwrap()
-                                                     }), PropertyType::Gv);
 
-                                            //Connection Destination -> Site
-                                            for s in sites.iter() {
-                                                let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().
+                                        for d in destinations.iter() {
+                                            let re = Regex::new(d.as_str().unwrap()).unwrap();
+
+                                            for site in sites.iter() {
+                                                let site_name = site.props.get(PropertyType::Base.index()).unwrap().value.as_object().
                                                     unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
-                                                if site_name == d {
-                                                    self.db.create_relationship(&dst_o, &s.vertex);
+                                                if let Some(_t) = re.captures(site_name) {
+                                                    let dst_o = self.db.create_object(VertexTypes::ConnectionDst);
+                                                    self.db.create_relationship(&src_o, &dst_o);
+                                                    self.db.add_object_properties(&dst_o, &json!({KEY_NAME: &d, KEY_RTE: &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
+                                                    self.db.add_object_properties(&dst_o, &json!({
+                                                     KEY_GVID: format!("{}_{}_{}_{}", "connection_dst", &c_name.replace('-',"_"), d.as_str().unwrap(), &rte.as_object().
+                                                        unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                     KEY_GV_LABEL: d.as_str().unwrap()
+                                                 }), PropertyType::Gv);
+                                                    //Connection Destination -> Site
+                                                    self.db.create_relationship(&dst_o, &site.vertex);
                                                     //site --> rte
-                                                    self.db.create_relationship(&s.vertex, &r_o);
+                                                    self.db.create_relationship(&site.vertex, &r_o);
                                                 }
                                             }
                                         }
@@ -1370,7 +1372,7 @@ impl<'a> Regression<'a> {
     }
 
     fn init_rte_type_a(&self, r_o: &Vertex) {
-        error!("INIT TYPE A RTE");
+        info!("Init rte type a connection components...");
         // Connection -> Component
         let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
         let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
@@ -1394,6 +1396,7 @@ impl<'a> Regression<'a> {
                     self.db.create_relationship(&c_s.vertex, &component_src);
                 }
             }
+
             //CONNECTION DSTs
             for c_d in _c_d_s.iter() {
                 for p in rte_provider.iter() {
@@ -1403,10 +1406,11 @@ impl<'a> Regression<'a> {
                 }
             }
         }
+        info!("Init rte type a connection components -> Done.");
     }
 
     fn init_rte_type_b(&self, r_o: &Vertex) {
-        error!("INIT TYPE B RTE");
+        info!("Init rte type b connection components...");
         // Connection -> Component
         let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
         let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
@@ -1429,6 +1433,7 @@ impl<'a> Regression<'a> {
                 }
             }
         }
+        info!("Init rte type b connection components-> Done.");
     }
 
     fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
