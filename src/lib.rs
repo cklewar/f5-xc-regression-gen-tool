@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 
@@ -301,7 +302,7 @@ struct RegressionConfigGenericCiStages {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigGenericCi {
-    pub(crate) stages: RegressionConfigGenericCiStages,
+    stages: RegressionConfigGenericCiStages,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -326,9 +327,9 @@ struct RegressionConfigCi {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigEut {
-    pub(crate) module: String,
-    pub(crate) path: String,
-    pub(crate) ci: RegressionConfigGenericCi,
+    module: String,
+    path: String,
+    ci: RegressionConfigGenericCi,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -338,26 +339,26 @@ struct RegressionConfigCollector {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigFeatures {
-    pub(crate) path: String,
-    pub(crate) ci: RegressionConfigGenericCi,
+    path: String,
+    ci: RegressionConfigGenericCi,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigRte {
-    pub(crate) path: String,
-    pub(crate) ci: RegressionConfigGenericCi,
+    path: String,
+    ci: RegressionConfigGenericCi,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigTests {
-    pub(crate) path: String,
-    pub(crate) ci: RegressionConfigGenericCi,
+    path: String,
+    ci: RegressionConfigGenericCi,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigVerifications {
-    pub(crate) path: String,
-    pub(crate) ci: RegressionConfigGenericCi,
+    path: String,
+    ci: RegressionConfigGenericCi,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -425,8 +426,8 @@ struct RteProviderShareRenderContext {
 
 #[derive(Serialize, Debug)]
 struct RteCiRenderContext {
-    pub(crate) timeout: Value,
-    pub(crate) variables: Value,
+    timeout: Value,
+    variables: Value,
 }
 
 #[derive(Serialize, Debug)]
@@ -453,13 +454,13 @@ struct RteTestRenderContext {
 }
 
 #[derive(Serialize, Debug)]
-pub(crate) struct RteComponentRenderContext {
-    pub(crate) job: String,
-    pub(crate) rte: String,
-    pub(crate) name: String,
-    pub(crate) site: String,
-    pub(crate) scripts: Vec<HashMap<String, Vec<String>>>,
-    pub(crate) provider: String,
+struct RteComponentRenderContext {
+    job: String,
+    rte: String,
+    name: String,
+    site: String,
+    scripts: Vec<HashMap<String, Vec<String>>>,
+    provider: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -512,7 +513,7 @@ impl ScriptEutRenderContext {
         }
     }
 
-    fn render_script(&self, context: &ScriptEutRenderContext, input: &String) -> String {
+    fn render_script(&self, context: &ScriptEutRenderContext, input: &str) -> String {
         info!("Render regression pipeline file eut script section...");
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
@@ -544,7 +545,7 @@ impl ScriptFeatureRenderContext {
         }
     }
 
-    fn render_script(&self, context: &ScriptFeatureRenderContext, input: &String) -> String {
+    fn render_script(&self, context: &ScriptFeatureRenderContext, input: &str) -> String {
         info!("Render regression pipeline file feature script section...");
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
@@ -575,7 +576,7 @@ impl ScriptVerificationRenderContext {
         }
     }
 
-    fn render_script(&self, context: &ScriptVerificationRenderContext, input: &String) -> String {
+    fn render_script(&self, context: &ScriptVerificationRenderContext, input: &str) -> String {
         info!("Render regression pipeline file verification script section...");
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
@@ -602,7 +603,7 @@ impl ScriptTestRenderContext {
         }
     }
 
-    fn render_script(&self, context: &ScriptTestRenderContext, input: &String) -> String {
+    fn render_script(&self, context: &ScriptTestRenderContext, input: &str) -> String {
         info!("Render regression pipeline file test script section...");
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
@@ -635,7 +636,7 @@ impl ScriptRteRenderContext {
         }
     }
 
-    fn render_script(&self, context: &ScriptRteRenderContext, input: &String) -> String {
+    fn render_script(&self, context: &ScriptRteRenderContext, input: &str) -> String {
         info!("Render regression pipeline file rte script section...");
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
@@ -684,7 +685,7 @@ impl ScriptRteProviderShareRenderContext {
         }
     }
 
-    fn render_script(&self, context: &ScriptRteProviderShareRenderContext, input: &String) -> String {
+    fn render_script(&self, context: &ScriptRteProviderShareRenderContext, input: &str) -> String {
         info!("Render regression pipeline file rte provider share script section...");
         let ctx = Context::from_serialize(context);
         let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
@@ -736,15 +737,15 @@ impl<'a> Regression<'a> {
         let project = self.db.create_object(VertexTypes::Project);
         self.db.add_object_properties(&project, &self.config.project, PropertyType::Base);
         self.db.add_object_properties(&project, &json!({
-            KEY_GVID: self.config.project.name.replace("-", "_"),
-            KEY_GV_LABEL: self.config.project.name.replace("-", "_"),
+            KEY_GVID: self.config.project.name.replace('-', "_"),
+            KEY_GV_LABEL: self.config.project.name.replace('-', "_"),
         }), PropertyType::Gv);
 
         // Ci
         let ci = self.db.create_object(VertexTypes::Ci);
         self.db.add_object_properties(&ci, &self.config.ci, PropertyType::Base);
         self.db.add_object_properties(&ci, &json!({
-            KEY_GVID: format!("{}_{}", self.config.project.name.replace("-", "_"), KEY_CI),
+            KEY_GVID: format!("{}_{}", self.config.project.name.replace('-', "_"), KEY_CI),
             KEY_GV_LABEL: KEY_CI,
         }), PropertyType::Gv);
         self.db.create_relationship(&project, &ci);
@@ -753,11 +754,11 @@ impl<'a> Regression<'a> {
         let eut = self.db.create_object(VertexTypes::Eut);
         self.db.add_object_properties(&eut, &self.config.eut, PropertyType::Base);
         self.db.add_object_properties(&eut, &json!({
-            KEY_GVID: self.config.eut.module.replace("-", "_"),
+            KEY_GVID: self.config.eut.module.replace('-', "_"),
             KEY_GV_LABEL: self.config.eut.module,
         }), PropertyType::Gv);
 
-        let module = self.load_object_config(&VertexTypes::get_name_by_object(&eut), &self.config.eut.module);
+        let module = self.load_object_config(VertexTypes::get_name_by_object(&eut), &self.config.eut.module);
         let v = to_value(module).unwrap();
         self.db.create_relationship(&project, &eut);
 
@@ -813,38 +814,41 @@ impl<'a> Regression<'a> {
 
                     //Generate provider name to vertex id map
                     for p in provider.iter() {
-                        id_name_map.insert(&p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().
+                        id_name_map.insert(p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().
                             get(KEY_NAME).unwrap().as_str().unwrap(), p.vertex.id);
                     }
 
                     for (site_name, site_attr) in obj.as_object().unwrap().iter() {
                         let site_count = site_attr.as_object().unwrap().get(KEY_COUNT).unwrap().as_i64().unwrap();
-
-                        if site_count == 1 {
-                            let s_o = self.db.create_object(VertexTypes::Site);
-                            self.db.create_relationship(&o, &s_o);
-                            let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
-                            let p_o = self.db.get_object(&id_name_map.get(provider).unwrap());
-                            self.db.create_relationship(&s_o, &p_o);
-                            self.db.add_object_properties(&s_o, &json!({KEY_NAME: site_name}), PropertyType::Base);
-                            self.db.add_object_properties(&s_o, &json!({
-                                KEY_GVID: format!("{}_{}_{}", self.config.eut.module, k, site_name),
-                                KEY_GV_LABEL: site_name
-                            }), PropertyType::Gv);
-                        } else if site_count > 1 {
-                            for c in 1..=site_count {
+                        match site_count.cmp(&1i64) {
+                            Ordering::Equal => {
                                 let s_o = self.db.create_object(VertexTypes::Site);
                                 self.db.create_relationship(&o, &s_o);
                                 let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
-                                let p_o = self.db.get_object(&id_name_map.get(provider).unwrap());
+                                let p_o = self.db.get_object(id_name_map.get(provider).unwrap());
                                 self.db.create_relationship(&s_o, &p_o);
-                                self.db.add_object_properties(&s_o, &json!({KEY_NAME: format!("{}_{}", site_name, c)}),
-                                                              PropertyType::Base);
+                                self.db.add_object_properties(&s_o, &json!({KEY_NAME: site_name}), PropertyType::Base);
                                 self.db.add_object_properties(&s_o, &json!({
+                                KEY_GVID: format!("{}_{}_{}", self.config.eut.module, k, site_name),
+                                KEY_GV_LABEL: site_name
+                            }), PropertyType::Gv);
+                            }
+                            Ordering::Greater => {
+                                for c in 1..=site_count {
+                                    let s_o = self.db.create_object(VertexTypes::Site);
+                                    self.db.create_relationship(&o, &s_o);
+                                    let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
+                                    let p_o = self.db.get_object(id_name_map.get(provider).unwrap());
+                                    self.db.create_relationship(&s_o, &p_o);
+                                    self.db.add_object_properties(&s_o, &json!({KEY_NAME: format!("{}_{}", site_name, c)}),
+                                                                  PropertyType::Base);
+                                    self.db.add_object_properties(&s_o, &json!({
                                     KEY_GVID: format!("{}_{}_{}_{}", self.config.eut.module, k, site_name, c),
                                     KEY_GV_LABEL: format!("{}_{}", site_name, c)
                                 }), PropertyType::Gv);
+                                }
                             }
+                            _ => {}
                         }
                     }
                 }
@@ -880,7 +884,7 @@ impl<'a> Regression<'a> {
                         }
 
                         // FEATURE MODULE CFG
-                        let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&f_o), &f_module);
+                        let cfg = self.load_object_config(VertexTypes::get_name_by_object(&f_o), f_module);
                         for (k, v) in cfg.as_object().unwrap().iter() {
                             match k {
                                 k if k == KEY_SCRIPTS_PATH => {
@@ -1097,7 +1101,7 @@ impl<'a> Regression<'a> {
                                                                                  KEY_GV_LABEL: format!("v_{}", v_module)
                                                                              }), PropertyType::Gv);
                                                             // Verification module cfg
-                                                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&v_o), &v_module);
+                                                            let cfg = self.load_object_config(VertexTypes::get_name_by_object(&v_o), &v_module);
                                                             for (k, v) in cfg.as_object().unwrap().iter() {
                                                                 match k {
                                                                     k if k == KEY_NAME => {
@@ -1129,7 +1133,7 @@ impl<'a> Regression<'a> {
                                             //Test module cfg
                                             let t_p = self.db.get_object_properties(&t_o).unwrap().props;
                                             let module = t_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                                            let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&t_o), &module);
+                                            let cfg = self.load_object_config(VertexTypes::get_name_by_object(&t_o), &module);
                                             for (k, v) in cfg.as_object().unwrap().iter() {
                                                 match k {
                                                     k if k == KEY_NAME => {
@@ -1162,7 +1166,7 @@ impl<'a> Regression<'a> {
                         //Rte module cfg
                         let r_p = self.db.get_object_properties(&r_o).unwrap().props;
                         let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                        let cfg = self.load_object_config(&VertexTypes::get_name_by_object(&r_o), &module);
+                        let cfg = self.load_object_config(VertexTypes::get_name_by_object(&r_o), module);
 
                         for (k, v) in cfg.as_object().unwrap().iter() {
                             match k {
@@ -1494,14 +1498,14 @@ impl<'a> Regression<'a> {
         cfg
     }
 
-    fn add_ci_stages(&self, ancestor: &Vertex, stages: &Vec<String>, object_type: &VertexTypes) -> Option<Vertex> {
+    fn add_ci_stages(&self, ancestor: &Vertex, stages: &[String], object_type: &VertexTypes) -> Option<Vertex> {
         let mut curr = Vertex { id: Default::default(), t: Default::default() };
 
         for (i, stage) in stages.iter().enumerate() {
             let new = self.db.create_object(object_type.clone());
             self.db.add_object_properties(&new, &stage, PropertyType::Base);
             self.db.add_object_properties(&new, &json!({
-                KEY_GVID: stage.replace("-", "_"),
+                KEY_GVID: stage.replace('-', "_"),
                 KEY_GV_LABEL: stage,
             }), PropertyType::Gv);
 
@@ -1594,7 +1598,7 @@ impl<'a> Regression<'a> {
 
         for rte in rtes.iter() {
             let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
-            self.call_rte_build(rte_type, &rte, site_count, &mut srsd);
+            self.call_rte_build(rte_type, rte, site_count, &mut srsd);
         }
 
         //Build rte_to_site_map structure and add ScriptRteSiteShareDataRenderContext context
@@ -1671,7 +1675,7 @@ impl<'a> Regression<'a> {
                 }
 
                 rte_crcs.shares.push(RteProviderShareRenderContext {
-                    job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace("_", "-"),
+                    job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
                     rte: rte_name.to_string(),
                     eut: eut_name.to_string(),
                     provider: p_name.to_string(),
@@ -1694,11 +1698,8 @@ impl<'a> Regression<'a> {
             let r_p = self.db.get_object_neighbour_with_properties_out(&s.vertex.id, EdgeTypes::SiteRefersRte);
             let mut rte_name: String = Default::default();
 
-            match r_p {
-                Some(v) => {
-                    rte_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
-                }
-                None => (),
+            if let Some(v) = r_p {
+                rte_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
             }
 
             //Process eut site scripts
@@ -1729,7 +1730,7 @@ impl<'a> Regression<'a> {
                 scripts.push(data);
             }
             let eut_s_rc = EutSiteRenderContext {
-                job: format!("{}_{}_{}", KEY_EUT, &eut_name, &site_name).replace("_", "-"),
+                job: format!("{}_{}_{}", KEY_EUT, &eut_name, &site_name).replace('_', "-"),
                 name: site_name.to_string(),
                 index: i,
                 scripts,
@@ -1791,7 +1792,7 @@ impl<'a> Regression<'a> {
                 Some(rte) => {
                     match rte.sites.get_mut(src_site_name) {
                         Some(site) => {
-                            if site.has_client == false {
+                            if !site.has_client {
                                 site.has_client = true
                             }
                         }
@@ -1805,7 +1806,7 @@ impl<'a> Regression<'a> {
                             };
 
                             rte.sites.entry(src_site_name.to_string()).or_insert(srssd_rc);
-                            site_count = site_count + 1;
+                            site_count += 1;
 
                             let dsts = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::HasConnectionDst);
                             for dst in dsts.iter() {
@@ -1814,7 +1815,7 @@ impl<'a> Regression<'a> {
 
                                 match rte.sites.get_mut(dst_site_name) {
                                     Some(site) => {
-                                        if site.has_server == false {
+                                        if !site.has_server {
                                             site.has_server = true
                                         }
                                     }
@@ -1827,7 +1828,7 @@ impl<'a> Regression<'a> {
                                             has_server: true,
                                         };
                                         rte.sites.entry(dst_site_name.to_string()).or_insert(srssd_rc);
-                                        site_count = site_count + 1;
+                                        site_count += 1;
                                     }
                                 }
                             }
@@ -1857,7 +1858,7 @@ impl<'a> Regression<'a> {
                         has_server: false,
                     };
                     rte.sites.entry("dummy".to_string()).or_insert(srssd_rc);
-                    site_count = site_count + 1;
+                    site_count += 1;
                 }
                 None => error!("RTE {} does not exist", rte_name),
             }
@@ -1949,7 +1950,7 @@ impl<'a> Regression<'a> {
                 let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let comp_dst = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst).unwrap();
                 let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace("_", "-");
+                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace('_', "-");
 
                 //Process server destination list
                 let rt_dsts = self.db.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
@@ -2008,7 +2009,7 @@ impl<'a> Regression<'a> {
                                          rte_name,
                                          src_name,
                                          t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
-                ).replace("_", "-");
+                ).replace('_', "-");
 
                 //Process test scripts
                 let t_name = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
@@ -2044,8 +2045,8 @@ impl<'a> Regression<'a> {
                                              rte_name,
                                              src_name,
                                              &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                             v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                    ).replace("_", "-");
+                                             v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                    ).replace('_', "-");
 
                     //Process test scripts
                     let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
@@ -2118,7 +2119,7 @@ impl<'a> Regression<'a> {
                                          rte_name,
                                          src_name,
                                          t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
-                ).replace("_", "-");
+                ).replace('_', "-");
 
                 //Process test scripts
                 let t_name = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
@@ -2282,8 +2283,8 @@ impl<'a> Regression<'a> {
                 for e in edge.iter() {
                     let o_a = self.db.get_object(&e.outbound_id);
                     let o_b = self.db.get_object(&e.inbound_id);
-                    let a_id = format!("{}", self.db.get_object(&e.outbound_id).t.to_string());
-                    let b_id = format!("{}", self.db.get_object(&e.inbound_id).t.to_string());
+                    let a_id = self.db.get_object(&e.outbound_id).t.to_string();
+                    let b_id = self.db.get_object(&e.inbound_id).t.to_string();
                     let a_p = self.db.get_object_properties(&self.db.get_object(&o_a.id));
                     let b_p = self.db.get_object_properties(&self.db.get_object(&o_b.id));
 
@@ -2338,8 +2339,6 @@ impl<'a> Regression<'a> {
         }
 
         let mut _tera = Tera::new(&self.config.project.templates).unwrap();
-        let rendered = _tera.render("graph.tpl", &context).unwrap();
-
-        rendered
+        _tera.render("graph.tpl", &context).unwrap()
     }
 }
