@@ -874,12 +874,15 @@ impl<'a> Regression<'a> {
                             }), PropertyType::Gv);
 
                         //Feature -> Site
-                        for s in sites.iter() {
-                            let site_name = s.props.get(PropertyType::Base.index()).unwrap().value.as_object().
-                                unwrap().get(KEY_NAME).unwrap();
+                        for f_site in f_sites {
+                            let re = Regex::new(f_site.as_str().unwrap()).unwrap();
+                            for site in sites.iter() {
+                                let site_name = site.props.get(PropertyType::Base.index()).unwrap().value.as_object().
+                                    unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
-                            if f_sites.contains(site_name) {
-                                self.db.create_relationship(&f_o, &s.vertex);
+                                if let Some(_t) = re.captures(site_name) {
+                                    self.db.create_relationship(&f_o, &site.vertex);
+                                }
                             }
                         }
 
