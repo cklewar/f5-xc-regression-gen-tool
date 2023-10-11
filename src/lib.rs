@@ -361,13 +361,13 @@ struct RegressionConfigVerifications {
     ci: RegressionConfigGenericCi,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProjectVars {
     file: String,
     path: String,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
     name: String,
     templates: String,
@@ -485,20 +485,20 @@ struct EutFeatureRenderContext {
     scripts: HashMap<String, String>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Default, Serialize, Debug)]
 struct ScriptEutRenderContext {
-    rte: Option<String>,
-    name: Option<String>,
-    site: Option<String>,
-    rtes: Option<Vec<String>>,
-    index: Option<usize>,
-    counter: Option<usize>,
-    release: Option<String>,
+    rte: String,
+    name: String,
+    site: String,
+    rtes: Vec<String>,
+    index: usize,
+    counter: usize,
+    release: String,
     project: RegressionConfigProject,
-    provider: Option<String>,
+    provider: String,
 }
 
-impl ScriptEutRenderContext {
+/*impl ScriptEutRenderContext {
     fn new(project: RegressionConfigProject) -> Self {
         Self {
             rte: None,
@@ -520,7 +520,7 @@ impl ScriptEutRenderContext {
         info!("Render regression pipeline file eut script section -> Done.");
         rendered
     }
-}
+}*/
 
 #[derive(Serialize, Debug)]
 struct ScriptFeatureRenderContext {
@@ -696,17 +696,9 @@ impl ScriptRteProviderShareRenderContext {
 
 pub trait RenderContext {}
 
-#[derive(Serialize, Debug)]
-pub enum ScriptRenderContext {
-    ScriptEutRenderContext,
-    ScriptRteRenderContext,
-    ScriptTestRenderContext,
-    ScriptFeatureRenderContext,
-    ScriptVerificationRenderContext,
-    ScriptRteProviderShareRenderContext,
-}
+impl RenderContext for ScriptEutRenderContext {}
 
-impl RenderContext for ScriptRenderContext {}
+impl RenderContext for ScriptRteRenderContext {}
 
 pub fn render_script(context: &(impl RenderContext + serde::Serialize), input: &str) -> String {
     info!("Render script context...");
@@ -1733,19 +1725,20 @@ impl<'a> Regression<'a> {
             for script in eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                 let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, eut_name.to_string(), scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
-                let mut ctx: ScriptEutRenderContext = ScriptEutRenderContext::new(self.config.project.clone());
-
-                ctx.rte = Option::from(rte_name.to_string());
-                ctx.rtes = Option::from(rte_names.clone());
-                ctx.name = Option::from(eut_name.to_string());
-                ctx.site = Option::from(site_name.to_string());
-                ctx.index = Option::from(i);
-                ctx.counter = Option::from(sites.len());
-                ctx.release = Option::from(eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
-                ctx.provider = Option::from(provider_name.to_string());
+                let ctx = ScriptEutRenderContext {
+                    project: self.config.project.clone(),
+                    rte: rte_name.to_string(),
+                    rtes: rte_names.clone(),
+                    name: eut_name.to_string(),
+                    site: site_name.to_string(),
+                    index: i,
+                    counter: sites.len(),
+                    release: eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
+                    provider: provider_name.to_string(),
+                };
 
                 let mut commands: Vec<String> = Vec::new();
-                for command in ctx.render_script(&ctx, &contents).lines() {
+                for command in render_script(&ctx, &contents).lines() {
                     commands.push(format!("{:indent$}{}", "", command, indent = 0));
                 }
 
