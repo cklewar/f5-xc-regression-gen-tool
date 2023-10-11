@@ -886,7 +886,7 @@ impl<'a> Regression<'a> {
                                         let c_name = item.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                                         self.db.add_object_properties(&c_o, &json!({KEY_NAME: c_name}), PropertyType::Base);
                                         self.db.add_object_properties(&c_o, &json!({
-                                                KEY_GVID: format!("{}_{}_{}", KEY_CONNECTION, c_name.replace("-", "_"), &rte.as_object().
+                                                KEY_GVID: format!("{}_{}_{}", KEY_CONNECTION, c_name.replace('-', "_"), &rte.as_object().
                                                     unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                 KEY_GV_LABEL: c_name
                                             }), PropertyType::Gv);
@@ -898,7 +898,7 @@ impl<'a> Regression<'a> {
                                         self.db.add_object_properties(&src_o, &json!({KEY_NAME: &source, KEY_RTE: &rte.as_object().
                                             unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
                                         self.db.add_object_properties(&src_o, &json!({
-                                            KEY_GVID: format!("{}_{}_{}_{}", "connection_src", &c_name.replace("-","_"), &source, &rte.as_object().unwrap().
+                                            KEY_GVID: format!("{}_{}_{}_{}", "connection_src", &c_name.replace('-',"_"), &source, &rte.as_object().unwrap().
                                                 get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                             KEY_GV_LABEL: source
                                         }), PropertyType::Gv);
@@ -974,7 +974,7 @@ impl<'a> Regression<'a> {
                                                         let t_name = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                                                         let t_module = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                                                         self.db.add_object_properties(&t_o, &json!({
-                                                                             KEY_GVID: format!("{}_{}_{}", t_o.t.as_str(), t_name.replace("-", "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                             KEY_GVID: format!("{}_{}_{}", t_o.t.as_str(), t_name.replace('-', "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                                              KEY_GV_LABEL: format!("t_{}", t_module)
                                                                          }), PropertyType::Gv);
                                                     }
@@ -992,11 +992,11 @@ impl<'a> Regression<'a> {
                                                             let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                                                             self.db.add_object_properties(&v_o, v, PropertyType::Base);
                                                             self.db.add_object_properties(&v_o, &json!({
-                                                                                 KEY_GVID: format!("{}_{}_{}", v_o.t.as_str(), v_name.replace("-", "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
+                                                                                 KEY_GVID: format!("{}_{}_{}", v_o.t.as_str(), v_name.replace('-', "_"), &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
                                                                                  KEY_GV_LABEL: format!("v_{}", v_module)
                                                                              }), PropertyType::Gv);
                                                             // Verification module cfg
-                                                            let cfg = self.load_object_config(VertexTypes::get_name_by_object(&v_o), &v_module);
+                                                            let cfg = self.load_object_config(VertexTypes::get_name_by_object(&v_o), v_module);
                                                             for (k, v) in cfg.as_object().unwrap().iter() {
                                                                 match k {
                                                                     k if k == KEY_NAME => {
@@ -1028,7 +1028,7 @@ impl<'a> Regression<'a> {
                                             //Test module cfg
                                             let t_p = self.db.get_object_properties(&t_o).unwrap().props;
                                             let module = t_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                                            let cfg = self.load_object_config(VertexTypes::get_name_by_object(&t_o), &module);
+                                            let cfg = self.load_object_config(VertexTypes::get_name_by_object(&t_o), module);
                                             for (k, v) in cfg.as_object().unwrap().iter() {
                                                 match k {
                                                     k if k == KEY_NAME => {
@@ -1227,7 +1227,7 @@ impl<'a> Regression<'a> {
                                                c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                KEY_APPLY
-                    ).replace("_", "-");
+                    ).replace('_', "-");
                     _test_stages.push(t_stage_name);
 
                     //Verification stages
@@ -1239,7 +1239,7 @@ impl<'a> Regression<'a> {
                                                    c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    &v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    KEY_APPLY
-                        ).replace("_", "-");
+                        ).replace('_', "-");
                         _verification_stages.push(v_stage_name);
                     }
                 }
@@ -1254,7 +1254,7 @@ impl<'a> Regression<'a> {
         let _features = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasFeatures);
         let features = self.db.get_object_neighbours_out(&_features.id, EdgeTypes::HasFeature);
 
-        if features.len() > 0 {
+        if !features.is_empty() {
             stage_destroy = self.add_ci_stages(&ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
         }
 
@@ -1337,8 +1337,8 @@ impl<'a> Regression<'a> {
 
     fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
         info!("Loading regression configuration data...");
-        let data: String = String::from(format!("{path}/{file}"));
-        let raw = std::fs::read_to_string(&data).unwrap();
+        let data: String = format!("{path}/{file}");
+        let raw = std::fs::read_to_string(data).unwrap();
         let cfg = serde_json::from_str::<RegressionConfig>(&raw).unwrap();
         info!("Loading regression configuration data -> Done.");
 
@@ -1353,7 +1353,7 @@ impl<'a> Regression<'a> {
         context.insert("collector", &cfg.collector);
         context.insert(KEY_VERIFICATIONS, &cfg.verifications);
 
-        let eutc = _tera.render(&file, &context).unwrap();
+        let eutc = _tera.render(file, &context).unwrap();
         info!("Render regression configuration file -> Done.");
 
         info!("Loading regression configuration data...");
@@ -1387,7 +1387,7 @@ impl<'a> Regression<'a> {
             }
         }
 
-        let raw = std::fs::read_to_string(&String::from(&file)).unwrap();
+        let raw = std::fs::read_to_string(String::from(&file)).unwrap();
         let cfg: Value = serde_json::from_str(&raw).unwrap();
         info!("Loading module <{module}> configuration data -> Done.");
         cfg
@@ -1405,7 +1405,7 @@ impl<'a> Regression<'a> {
             }), PropertyType::Gv);
 
             if i == 0 {
-                self.db.create_relationship(&ancestor, &new);
+                self.db.create_relationship(ancestor, &new);
                 curr = new.clone();
             } else {
                 self.db.create_relationship(&curr, &new);
@@ -1471,7 +1471,7 @@ impl<'a> Regression<'a> {
 
             let frc = FeatureRenderContext {
                 ci: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
-                job: format!("{}_{}_{}", KEY_FEATURE, &eut_name, &f_name).replace("_", "-"),
+                job: format!("{}_{}_{}", KEY_FEATURE, &eut_name, &f_name).replace('_', "-"),
                 eut: eut_name.to_string(),
                 name: f_name,
                 release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
@@ -1603,7 +1603,7 @@ impl<'a> Regression<'a> {
             let scripts_path = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
             for script in eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, eut_name.to_string(), scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let ctx = ScriptEutRenderContext {
                     project: self.config.project.clone(),
@@ -1783,7 +1783,7 @@ impl<'a> Regression<'a> {
             let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             let comp_src = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
             let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-            let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace("_", "-");
+            let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace('_', "-");
 
             //Process site_to_rte_map
             let mut _rtes: HashSet<String> = HashSet::new();
@@ -2060,8 +2060,8 @@ impl<'a> Regression<'a> {
                                              rte_name,
                                              src_name,
                                              &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                             v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                    ).replace("_", "-");
+                                             v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                    ).replace('_', "-");
 
                     //Process test scripts
                     let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
@@ -2119,7 +2119,7 @@ impl<'a> Regression<'a> {
     }
 
     fn get_next_stage(&self, id: &Uuid, data: &mut Vec<String>) {
-        for stage in self.db.get_object_neighbours_with_properties_out(&id, EdgeTypes::NextStage).iter() {
+        for stage in self.db.get_object_neighbours_with_properties_out(id, EdgeTypes::NextStage).iter() {
             data.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
             self.get_next_stage(&stage.vertex.id, data);
         }
@@ -2128,7 +2128,7 @@ impl<'a> Regression<'a> {
     pub fn render(&self, context: &Context) -> String {
         info!("Render regression pipeline file first step...");
         let mut _tera = Tera::new(&self.config.project.templates).unwrap();
-        let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, &context).unwrap();
+        let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, context).unwrap();
         info!("Render regression pipeline file first step -> Done.");
         rendered
     }
