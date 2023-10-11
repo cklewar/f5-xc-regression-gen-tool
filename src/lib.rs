@@ -498,151 +498,44 @@ struct ScriptEutRenderContext {
     provider: String,
 }
 
-/*impl ScriptEutRenderContext {
-    fn new(project: RegressionConfigProject) -> Self {
-        Self {
-            rte: None,
-            project,
-            name: None,
-            site: None,
-            rtes: None,
-            index: None,
-            counter: None,
-            release: None,
-            provider: None,
-        }
-    }
-
-    fn render_script(&self, context: &ScriptEutRenderContext, input: &str) -> String {
-        info!("Render regression pipeline file eut script section...");
-        let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
-        info!("Render regression pipeline file eut script section -> Done.");
-        rendered
-    }
-}*/
-
 #[derive(Serialize, Debug)]
 struct ScriptFeatureRenderContext {
     eut: String,
-    name: Option<String>,
-    sites: Option<String>,
-    release: Option<String>,
-    project: Option<RegressionConfigProject>,
-    provider: Option<Vec<String>>,
+    name: String,
+    sites: String,
+    release: String,
+    project: RegressionConfigProject,
+    provider: Vec<String>,
 
-}
-
-impl ScriptFeatureRenderContext {
-    fn new(eut: String) -> Self {
-        Self {
-            eut,
-            name: None,
-            sites: None,
-            release: None,
-            project: None,
-            provider: None,
-        }
-    }
-
-    fn render_script(&self, context: &ScriptFeatureRenderContext, input: &str) -> String {
-        info!("Render regression pipeline file feature script section...");
-        let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
-        info!("Render regression pipeline file feature script section -> Done.");
-        rendered
-    }
 }
 
 #[derive(Serialize, Debug)]
 struct ScriptVerificationRenderContext {
-    rte: Option<String>,
-    name: Option<String>,
-    module: Option<String>,
+    rte: String,
+    name: String,
+    module: String,
     provider: String,
-    test_name: Option<String>,
-    test_module: Option<String>,
-}
-
-impl ScriptVerificationRenderContext {
-    fn new(provider: String) -> Self {
-        Self {
-            provider,
-            rte: None,
-            name: None,
-            module: None,
-            test_name: None,
-            test_module: None,
-        }
-    }
-
-    fn render_script(&self, context: &ScriptVerificationRenderContext, input: &str) -> String {
-        info!("Render regression pipeline file verification script section...");
-        let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
-        info!("Render regression pipeline file verification script section -> Done.");
-        rendered
-    }
+    test_name: String,
+    test_module: String,
 }
 
 #[derive(Serialize, Debug)]
 struct ScriptTestRenderContext {
-    rte: Option<String>,
-    name: Option<String>,
-    module: Option<String>,
+    rte: String,
+    name: String,
+    module: String,
     provider: String,
-}
-
-impl ScriptTestRenderContext {
-    fn new(provider: String) -> Self {
-        Self {
-            provider,
-            rte: None,
-            name: None,
-            module: None,
-        }
-    }
-
-    fn render_script(&self, context: &ScriptTestRenderContext, input: &str) -> String {
-        info!("Render regression pipeline file test script section...");
-        let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), true).unwrap();
-        info!("Render regression pipeline file test script section -> Done.");
-        rendered
-    }
 }
 
 #[derive(Serialize, Debug)]
 struct ScriptRteRenderContext {
-    eut: Option<String>,
-    rte: Option<String>,
-    site: Option<String>,
-    release: Option<String>,
-    project: Option<RegressionConfigProject>,
+    eut: String,
+    rte: String,
+    site: String,
+    release: String,
+    project: RegressionConfigProject,
     provider: String,
-    destinations: Option<String>,
-}
-
-impl ScriptRteRenderContext {
-    fn new(provider: String) -> Self {
-        Self {
-            provider,
-            eut: None,
-            rte: None,
-            site: None,
-            release: None,
-            project: None,
-            destinations: None,
-        }
-    }
-
-    fn render_script(&self, context: &ScriptRteRenderContext, input: &str) -> String {
-        info!("Render regression pipeline file rte script section...");
-        let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
-        info!("Render regression pipeline file rte script section -> Done.");
-        rendered
-    }
+    destinations: String,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -661,37 +554,14 @@ struct ScriptRteSitesShareDataRenderContext {
 
 #[derive(Serialize, Debug)]
 struct ScriptRteProviderShareRenderContext {
-    eut: Option<String>,
-    rte: Option<String>,
-    map: Option<String>,
-    vars: Option<RegressionConfigProjectVars>,
-    sites: Option<String>,
-    counter: Option<usize>,
+    eut: String,
+    rte: String,
+    map: String,
+    vars: RegressionConfigProjectVars,
+    sites: String,
+    counter: usize,
     project: String,
-    provider: Option<String>,
-}
-
-impl ScriptRteProviderShareRenderContext {
-    fn new(project: String) -> Self {
-        Self {
-            project,
-            eut: None,
-            rte: None,
-            map: None,
-            vars: None,
-            sites: None,
-            counter: None,
-            provider: None,
-        }
-    }
-
-    fn render_script(&self, context: &ScriptRteProviderShareRenderContext, input: &str) -> String {
-        info!("Render regression pipeline file rte provider share script section...");
-        let ctx = Context::from_serialize(context);
-        let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
-        info!("Render regression pipeline file rte provider share script section -> Done.");
-        rendered
-    }
+    provider: String,
 }
 
 pub trait RenderContext {}
@@ -699,6 +569,14 @@ pub trait RenderContext {}
 impl RenderContext for ScriptEutRenderContext {}
 
 impl RenderContext for ScriptRteRenderContext {}
+
+impl RenderContext for ScriptFeatureRenderContext {}
+
+impl RenderContext for ScriptTestRenderContext {}
+
+impl RenderContext for ScriptVerificationRenderContext {}
+
+impl RenderContext for ScriptRteProviderShareRenderContext {}
 
 pub fn render_script(context: &(impl RenderContext + serde::Serialize), input: &str) -> String {
     info!("Render script context...");
@@ -1571,16 +1449,17 @@ impl<'a> Regression<'a> {
             for script in feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                 let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
-                let mut ctx: ScriptFeatureRenderContext = ScriptFeatureRenderContext::new(eut_name.to_string());
-
-                ctx.name = Option::from(f_name.to_string());
-                ctx.sites = Option::from(serde_json::to_string(&feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap()).unwrap());
-                ctx.release = Option::from(feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string());
-                ctx.provider = Option::from(eut_provider_p_base.clone());
-                ctx.project = Option::from(self.config.project.clone());
+                let ctx = ScriptFeatureRenderContext {
+                    eut: eut_name.to_string(),
+                    name: f_name.to_string(),
+                    sites: serde_json::to_string(&feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap()).unwrap(),
+                    release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
+                    provider: eut_provider_p_base.clone(),
+                    project: self.config.project.clone(),
+                };
 
                 let mut commands: Vec<String> = Vec::new();
-                for command in ctx.render_script(&ctx, &contents).lines() {
+                for command in render_script(&ctx, &contents).lines() {
                     commands.push(format!("{:indent$}{}", "", command, indent = 0));
                 }
 
@@ -1669,18 +1548,19 @@ impl<'a> Regression<'a> {
                 for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
-                    let mut ctx: ScriptRteProviderShareRenderContext = ScriptRteProviderShareRenderContext::new(self.config.project.name.to_string());
-
-                    ctx.rte = Option::from(rte_name.to_string());
-                    ctx.eut = Option::from(eut_name.to_string());
-                    ctx.map = Option::from(serde_json::to_string(&rte_to_site_map).unwrap());
-                    ctx.vars = Option::from(self.config.project.vars.clone());
-                    ctx.sites = Option::from(serde_json::to_string(&srsd_rc).unwrap());
-                    ctx.counter = Option::from(site_count);
-                    ctx.provider = Option::from(p_name.to_string());
+                    let ctx = ScriptRteProviderShareRenderContext {
+                        rte: rte_name.to_string(),
+                        eut: eut_name.to_string(),
+                        map: serde_json::to_string(&rte_to_site_map).unwrap(),
+                        vars: self.config.project.vars.clone(),
+                        sites: serde_json::to_string(&srsd_rc).unwrap(),
+                        counter: site_count,
+                        provider: p_name.to_string(),
+                        project: self.config.project.name.to_string(),
+                    };
 
                     let mut commands: Vec<String> = Vec::new();
-                    for command in ctx.render_script(&ctx, &contents).lines() {
+                    for command in render_script(&ctx, &contents).lines() {
                         commands.push(format!("{:indent$}{}", "", command, indent = 0));
                     }
 
@@ -1928,16 +1808,18 @@ impl<'a> Regression<'a> {
                     if src_p_name == p_name {
                         let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
-                        let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
-
-                        ctx.rte = Option::from(rte_name.to_string());
-                        ctx.eut = Option::from(eut_name.to_string());
-                        ctx.site = Option::from(src_site_name.to_string());
-                        ctx.project = Option::from(self.config.project.clone());
-                        ctx.destinations = Option::from(serde_json::to_string(&client_destinations).unwrap());
+                        let ctx = ScriptRteRenderContext {
+                            rte: rte_name.to_string(),
+                            eut: eut_name.to_string(),
+                            site: src_site_name.to_string(),
+                            release: "".to_string(),
+                            provider: p_name.to_string(),
+                            project: self.config.project.clone(),
+                            destinations: serde_json::to_string(&client_destinations).unwrap(),
+                        };
 
                         let mut commands: Vec<String> = Vec::new();
-                        for command in ctx.render_script(&ctx, &contents).lines() {
+                        for command in render_script(&ctx, &contents).lines() {
                             commands.push(format!("{:indent$}{}", "", command, indent = 0));
                         }
 
@@ -1987,16 +1869,18 @@ impl<'a> Regression<'a> {
                         if dst_p_name == p_name {
                             let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
-                            let mut ctx: ScriptRteRenderContext = ScriptRteRenderContext::new(p_name.to_string());
-
-                            ctx.rte = Option::from(rte_name.to_string());
-                            ctx.eut = Option::from(eut_name.to_string());
-                            ctx.project = Option::from(self.config.project.clone());
-                            ctx.site = Option::from(dst_site_name.to_string());
-                            ctx.destinations = Option::from(serde_json::to_string(&server_destinations).unwrap());
+                            let ctx = ScriptRteRenderContext {
+                                rte: rte_name.to_string(),
+                                eut: eut_name.to_string(),
+                                site: dst_site_name.to_string(),
+                                release: "".to_string(),
+                                provider: p_name.to_string(),
+                                project: self.config.project.clone(),
+                                destinations: serde_json::to_string(&server_destinations).unwrap(),
+                            };
 
                             let mut commands: Vec<String> = Vec::new();
-                            for command in ctx.render_script(&ctx, &contents).lines() {
+                            for command in render_script(&ctx, &contents).lines() {
                                 commands.push(format!("{:indent$}{}", "", command, indent = 0));
                             }
 
@@ -2037,14 +1921,15 @@ impl<'a> Regression<'a> {
                 for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
-                    let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
-
-                    ctx.rte = Option::from(rte_name.to_string());
-                    ctx.name = Option::from(t_name.to_string());
-                    ctx.module = Option::from(t_module.to_string());
+                    let ctx = ScriptTestRenderContext {
+                        rte: rte_name.to_string(),
+                        name: t_name.to_string(),
+                        module: t_module.to_string(),
+                        provider: src_name.to_string(),
+                    };
 
                     let mut commands: Vec<String> = Vec::new();
-                    for command in ctx.render_script(&ctx, &contents).lines() {
+                    for command in render_script(&ctx, &contents).lines() {
                         commands.push(format!("{:indent$}{}", "", command, indent = 0));
                     }
 
@@ -2074,16 +1959,17 @@ impl<'a> Regression<'a> {
                     for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                         let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
-                        let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
-
-                        ctx.rte = Option::from(rte_name.to_string());
-                        ctx.name = Option::from(v_name.to_string());
-                        ctx.module = Option::from(v_module.to_string());
-                        ctx.test_name = Option::from(t_name.to_string());
-                        ctx.test_module = Option::from(t_module.to_string());
+                        let ctx = ScriptVerificationRenderContext {
+                            rte: rte_name.to_string(),
+                            name: v_name.to_string(),
+                            module: v_module.to_string(),
+                            provider: src_name.to_string(),
+                            test_name: t_name.to_string(),
+                            test_module: t_module.to_string(),
+                        };
 
                         let mut commands: Vec<String> = Vec::new();
-                        for command in ctx.render_script(&ctx, &contents).lines() {
+                        for command in render_script(&ctx, &contents).lines() {
                             commands.push(format!("{:indent$}{}", "", command, indent = 0));
                         }
 
@@ -2147,14 +2033,15 @@ impl<'a> Regression<'a> {
                 for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
-                    let mut ctx: ScriptTestRenderContext = ScriptTestRenderContext::new(src_name.to_string());
-
-                    ctx.rte = Option::from(rte_name.to_string());
-                    ctx.name = Option::from(t_name.to_string());
-                    ctx.module = Option::from(t_module.to_string());
+                    let ctx = ScriptTestRenderContext {
+                        rte: rte_name.to_string(),
+                        name: t_name.to_string(),
+                        module: t_module.to_string(),
+                        provider: src_name.to_string(),
+                    };
 
                     let mut commands: Vec<String> = Vec::new();
-                    for command in ctx.render_script(&ctx, &contents).lines() {
+                    for command in render_script(&ctx, &contents).lines() {
                         commands.push(format!("{:indent$}{}", "", command, indent = 0));
                     }
 
@@ -2184,16 +2071,17 @@ impl<'a> Regression<'a> {
                     for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                         let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
-                        let mut ctx: ScriptVerificationRenderContext = ScriptVerificationRenderContext::new(src_name.to_string());
-
-                        ctx.rte = Option::from(rte_name.to_string());
-                        ctx.name = Option::from(v_name.to_string());
-                        ctx.module = Option::from(v_module.to_string());
-                        ctx.test_name = Option::from(t_name.to_string());
-                        ctx.test_module = Option::from(t_module.to_string());
+                        let ctx = ScriptVerificationRenderContext {
+                            rte: rte_name.to_string(),
+                            name: v_name.to_string(),
+                            module: v_module.to_string(),
+                            provider: src_name.to_string(),
+                            test_name: t_name.to_string(),
+                            test_module: t_module.to_string(),
+                        };
 
                         let mut commands: Vec<String> = Vec::new();
-                        for command in ctx.render_script(&ctx, &contents).lines() {
+                        for command in render_script(&ctx, &contents).lines() {
                             commands.push(format!("{:indent$}{}", "", command, indent = 0));
                         }
 
