@@ -694,6 +694,28 @@ impl ScriptRteProviderShareRenderContext {
     }
 }
 
+pub trait RenderContext {}
+
+#[derive(Serialize, Debug)]
+pub enum ScriptRenderContext {
+    ScriptEutRenderContext,
+    ScriptRteRenderContext,
+    ScriptTestRenderContext,
+    ScriptFeatureRenderContext,
+    ScriptVerificationRenderContext,
+    ScriptRteProviderShareRenderContext,
+}
+
+impl RenderContext for ScriptRenderContext {}
+
+pub fn render_script(context: &(impl RenderContext + serde::Serialize), input: &str) -> String {
+    info!("Render script context...");
+    let ctx = Context::from_serialize(context);
+    let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
+    info!("Render script context -> Done.");
+    rendered
+}
+
 pub struct Regression<'a> {
     pub config: RegressionConfig,
     db: &'a Db,
@@ -702,7 +724,7 @@ pub struct Regression<'a> {
 impl<'a> Regression<'a> {
     pub fn new(db: &'a Db, path: &str, file: &str) -> Self {
         Regression {
-            config: Regression::load_regression_config(&path, &file),
+            config: Regression::load_regression_config(path, file),
             db,
         }
     }
