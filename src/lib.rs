@@ -1165,15 +1165,6 @@ impl<'a> Regression<'a> {
         }
     }
 
-    /*fn call_rte_build_connection_context(&self, v: &str, eut_name: &str, rte_name: &str, rte: &VertexProperties, provider: Vec<VertexProperties>,
-                                         rte_crcs: &mut RteRenderContext) {
-        match v {
-            v if v == RTE_TYPE_A => self.build_rte_type_a_connection_context(eut_name, rte_name, rte, provider, rte_crcs),
-            v if v == RTE_TYPE_B => self.build_rte_type_b_connection_context(rte_name, rte, rte_crcs),
-            _ => error!("Unknown RTE type found: {:?}", v)
-        }
-    }*/
-
     pub fn init(&self) -> Uuid {
         // Project
         let project = self.db.create_object(VertexTypes::Project);
