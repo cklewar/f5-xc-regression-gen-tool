@@ -391,10 +391,15 @@ variables:
 # feature - {{ feature.job }} - artifacts
 {{ feature.job }}-artifacts:
   <<: *base
-  stage: feature-deploy
+  stage: feature-artifacts
   rules:
     {%- for site in eut.sites %}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- for rte in rtes %}
+    {%- for test in rte.tests %}
+    - !reference [ .deploy_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
   script:
       - |
