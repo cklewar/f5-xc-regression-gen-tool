@@ -610,7 +610,7 @@ struct RteTypeA<'a> {
 
 impl<'a> RteCharacteristics for RteTypeA<'a> {
     fn init(&self, r_o: &Vertex) {
-        println!("RTE TYPE A init connection components --> {:?}", &r_o);
+        error!("RTE TYPE A init connection components --> {:?}", &r_o);
         // Connection -> Component
         let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
         let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
@@ -648,7 +648,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
     }
 
     fn build_ctx(&self, rte: &VertexProperties, mut site_count: usize, srsd: &mut HashMap<String, ScriptRteSitesShareDataRenderContext>) {
-        println!("RTE TYPE A build ctx --> {:?}", rte);
+        error!("RTE TYPE A build ctx --> {:?}", rte);
 
         let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
@@ -713,7 +713,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
         }
     }
     fn build_conn_ctx(&self, params: RteCtxParameters) {
-        println!("RTE TYPE A build conn ctx --> {}", params.rte_name);
+        error!("RTE TYPE A build conn ctx --> {}", params.rte_name);
         //Connection DST rt set
         let mut server_destinations: HashSet<String> = HashSet::new();
 
@@ -963,7 +963,7 @@ struct RteTypeB<'a> {
 
 impl<'a> RteCharacteristics for RteTypeB<'a> {
     fn init(&self, r_o: &Vertex) {
-        println!("RTE TYPE B init connection component --> {:?}", &r_o);
+        error!("RTE TYPE B init connection component --> {:?}", &r_o);
         // Connection -> Component
         let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
         let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
@@ -990,7 +990,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
     }
 
     fn build_ctx(&self, rte: &VertexProperties, mut site_count: usize, srsd: &mut HashMap<String, ScriptRteSitesShareDataRenderContext>) {
-        println!("RTE TYPE B build ctx --> {:?}", rte);
+        error!("RTE TYPE B build ctx --> {:?}", rte);
         let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
 
@@ -1016,7 +1016,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
     }
 
     fn build_conn_ctx(&self, params: RteCtxParameters) {
-        println!("RTE TYPE B build conn ctx --> {}", params.rte_name);
+        error!("RTE TYPE B build conn ctx --> {}", params.rte_name);
         let _c = self.db.get_object_neighbour_out(&params.rte.vertex.id, EdgeTypes::HasConnections);
         let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
 
