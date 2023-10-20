@@ -118,14 +118,14 @@ variables:
     - if: $ACTION == "destroy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests %}
-.regression_{{ test.job | replace(from="-", to="_") }}:
+.regression_{{ test.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests -%}
 {% for verification in test.verifications %}
-.regression_{{ verification.job | replace(from="-", to="_") }}:
+.regression_{{ verification.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
@@ -398,7 +398,7 @@ variables:
     {%- endfor %}
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
-    - !reference [ .deploy_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- endfor %}
   script:
