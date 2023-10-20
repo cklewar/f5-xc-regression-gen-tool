@@ -522,9 +522,11 @@ struct ScriptVerificationRenderContext {
 #[derive(Serialize, Debug)]
 struct ScriptTestRenderContext {
     rte: String,
+    eut: String,
     name: String,
     module: String,
     provider: String,
+    features: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -589,8 +591,9 @@ pub fn render_script(context: &(impl RenderContext + serde::Serialize), input: &
 struct RteCtxParameters<'a> {
     rte: &'a VertexProperties,
     config: &'a RegressionConfig,
-    eut_name: &'a str,
-    rte_name: &'a str,
+    eut_name: String,
+    rte_name: String,
+    features: Vec<String>,
     provider: Vec<VertexProperties>,
     rte_crcs: &'a mut RteRenderContext,
 }
@@ -868,9 +871,11 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
                         rte: params.rte_name.to_string(),
+                        eut: params.eut_name.to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
                         provider: src_name.to_string(),
+                        features: params.features.to_vec(),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1039,9 +1044,11 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
                         rte: params.rte_name.to_string(),
+                        eut: params.eut_name.to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
                         provider: src_name.to_string(),
+                        features: params.features.to_vec(),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -2061,12 +2068,19 @@ impl<'a> Regression<'a> {
             //Process connections
             let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
             let _rte = Rte::new(rte_type, self.db);
+            let mut feature_names: Vec<String> = Vec::new();
+
+            for feature in features_rc.iter() {
+                feature_names.push(feature.name.to_string());
+            }
+
             if let Some(r) = _rte {
                 r.build_conn_ctx(RteCtxParameters {
                     rte,
                     config: &self.config,
-                    eut_name: &eut_name,
-                    rte_name,
+                    eut_name: eut_name.to_string(),
+                    rte_name: rte_name.to_string(),
+                    features: feature_names,
                     provider,
                     rte_crcs: &mut rte_crcs,
                 })
