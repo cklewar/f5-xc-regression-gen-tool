@@ -380,6 +380,10 @@ variables:
         {%- endif %}
         {%- endfor %}
         {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
   timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
@@ -412,6 +416,10 @@ variables:
         {%- endif %}
         {%- endfor %}
         {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
   timeout: {{ feature.ci.timeout }}
   retry:
     max: 1
