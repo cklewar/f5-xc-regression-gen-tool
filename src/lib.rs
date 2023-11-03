@@ -975,6 +975,8 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             let _c_d_s: Vec<VertexProperties> = self.db.get_object_neighbours_with_properties_out(&c_s.vertex.id, EdgeTypes::HasConnectionDst);
             for p in rte_provider.iter() {
                 let _components = self.db.get_object_neighbour_out(&p.vertex.id, EdgeTypes::HasComponents);
+                let component_src = self.db.get_object_neighbour_out(&_components.id, EdgeTypes::HasComponentSrc);
+                self.db.create_relationship(&c_s.vertex, &component_src);
             }
 
             //CONNECTION DSTs
@@ -1021,16 +1023,62 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
         let connections = self.db.get_object_neighbours_with_properties_out(&_c.id, EdgeTypes::HasConnection);
 
         for conn in connections.iter() {
-            let src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
-            let src_name = src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let conn_src = self.db.get_object_neighbour_with_properties_out(&conn.vertex.id, EdgeTypes::HasConnectionSrc).unwrap();
+            let conn_name = conn.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let conn_src_name = conn_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let comp_src = self.db.get_object_neighbour_with_properties_out(&conn_src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
+            let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
+            //Process rte src component scripts
+            let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+
+            for p in params.provider.iter() {
+                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let rte_job_name = format!("{}_{}_{}_{}_{}", KEY_RTE, params.rte_name, &conn_name, &p_name, &conn_src_name).replace('_', "-");
+
+                for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.project.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
+                    let ctx = ScriptRteRenderContext {
+                        rte: params.rte_name.to_string(),
+                        eut: params.eut_name.to_string(),
+                        site: "".to_string(),
+                        release: "".to_string(),
+                        provider: p_name.to_string(),
+                        project: params.config.project.clone(),
+                        destinations: "".to_string(),
+                    };
+
+                    let mut commands: Vec<String> = Vec::new();
+                    for command in render_script(&ctx, &contents).lines() {
+                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    }
+
+                    let data: HashMap<String, Vec<String>> = [
+                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                    ].into_iter().collect();
+                    scripts.push(data);
+                }
+
+                let rte_crc = RteComponentRenderContext {
+                    job: rte_job_name.clone(),
+                    rte: params.rte_name.to_string(),
+                    name: comp_src_name.to_string(),
+                    site: "".to_string(),
+                    provider: p_name.to_string(),
+                    scripts,
+                };
+                params.rte_crcs.components.push(rte_crc);
+            }
 
             //Tests
-            let tests_p = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::Runs);
+            let tests_p = self.db.get_object_neighbours_with_properties_out(&conn_src.vertex.id, EdgeTypes::Runs);
             for t in tests_p.iter() {
                 let t_job_name = format!("{}_{}_{}_{}",
                                          KEY_TEST,
                                          params.rte_name,
-                                         src_name,
+                                         conn_src_name,
                                          t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
                 ).replace('_', "-");
 
@@ -1047,7 +1095,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         eut: params.eut_name.to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
-                        provider: src_name.to_string(),
+                        provider: conn_src_name.to_string(),
                         features: params.features.to_vec(),
                     };
 
@@ -1069,7 +1117,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let v_job_name = format!("{}_{}_{}_{}_{}",
                                              KEY_VERIFICATION,
                                              params.rte_name,
-                                             src_name,
+                                             conn_src_name,
                                              &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                              v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                     ).replace('_', "-");
@@ -1086,7 +1134,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                             rte: params.rte_name.to_string(),
                             name: v_name.to_string(),
                             module: v_module.to_string(),
-                            provider: src_name.to_string(),
+                            provider: conn_src_name.to_string(),
                             test_name: t_name.to_string(),
                             test_module: t_module.to_string(),
                         };
@@ -1120,7 +1168,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     job: t_job_name,
                     name: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                     module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
-                    provider: src_name.to_string(),
+                    provider: conn_src_name.to_string(),
                     scripts,
                     verifications,
                 };
