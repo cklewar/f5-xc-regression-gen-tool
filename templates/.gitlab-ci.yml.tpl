@@ -196,6 +196,7 @@ variables:
   <<: *base
   stage: rte-share-artifacts
   rules:
+    - !reference [ .destroy_rules, rules ]
     {%- for site in eut.sites %}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
