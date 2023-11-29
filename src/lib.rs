@@ -1028,6 +1028,18 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             let conn_src_name = conn_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             let comp_src = self.db.get_object_neighbour_with_properties_out(&conn_src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
             let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let components = self.db.get_object_neighbours_in(&comp_src.vertex.id, EdgeTypes::HasComponentSrc);
+            let mut component_provider = String::new();
+
+            for item in components.iter() {
+                match item {
+                    k if k.t.to_string() == KEY_COMPONENTS => {
+                        let p = self.db.get_object_neighbours_with_properties_in(&k.id, EdgeTypes::HasComponents);
+                        component_provider = p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+                    }
+                    &_ => {}
+                }
+            }
 
             //Process rte src component scripts
             let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
@@ -1095,7 +1107,8 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         eut: params.eut_name.to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
-                        provider: conn_src_name.to_string(),
+                        //provider: conn_src_name.to_string(),
+                        provider: component_provider.to_string(),
                         features: params.features.to_vec(),
                     };
 
@@ -2220,7 +2233,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
-        //error!("{:#?}", context);
+        // error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }

@@ -172,6 +172,32 @@ impl Db {
         objs
     }
 
+    pub fn get_object_neighbour_in(&self, id: &Uuid, identifier: EdgeTypes) -> Vertex {
+        error!("ID: {:?}", id);
+        error!("IDENTIFIER: {:?}", identifier.name().to_string());
+        let i = Identifier::new(identifier.name().to_string()).unwrap();
+        let ooo = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
+
+        let extracted = indradb::util::extract_edges(ooo.unwrap()).unwrap();
+        error!("OOO: {:?}", &extracted);
+        error!("O_OUT_ID: {:?}", self.get_object(&extracted.get(1).unwrap().outbound_id));
+        error!("O_IN_ID: {:?}",  self.get_object(&extracted.get(1).unwrap().inbound_id));
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
+        let id = indradb::util::extract_edges(o.unwrap()).unwrap().get(1).unwrap().outbound_id;
+        self.get_object(&id)
+    }
+
+    pub fn get_object_neighbours_in(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<Vertex> {
+        let i = Identifier::new(identifier.name().to_string()).unwrap();
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
+        let mut objs: Vec<Vertex> = Vec::new();
+
+        for item in indradb::util::extract_edges(o.unwrap()).unwrap().iter() {
+            objs.push(self.get_object(&item.outbound_id));
+        }
+        objs
+    }
+
     pub fn get_object_neighbours_with_properties_in(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<VertexProperties> {
         let i = Identifier::new(identifier.name().to_string()).unwrap();
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
