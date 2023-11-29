@@ -1095,7 +1095,6 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                 ).replace('_', "-");
 
                 //Process test scripts
-                error!("T: {:#?}", &t.props);
                 let t_name = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                 let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
