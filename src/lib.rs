@@ -1109,7 +1109,6 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                             eut: params.eut_name.to_string(),
                             name: t_name.to_string(),
                             module: t_module.to_string(),
-                            //provider: conn_src_name.to_string(),
                             provider: component_provider.to_string(),
                             features: params.features.to_vec(),
                         };
