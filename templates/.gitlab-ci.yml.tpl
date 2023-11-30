@@ -609,7 +609,9 @@ variables:
       {%- endfor %}
       {%- endfor %}
   needs:
-    - job: {{ component.job | replace(from="_", to="-") }}
+    - project: namespace/group/project-name
+      job: {{ component.job | replace(from="_", to="-") }}
+      ref: $CI_COMMIT_REF_NAME
       artifacts: true
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
