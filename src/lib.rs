@@ -2090,43 +2090,44 @@ impl<'a> Regression<'a> {
                 );
 
                 //Process provider share scripts render context
-                let share_p = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare).unwrap();
-                let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-                let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                if let Some(share_p) = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare) {
+                    let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
-                for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                    let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                    let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
-                    let ctx = ScriptRteProviderShareRenderContext {
-                        rte: rte_name.to_string(),
-                        eut: eut_name.to_string(),
-                        map: serde_json::to_string(&rte_to_site_map).unwrap(),
-                        vars: self.config.project.vars.clone(),
-                        sites: serde_json::to_string(&srsd_rc).unwrap(),
-                        counter: site_count,
-                        provider: p_name.to_string(),
-                        project: self.config.project.name.to_string(),
-                    };
+                    for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                        let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
+                        let ctx = ScriptRteProviderShareRenderContext {
+                            rte: rte_name.to_string(),
+                            eut: eut_name.to_string(),
+                            map: serde_json::to_string(&rte_to_site_map).unwrap(),
+                            vars: self.config.project.vars.clone(),
+                            sites: serde_json::to_string(&srsd_rc).unwrap(),
+                            counter: site_count,
+                            provider: p_name.to_string(),
+                            project: self.config.project.name.to_string(),
+                        };
 
-                    let mut commands: Vec<String> = Vec::new();
-                    for command in render_script(&ctx, &contents).lines() {
-                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        let mut commands: Vec<String> = Vec::new();
+                        for command in render_script(&ctx, &contents).lines() {
+                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        }
+
+                        let data: HashMap<String, Vec<String>> = [
+                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                        ].into_iter().collect();
+
+                        scripts.push(data);
                     }
 
-                    let data: HashMap<String, Vec<String>> = [
-                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                    ].into_iter().collect();
-
-                    scripts.push(data);
+                    rte_crcs.shares.push(RteProviderShareRenderContext {
+                        job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
+                        rte: rte_name.to_string(),
+                        eut: eut_name.to_string(),
+                        provider: p_name.to_string(),
+                        scripts,
+                    });
                 }
-
-                rte_crcs.shares.push(RteProviderShareRenderContext {
-                    job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
-                    rte: rte_name.to_string(),
-                    eut: eut_name.to_string(),
-                    provider: p_name.to_string(),
-                    scripts,
-                });
             }
 
             //Process connections
