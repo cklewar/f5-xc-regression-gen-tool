@@ -2237,7 +2237,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
 
-        error!("{:#?}", context);
+        // error!("{:#?}", context);
         info!("Build render context -> Done.");
         context
     }
