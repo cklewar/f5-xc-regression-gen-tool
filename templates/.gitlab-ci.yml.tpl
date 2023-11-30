@@ -609,7 +609,7 @@ variables:
       {%- endfor %}
       {%- endfor %}
   needs:
-    - project: namespace/group/project-name
+    - project: $CI_PROJECT_PATH
       job: {{ component.job | replace(from="_", to="-") }}
       ref: softbank-base-eut_ck
       artifacts: true
