@@ -608,8 +608,9 @@ variables:
       {%- endif %}
       {%- endfor %}
       {%- endfor %}
-  dependencies:
-    - {{ component.job | replace(from="_", to="-") }}
+  needs:
+    - job: {{ component.job | replace(from="_", to="-") }}
+      artifacts: true
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
     max: 1
