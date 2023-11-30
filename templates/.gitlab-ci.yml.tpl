@@ -609,7 +609,7 @@ variables:
       {%- endfor %}
       {%- endfor %}
   dependencies:
-    - {{ component.job | replace(from="_", to="-") }}-deploy
+    - {{ component.job | replace(from="_", to="-") }}
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
     max: 1
