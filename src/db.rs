@@ -9,10 +9,17 @@ pub struct Db {
     pub db: indradb::Database<indradb::MemoryDatastore>,
 }
 
+impl Default for Db {
+    fn default() -> Self {
+        Db::new()
+    }
+}
+
 impl Db {
     pub fn new() -> Self {
         Db { db: indradb::MemoryDatastore::new_db() }
     }
+
     pub fn create_object(&self, object_type: VertexTypes) -> Vertex {
         info!("Create new object of type <{}>...", object_type.name());
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
@@ -26,22 +33,22 @@ impl Db {
 
     fn create_relationship_identifier(&self, a: &Vertex, b: &Vertex) -> Identifier {
         info!("Create relationship identifier for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
-        let i = Identifier::new(self.get_relationship_type(&a, &b)).unwrap();
+        let i = Identifier::new(self.get_relationship_type(a, b)).unwrap();
         info!("Create relationship identifier for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         i
     }
 
     pub fn create_relationship(&self, a: &Vertex, b: &Vertex) -> bool {
         info!("Create relationship for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
-        let i = self.create_relationship_identifier(&a, &b);
+        let i = self.create_relationship_identifier(a, b);
         let e = Edge::new(a.id, i, b.id);
-        let status = self.db.create_edge(&e).expect(&format!("panic build relationship between {} and {}", a.t.as_str(), b.t.as_str()));
+        let status = self.db.create_edge(&e).unwrap_or_else(|_| panic!("panic build relationship between {} and {}", a.t.as_str(), b.t.as_str()));
         info!("Create relationship for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         status
     }
 
     pub fn add_object_properties<T: serde::Serialize>(&self, object: &Vertex, value: &T, property_type: PropertyType) {
-        info!("Add new property to object <{}>...", object.t.to_string());
+        info!("Add new property to object <{}>...", object.t.as_str());
         let v = to_value(value).unwrap();
         let p: BulkInsertItem;
 
@@ -61,12 +68,12 @@ impl Db {
         }
 
         self.db.bulk_insert(vec![p]).unwrap();
-        info!("Add new property to object <{}> -> Done", object.t.to_string());
+        info!("Add new property to object <{}> -> Done", object.t.as_str());
     }
 
     #[allow(dead_code)]
     fn add_relationship_properties<T: serde::Serialize>(&self, object: &Edge, value: &T, property_type: PropertyType) {
-        info!("Add new property to relationship <{}>...", object.t.to_string());
+        info!("Add new property to relationship <{}>...", object.t.as_str());
         let v = to_value(value).unwrap();
         let p: BulkInsertItem;
 
@@ -85,7 +92,7 @@ impl Db {
             }
         }
         self.db.bulk_insert(vec![p]).unwrap();
-        info!("Add new property to relationship <{}> -> Done", object.t.to_string());
+        info!("Add new property to relationship <{}> -> Done", object.t.as_str());
     }
 
     #[allow(dead_code)]
@@ -96,7 +103,7 @@ impl Db {
 
     fn get_relationship_type(&self, a: &Vertex, b: &Vertex) -> &str {
         info!("Get relationship type for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
-        error!("RELA -----> {:?}, {:?}", a.t.to_string(), b.t.to_string());
+        error!("RELA -----> {:?}, {:?}", a.t, b.t);
         let e = EDGE_TYPES.get(&VertexTuple(a.t.to_string(), b.t.to_string())).unwrap();
         info!("Get relationship type for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         e
