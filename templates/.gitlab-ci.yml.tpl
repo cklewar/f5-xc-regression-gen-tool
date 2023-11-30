@@ -608,13 +608,8 @@ variables:
       {%- endif %}
       {%- endfor %}
       {%- endfor %}
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-      {%- for path in rte.ci[component.provider].artifacts.paths %}
-      - {{ path }}
-      {%- endfor %}
-    expire_in: {{ config.ci.artifacts.expire_in }}
+  dependencies:
+    - {{ component.job | replace(from="_", to="-") }}-deploy
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
     max: 1
@@ -643,10 +638,6 @@ variables:
       {%- endif %}
       {%- endfor %}
       {%- endfor %}
-  artifacts:
-    paths:
-      - $ARTIFACTS_ROOT_DIR/
-    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ rte.ci[share.provider].timeout }}
   retry:
     max: 1
