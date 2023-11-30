@@ -428,6 +428,7 @@ struct RteProviderShareRenderContext {
 struct RteCiRenderContext {
     timeout: Value,
     variables: Value,
+    artifacts: Value,
 }
 
 #[derive(Serialize, Debug)]
@@ -1709,6 +1710,7 @@ impl<'a> Regression<'a> {
                                                             KEY_GV_LABEL: k
                                                         }), PropertyType::Gv);
                                                     self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
+                                                    error!("CI_CONFIG: {:#?}",self.db.get_object_with_properties(&p_ci_o.id));
                                                 }
                                                 k if k == KEY_SHARE => {
                                                     let s_o = self.db.create_object(VertexTypes::Share);
@@ -2086,6 +2088,7 @@ impl<'a> Regression<'a> {
                                    RteCiRenderContext {
                                        timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
                                        variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
+                                       artifacts: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("artifacts").unwrap().clone(),
                                    },
                 );
 

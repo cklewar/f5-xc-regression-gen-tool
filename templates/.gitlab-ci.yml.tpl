@@ -253,6 +253,9 @@ variables:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
+      {%- for path in rte.ci[component.provider].artifacts.paths %}
+      - {{ path }}
+      {%- endfor %}
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
@@ -608,6 +611,9 @@ variables:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
+      {%- for path in rte.ci[component.provider].artifacts.paths %}
+      - {{ path }}
+      {%- endfor %}
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
