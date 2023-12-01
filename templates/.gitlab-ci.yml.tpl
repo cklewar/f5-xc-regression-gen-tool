@@ -608,11 +608,13 @@ variables:
       {%- endif %}
       {%- endfor %}
       {%- endfor %}
+  {%- if rte.ci[component.provider].artifacts.needs_deploy %}
   needs:
     - project: $CI_PROJECT_PATH
       job: {{ component.job | replace(from="_", to="-") }}
       ref: $CI_COMMIT_REF_NAME
       artifacts: true
+  {%- endif %}
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
     max: 1
