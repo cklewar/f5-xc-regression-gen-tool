@@ -611,7 +611,7 @@ variables:
   needs:
     - project: $CI_PROJECT_PATH
       job: {{ component.job | replace(from="_", to="-") }}
-      ref: softbank-base-eut_ck
+      ref: $CI_COMMIT_REF_NAME
       artifacts: true
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
