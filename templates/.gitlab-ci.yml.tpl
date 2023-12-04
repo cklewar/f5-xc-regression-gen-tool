@@ -156,7 +156,7 @@ variables:
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/${P12_FILE}"
       export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN}"
       export TF_VAR_f5xc_tenant="${!F5XC_TENANT}"
-      export TF_VAR_f5xc_url="${!F5XC_API_URL}"
+      export TF_VAR_f5xc_api_url="${!F5XC_API_URL}"
     - terraform version
     - echo $CI_PROJECT_DIR
     - cd $CI_PROJECT_DIR
