@@ -152,6 +152,7 @@ variables:
       #!/usr/bin/env bash
       echo $CI_PROJECT_DIR
       cd $CI_PROJECT_DIR/tools/saml_extractor
+      python3 -m pip -qqq --exists-action i --no-input --no-color install --progress-bar off -r "requirements.txt"
       python main.py -s $SAML_RESPONSE -e true
       cd $CI_PROJECT_DIR
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
