@@ -314,7 +314,7 @@ variables:
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
-    - !reference [ .regression_{ { test.job | replace(from="-", to="_") } }_rules, rules ]
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- endfor %}
   script:
