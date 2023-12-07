@@ -312,11 +312,6 @@ variables:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
-    {%- for rte in rtes %}
-    {%- for test in rte.tests %}
-    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
-    {%- endfor %}
-    {%- endfor %}
   script:
       - |
         {%- for script in site.scripts %}
@@ -348,6 +343,11 @@ variables:
     - !reference [ .deploy_rte_rules, rules ]
     - !reference [ .destroy_rules, rules ]
     - !reference [ .destroy_rte_rules, rules ]
+    {%- for rte in rtes %}
+    {%- for test in rte.tests %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- endfor %}
   script:
       - |
         {%- for script in site.scripts %}
