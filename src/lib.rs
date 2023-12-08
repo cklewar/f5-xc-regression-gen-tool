@@ -1144,7 +1144,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                             rte: params.rte_name.to_string(),
                             name: v_name.to_string(),
                             module: v_module.to_string(),
-                            provider: conn_src_name.to_string(),
+                            provider: component_provider.to_string(),
                             test_name: t_name.to_string(),
                             test_module: t_module.to_string(),
                         };
