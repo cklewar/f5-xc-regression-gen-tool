@@ -360,6 +360,8 @@ struct RegressionConfigRte {
 struct RegressionConfigTests {
     path: String,
     ci: RegressionConfigGenericCi,
+    data_vars_path: String,
+    data_scripts_path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
