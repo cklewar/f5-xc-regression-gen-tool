@@ -150,14 +150,20 @@ variables:
   before_script:
     - |
       #!/usr/bin/env bash
+      cd $CI_PROJECT_DIR/modules/utils/url
+      terraform init
+      terraform apply -var="f5xc_url=$URL" -auto-approve
+      F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
+      P12_FILE=$(terraform output -json | jq -r .data.value.cert)
+      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       cd $CI_PROJECT_DIR
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
       aws s3 cp $P12_FILE_PATH/$P12_FILE $KEYS_DIR
-      export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/${P12_FILE}"
+      export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
       export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN}"
-      export TF_VAR_f5xc_tenant="${!F5XC_TENANT}"
-      export TF_VAR_f5xc_api_url="${!F5XC_API_URL}"
+      export TF_VAR_f5xc_tenant="$F5XC_TENANT"
+      export TF_VAR_f5xc_api_url="$F5XC_API_URL"
     - echo $CI_PROJECT_DIR
     - terraform version
 {% for rte in rtes -%}
