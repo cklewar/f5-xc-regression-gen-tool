@@ -157,6 +157,11 @@ variables:
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
       F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       F5XC_API_TOKEN_VAR=$(terraform output -json | jq -r .data.value.api_token)
+      {% for job_template in config.ci.job_templates -%}
+      {% for variable in job_template.variables -%}
+      {{ variable.name | upper }}: "{{ variable.value }}"
+      {% endfor -%}
+      {% endfor -%}      
       cd $CI_PROJECT_DIR
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR

@@ -312,6 +312,12 @@ struct RegressionConfigCiVariables {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigJobTemplates {
+    name: String,
+    variables: Vec<RegressionConfigCiVariables>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigCiArtifacts {
     path: String,
     expire_in: String,
@@ -323,6 +329,7 @@ struct RegressionConfigCi {
     image: String,
     artifacts: RegressionConfigCiArtifacts,
     variables: Vec<RegressionConfigCiVariables>,
+    job_templates: Vec<RegressionConfigJobTemplates>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
