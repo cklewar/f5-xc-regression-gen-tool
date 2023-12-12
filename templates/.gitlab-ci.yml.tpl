@@ -164,7 +164,7 @@ variables:
       export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN}"
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
-      export TF_VAR_environment: $ENVIRONMENT
+      export TF_VAR_environment="$ENVIRONMENT"
     - echo $CI_PROJECT_DIR
     - terraform version
 {% for rte in rtes -%}
