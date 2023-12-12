@@ -142,8 +142,7 @@ variables:
     key: "${CI_COMMIT_SHA}"
   image: {{ config.ci.image }}
   variables:
-    TF_VAR_feature: $FEATURE
-    TF_VAR_environment: $ENVIRONMENT
+    TF_VAR_feature: "sense8"
     TF_VAR_gcp_project_id: $GCP_PROJECT_ID
     TF_VAR_ssh_private_key_file: $KEYS_DIR/$SSH_PRIVATE_KEY_FILE
     TF_VAR_ssh_public_key_file: $KEYS_DIR/$SSH_PUBLIC_KEY_FILE
@@ -156,6 +155,7 @@ variables:
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
       P12_FILE=$(terraform output -json | jq -r .data.value.cert)
       F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
+      ENVIRONMENT=$(terraform output -json | jq -r .data.value.environment)
       cd $CI_PROJECT_DIR
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
@@ -164,6 +164,7 @@ variables:
       export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN}"
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
+      export TF_VAR_environment: $ENVIRONMENT
     - echo $CI_PROJECT_DIR
     - terraform version
 {% for rte in rtes -%}
