@@ -159,7 +159,7 @@ variables:
       F5XC_API_TOKEN_VAR=$(terraform output -json | jq -r .data.value.api_token)
       {% for job_template in config.ci.job_templates -%}
       {% for variable in job_template.variables -%}
-      {{ variable.name | upper }}: "{{ variable.value }}"
+      export {{ variable.name | upper }}="{{ variable.value }}"
       {% endfor -%}
       {% endfor -%}      
       cd $CI_PROJECT_DIR
