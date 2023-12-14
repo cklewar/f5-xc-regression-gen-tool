@@ -149,7 +149,7 @@ variables:
   before_script:
     - |
       #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/modules/utils/url
+      cd $CI_PROJECT_DIR/tools/init
       terraform init
       terraform apply -var="f5xc_url=$URL" -auto-approve
       P12_FILE=$(terraform output -json | jq -r .data.value.p12_file)
