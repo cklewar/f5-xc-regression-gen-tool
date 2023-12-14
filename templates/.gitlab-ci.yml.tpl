@@ -152,7 +152,7 @@ variables:
       cd $CI_PROJECT_DIR/modules/utils/url
       terraform init
       terraform apply -var="f5xc_url=$URL" -auto-approve
-      P12_FILE=$(terraform output -json | jq -r .data.value.cert)
+      P12_FILE=$(terraform output -json | jq -r .data.value.p12_file)
       ENVIRONMENT=$(terraform output -json | jq -r .data.value.environment)
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
       F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant_full)
