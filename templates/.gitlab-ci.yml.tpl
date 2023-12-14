@@ -151,7 +151,7 @@ variables:
       #!/usr/bin/env bash
       cd $CI_PROJECT_DIR/tools/init
       terraform init
-      terraform apply -var="f5xc_url=$URL" -auto-approve
+      terraform apply -var="f5xc_url=$URL" -var="keys_dir=${KEYS_DIR}" -auto-approve
       P12_FILE=$(terraform output -json | jq -r .data.value.p12_file)
       ENVIRONMENT=$(terraform output -json | jq -r .data.value.environment)
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
