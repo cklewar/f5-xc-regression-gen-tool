@@ -149,13 +149,12 @@ variables:
   before_script:
     - |
       #!/usr/bin/env bash
-      cd $CI_PROJECT_DIR/tools/init
+      cd $CI_PROJECT_DIR/tools/init/step1
       terraform init
-      terraform apply -var="f5xc_url=$URL" -var="keys_dir=${KEYS_DIR}" -auto-approve
+      terraform apply -var="f5xc_url=$URL" -auto-approve
       P12_FILE=$(terraform output -json | jq -r .data.value.p12_file)
       ENVIRONMENT=$(terraform output -json | jq -r .data.value.environment)
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
-      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant_full)
       F5XC_API_TOKEN_VAR=$(terraform output -json | jq -r .data.value.api_token)
       {% for job_template in config.ci.job_templates -%}
       {% if job_template.name == "base" -%}
@@ -164,7 +163,6 @@ variables:
       {% endfor -%}
       {% endif -%}
       {% endfor -%}      
-      cd $CI_PROJECT_DIR
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
       aws s3 cp $P12_FILE_PATH/$P12_FILE $KEYS_DIR
@@ -173,6 +171,11 @@ variables:
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
       export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN_VAR}"
+      cd $CI_PROJECT_DIR/tools/init/step2
+      terraform init
+      terraform apply -auto-approve
+      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
+      cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
     - terraform version
 {% for rte in rtes -%}
