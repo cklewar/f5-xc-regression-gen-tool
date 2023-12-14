@@ -155,7 +155,7 @@ variables:
       P12_FILE=$(terraform output -json | jq -r .data.value.cert)
       ENVIRONMENT=$(terraform output -json | jq -r .data.value.environment)
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
-      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
+      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant_full)
       F5XC_API_TOKEN_VAR=$(terraform output -json | jq -r .data.value.api_token)
       {% for job_template in config.ci.job_templates -%}
       {% if job_template.name == "base" -%}
