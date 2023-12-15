@@ -275,7 +275,6 @@ variables:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-      -
       {%- for path in rte.ci[component.provider].artifacts.paths %}
       - {{ path }}
       {%- endfor %}
