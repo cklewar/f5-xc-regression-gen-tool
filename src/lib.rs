@@ -604,7 +604,7 @@ struct RteCtxParameters<'a> {
     eut_name: String,
     rte_name: String,
     features: Vec<String>,
-    provider: Vec<VertexProperties>,
+    provider: Vec<&'a VertexProperties>,
     rte_crcs: &'a mut RteRenderContext,
 }
 
@@ -985,6 +985,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
         for p in rte_available_provider.iter() {
             let _p = self.db.get_object_with_properties(&p.vertex.id);
             let p_name = _p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+
             if rte_active_provider.contains(&to_value(p_name).unwrap()) {
                 for c in connections.iter() {
                     let c_s = self.db.get_object_neighbour_with_properties_out(&c.id, EdgeTypes::HasConnectionSrc).unwrap();
@@ -1050,8 +1051,8 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
 
             //Process rte src component scripts
             let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-
             for p in params.provider.iter() {
+
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}_{}", KEY_RTE, params.rte_name, &conn_name, &p_name, &conn_src_name).replace('_', "-");
@@ -1719,7 +1720,6 @@ impl<'a> Regression<'a> {
                                                             KEY_GV_LABEL: k
                                                         }), PropertyType::Gv);
                                                     self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
-                                                    error!("CI_CONFIG: {:#?}",self.db.get_object_with_properties(&p_ci_o.id));
                                                 }
                                                 k if k == KEY_SHARE => {
                                                     let s_o = self.db.create_object(VertexTypes::Share);
@@ -2077,6 +2077,7 @@ impl<'a> Regression<'a> {
 
         for rte in rtes.iter() {
             let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+
             rte_names.push(rte_name.to_string());
 
             let mut rte_crcs = RteRenderContext {
@@ -2089,56 +2090,62 @@ impl<'a> Regression<'a> {
 
             let _provider = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::NeedsProvider);
             let provider = self.db.get_object_neighbours_with_properties_out(&_provider.id, EdgeTypes::ProvidesProvider);
+            let _active_provider = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_array().unwrap();
+            let mut active_provider: Vec<&VertexProperties> = Vec::new();
 
             for p in provider.iter() {
-                let ci_p = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::HasCi).unwrap();
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                rte_crcs.ci.insert(p_name.to_string(),
-                                   RteCiRenderContext {
-                                       timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
-                                       variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
-                                       artifacts: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("artifacts").unwrap().clone(),
-                                   },
-                );
 
-                //Process provider share scripts render context
-                if let Some(share_p) = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare) {
-                    let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-                    let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+                if _active_provider.contains(&to_value(p_name).unwrap()) {
+                    active_provider.push(p);
+                    let ci_p = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::HasCi).unwrap();
+                    rte_crcs.ci.insert(p_name.to_string(),
+                                       RteCiRenderContext {
+                                           timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
+                                           variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
+                                           artifacts: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("artifacts").unwrap().clone(),
+                                       },
+                    );
 
-                    for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                        let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
-                        let ctx = ScriptRteProviderShareRenderContext {
-                            rte: rte_name.to_string(),
-                            eut: eut_name.to_string(),
-                            map: serde_json::to_string(&rte_to_site_map).unwrap(),
-                            vars: self.config.project.vars.clone(),
-                            sites: serde_json::to_string(&srsd_rc).unwrap(),
-                            counter: site_count,
-                            provider: p_name.to_string(),
-                            project: self.config.project.name.to_string(),
-                        };
+                    //Process provider share scripts render context
+                    if let Some(share_p) = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare) {
+                        let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                        let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
-                        let mut commands: Vec<String> = Vec::new();
-                        for command in render_script(&ctx, &contents).lines() {
-                            commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                        for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                            let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
+                            let ctx = ScriptRteProviderShareRenderContext {
+                                rte: rte_name.to_string(),
+                                eut: eut_name.to_string(),
+                                map: serde_json::to_string(&rte_to_site_map).unwrap(),
+                                vars: self.config.project.vars.clone(),
+                                sites: serde_json::to_string(&srsd_rc).unwrap(),
+                                counter: site_count,
+                                provider: p_name.to_string(),
+                                project: self.config.project.name.to_string(),
+                            };
+
+                            let mut commands: Vec<String> = Vec::new();
+                            for command in render_script(&ctx, &contents).lines() {
+                                commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                            }
+
+                            let data: HashMap<String, Vec<String>> = [
+                                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                            ].into_iter().collect();
+
+                            scripts.push(data);
                         }
 
-                        let data: HashMap<String, Vec<String>> = [
-                            (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                        ].into_iter().collect();
-
-                        scripts.push(data);
+                        rte_crcs.shares.push(RteProviderShareRenderContext {
+                            job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
+                            rte: rte_name.to_string(),
+                            eut: eut_name.to_string(),
+                            provider: p_name.to_string(),
+                            scripts,
+                        });
                     }
-
-                    rte_crcs.shares.push(RteProviderShareRenderContext {
-                        job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
-                        rte: rte_name.to_string(),
-                        eut: eut_name.to_string(),
-                        provider: p_name.to_string(),
-                        scripts,
-                    });
                 }
             }
 
@@ -2158,7 +2165,7 @@ impl<'a> Regression<'a> {
                     eut_name: eut_name.to_string(),
                     rte_name: rte_name.to_string(),
                     features: feature_names,
-                    provider,
+                    provider: active_provider,
                     rte_crcs: &mut rte_crcs,
                 })
             }
