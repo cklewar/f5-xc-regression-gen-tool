@@ -1899,12 +1899,13 @@ impl<'a> Regression<'a> {
     fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
         info!("Loading regression configuration data...");
         let data: String = format!("{path}/{file}");
+        error!("DATA: {}", &data);
         let raw = std::fs::read_to_string(data).unwrap();
         let cfg = serde_json::from_str::<RegressionConfig>(&raw).unwrap();
         info!("Loading regression configuration data -> Done.");
 
         info!("Render regression configuration file...");
-        let mut _tera = Tera::new("../../regression/config/*").unwrap();
+        let mut _tera = Tera::new(&*format!("{path}/*")).unwrap();
         let mut context = Context::new();
         context.insert(KEY_EUT, &cfg.eut);
         context.insert(KEY_RTE, &cfg.rte);
