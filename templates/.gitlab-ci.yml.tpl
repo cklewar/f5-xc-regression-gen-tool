@@ -164,6 +164,10 @@ variables:
       {% endfor -%}
       {% endif -%}
       {% endfor -%}      
+      export TF_VAR_environment="$ENVIRONMENT"
+      export TF_VAR_f5xc_api_url="$F5XC_API_URL"
+      export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
+      export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN_VAR}"
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
       aws s3 cp $P12_FILE_PATH/$P12_FILE $KEYS_DIR
@@ -171,11 +175,7 @@ variables:
       terraform init
       terraform apply -auto-approve
       F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
-      export TF_VAR_environment="$ENVIRONMENT"
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
-      export TF_VAR_f5xc_api_url="$F5XC_API_URL"
-      export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
-      export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN_VAR}"
       cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
     - terraform version
