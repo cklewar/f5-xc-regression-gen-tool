@@ -156,6 +156,10 @@ variables:
       ENVIRONMENT=$(terraform output -json | jq -r .data.value.environment)
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
       F5XC_API_TOKEN_VAR=$(terraform output -json | jq -r .data.value.api_token)
+      cd $CI_PROJECT_DIR/tools/init/step2
+      terraform init
+      terraform apply -auto-approve
+      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       {% for job_template in config.ci.job_templates -%}
       {% if job_template.name == "base" -%}
       {% for variable in job_template.variables -%}
@@ -171,10 +175,6 @@ variables:
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
       export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN_VAR}"
-      cd $CI_PROJECT_DIR/tools/init/step2
-      terraform init
-      terraform apply -auto-approve
-      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
     - terraform version
