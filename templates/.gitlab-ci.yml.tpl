@@ -157,10 +157,6 @@ variables:
       F5XC_TENANT_SHORT=$(terraform output -json | jq -r .data.value.tenant)
       F5XC_API_URL=$(terraform output -json | jq -r .data.value.api_url)
       F5XC_API_TOKEN_VAR=$(terraform output -json | jq -r .data.value.api_token)
-      cd $CI_PROJECT_DIR/tools/init/step2
-      terraform init
-      terraform apply -auto-approve
-      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       {% for job_template in config.ci.job_templates -%}
       {% if job_template.name == "base" -%}
       {% for variable in job_template.variables -%}
@@ -171,6 +167,10 @@ variables:
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
       aws s3 cp $P12_FILE_PATH/$P12_FILE $KEYS_DIR
+      cd $CI_PROJECT_DIR/tools/init/step2
+      terraform init
+      terraform apply -auto-approve
+      F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       export TF_VAR_environment="$ENVIRONMENT"
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
