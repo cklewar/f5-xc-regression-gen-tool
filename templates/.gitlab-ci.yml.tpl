@@ -468,6 +468,7 @@ variables:
   stage: regression-test
   script:
       - |
+        export TF_VAR_data_branch=$data_branch
         {%- for script in test.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
@@ -534,6 +535,7 @@ variables:
   stage: regression-test-verify
   script:
       - |
+        export TF_VAR_data_branch=$data_branch
         {%- for script in verification.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
