@@ -535,6 +535,7 @@ struct ScriptTestRenderContext {
     eut: String,
     name: String,
     module: String,
+    project: RegressionConfigProject,
     provider: String,
     features: Vec<String>,
 }
@@ -884,6 +885,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         eut: params.eut_name.to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
+                        project: params.config.project.clone(),
                         provider: src_name.to_string(),
                         features: params.features.to_vec(),
                     };
@@ -1052,7 +1054,6 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             //Process rte src component scripts
             let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             for p in params.provider.iter() {
-
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}_{}", KEY_RTE, params.rte_name, &conn_name, &p_name, &conn_src_name).replace('_', "-");
@@ -1115,6 +1116,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         eut: params.eut_name.to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
+                        project: params.config.project.clone(),
                         provider: component_provider.to_string(),
                         features: params.features.to_vec(),
                     };
