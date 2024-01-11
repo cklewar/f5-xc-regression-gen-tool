@@ -176,9 +176,9 @@ variables:
       terraform apply -auto-approve
       F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
-      cd $CI_PROJECT_DIR
       [ -z "$data_branch" ] && export data_branch="main"
-      git clone -b $data_branch https://gitlab-ci-token:$CI_JOB_TOKEN@$TESTS_SCRIPTS_REPOSITORY /data
+      git clone -b $data_branch https://gitlab-ci-token:$CI_JOB_TOKEN@$TESTS_SCRIPTS_REPOSITORY /$CI_PROJECT_DIR/data
+      cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
     - terraform version
 {% for rte in rtes -%}
