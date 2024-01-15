@@ -165,7 +165,7 @@ variables:
       {% endfor -%}
       {% endif -%}
       {% endfor -%}      
-      export TF_VAR_environment="$ENVIRONMENT"
+      export TF_VAR_f5xc_environment="$ENVIRONMENT"
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
       export TF_VAR_f5xc_api_token="${!F5XC_API_TOKEN_VAR}"
@@ -174,7 +174,8 @@ variables:
       aws s3 cp $SSH_PUBLIC_KEY_FILE_PATH/$SSH_PUBLIC_KEY_FILE $KEYS_DIR
       aws s3 cp $SSH_PRIVATE_KEY_FILE_PATH/$SSH_PRIVATE_KEY_FILE $KEYS_DIR
       aws s3 cp $P12_FILE_PATH/$P12_FILE $KEYS_DIR
-      aws s3 cp $P12_FILE_PATH/$MATRIX_USER_CERT $KEYS_DIR
+      aws s3 cp $P12_FILE_PATH/$INTROSPECT_CRT_FILE $KEYS_DIR
+      aws s3 cp $P12_FILE_PATH/$INTROSPECT_KEY_FILE $KEYS_DIR
       cd $CI_PROJECT_DIR/tools/init/step2
       terraform init
       terraform apply -auto-approve
@@ -259,7 +260,7 @@ variables:
 {% endfor -%}
 {% for component in rte.components %}
 # {{ component.job | replace(from="_", to="-") }} - deploy
-{{ component.job | replace(from="_", to="-") }}:
+{{ component.job | replace(from="_", to="-") }}-deploy:
   <<: *base
   stage: rte-deploy
   rules:

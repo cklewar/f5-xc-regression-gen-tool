@@ -602,6 +602,7 @@ pub fn render_script(context: &(impl RenderContext + serde::Serialize), input: &
 struct RteCtxParameters<'a> {
     rte: &'a VertexProperties,
     config: &'a RegressionConfig,
+    project: RegressionConfigProject,
     eut_name: String,
     rte_name: String,
     features: Vec<String>,
@@ -742,7 +743,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
             let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             let comp_src = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
             let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-            let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, params.rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace('_', "-");
+            let rte_job_name = format!("{}_{}_{}_{}_{}_{}_{}", params.project.name, KEY_RTE, params.rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace('_', "-");
 
             //Process site_to_rte_map
             let mut _rtes: HashSet<String> = HashSet::new();
@@ -809,7 +810,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                 let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let comp_dst = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst).unwrap();
                 let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}_{}_{}", KEY_RTE, &params.rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace('_', "-");
+                let rte_job_name = format!("{}_{}_{}_{}_{}_{}_{}", params.project.name, KEY_RTE, &params.rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace('_', "-");
 
                 //Process server destination list
                 let rt_dsts = self.db.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
@@ -866,8 +867,8 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
             let tests_p = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::Runs);
             for t in tests_p.iter() {
                 let t_job_name = format!("{}_{}_{}_{}",
+                                         params.project.name,
                                          KEY_TEST,
-                                         params.rte_name,
                                          src_name,
                                          t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
                 ).replace('_', "-");
@@ -1056,7 +1057,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             for p in params.provider.iter() {
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}_{}", KEY_RTE, params.rte_name, &conn_name, &p_name, &conn_src_name).replace('_', "-");
+                let rte_job_name = format!("{}_{}_{}_{}_{}", params.project.name, KEY_RTE, params.rte_name, &p_name, &conn_name).replace('_', "-");
 
                 for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.project.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
@@ -1066,8 +1067,8 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         eut: params.eut_name.to_string(),
                         site: "".to_string(),
                         release: "".to_string(),
-                        provider: p_name.to_string(),
                         project: params.config.project.clone(),
+                        provider: p_name.to_string(),
                         destinations: "".to_string(),
                     };
 
@@ -1096,16 +1097,13 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             //Tests
             let tests_p = self.db.get_object_neighbours_with_properties_out(&conn_src.vertex.id, EdgeTypes::Runs);
             for t in tests_p.iter() {
-                let t_job_name = format!("{}_{}_{}_{}",
-                                         KEY_TEST,
-                                         params.rte_name,
-                                         conn_src_name,
-                                         t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
-                ).replace('_', "-");
-
                 //Process test scripts
                 let t_name = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                let t_job_name = format!("{}_{}_{}",
+                                         params.project.name,
+                                         KEY_TEST,
+                                         t_name).replace('_', "-");
                 let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1135,18 +1133,15 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                 //Verifications
                 let verifications_p = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
                 let mut verifications: Vec<RteVerificationRenderContext> = Vec::new();
-                for v in verifications_p.iter() {
-                    let v_job_name = format!("{}_{}_{}_{}_{}",
-                                             KEY_VERIFICATION,
-                                             params.rte_name,
-                                             conn_src_name,
-                                             &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                             v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                    ).replace('_', "-");
 
+                for v in verifications_p.iter() {
                     //Process test scripts
-                    let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                    let v_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let v_job_name = format!("{}_{}_{}",
+                                             params.project.name,
+                                             KEY_VERIFICATION,
+                                             v_name).replace('_', "-");
                     let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1980,7 +1975,8 @@ impl<'a> Regression<'a> {
     pub fn build_context(&self, id: Uuid) -> Context {
         info!("Build render context...");
         let project = self.db.get_object_with_properties(&id);
-        let project_p_base = project.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+        let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
+        let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
 
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
@@ -2033,7 +2029,7 @@ impl<'a> Regression<'a> {
 
             let frc = FeatureRenderContext {
                 ci: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
-                job: format!("{}_{}_{}", KEY_FEATURE, &eut_name, &f_name).replace('_', "-"),
+                job: format!("{}_{}_{}_{}", project_name, KEY_FEATURE, &eut_name, &f_name).replace('_', "-"),
                 eut: eut_name.to_string(),
                 name: f_name,
                 release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
@@ -2080,7 +2076,6 @@ impl<'a> Regression<'a> {
 
         for rte in rtes.iter() {
             let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-
             rte_names.push(rte_name.to_string());
 
             let mut rte_crcs = RteRenderContext {
@@ -2142,7 +2137,7 @@ impl<'a> Regression<'a> {
                         }
 
                         rte_crcs.shares.push(RteProviderShareRenderContext {
-                            job: format!("{}_{}_{}_{}", KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
+                            job: format!("{}_{}_{}_{}_{}", project_name, KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
                             rte: rte_name.to_string(),
                             eut: eut_name.to_string(),
                             provider: p_name.to_string(),
@@ -2165,6 +2160,7 @@ impl<'a> Regression<'a> {
                 r.build_conn_ctx(RteCtxParameters {
                     rte,
                     config: &self.config,
+                    project: self.config.project.clone(),
                     eut_name: eut_name.to_string(),
                     rte_name: rte_name.to_string(),
                     features: feature_names,
@@ -2218,7 +2214,7 @@ impl<'a> Regression<'a> {
                 scripts.push(data);
             }
             let eut_s_rc = EutSiteRenderContext {
-                job: format!("{}_{}_{}", KEY_EUT, &eut_name, &site_name).replace('_', "-"),
+                job: format!("{}_{}_{}_{}", project_name, KEY_EUT, &eut_name, &site_name).replace('_', "-"),
                 name: site_name.to_string(),
                 index: i,
                 scripts,
