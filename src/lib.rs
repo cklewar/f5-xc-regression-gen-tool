@@ -1615,12 +1615,6 @@ impl<'a> Regression<'a> {
                         let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let cfg = self.load_object_config(VertexTypes::get_name_by_object(&r_o), module);
                         let rte_providers_id_path = rte_p_o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
-                        error!("RTE_PROVIDERS_ID_PATH: {:#?}", &rte_providers_id_path);
-                        let assigned_courses: Vec<String> = rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
-                        error!("Test123: {:?}", assigned_courses);
-
-                        /*let second: Vec<String> = rte_providers_id_path.split("__").map(|s| s.to_string()).collect();
-                        error!("RTE_PROVIDERS_ID_PATH_VEC: {:#?}", &second);*/
 
                         for (k, v) in cfg.as_object().unwrap().iter() {
                             match k {
@@ -1638,19 +1632,22 @@ impl<'a> Regression<'a> {
                                 }
                                 k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
-                                        let o = self.db.create_object_with_gv(VertexTypes::RteProvider, &mut id_path, p, 0);
+                                        let o = self.db.create_object_with_gv(VertexTypes::RteProvider,
+                                                                              &mut rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect(),
+                                                                              p, 0);
+                                        let o_p = self.db.get_object_with_properties(&o.id);
                                         self.db.create_relationship(&rte_p_o, &o);
                                         self.db.add_object_properties(&o, &json!({KEY_NAME: p}), PropertyType::Module);
 
                                         for (k, v) in v.as_object().unwrap().iter() {
+                                            let o_id_path = o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+
                                             match k {
                                                 k if k == KEY_CI => {
-                                                    let p_ci_o = self.db.create_object_with_gv(VertexTypes::Ci, &mut id_path, "", 0);
+                                                    let p_ci_o = self.db.create_object_with_gv(VertexTypes::Ci,
+                                                                                               &mut o_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect(),
+                                                                                               "", 0);
                                                     self.db.create_relationship(&o, &p_ci_o);
-                                                    /*self.db.add_object_properties(&p_ci_o, &json!({
-                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                            KEY_GV_LABEL: k
-                                                        }), PropertyType::Gv);*/
                                                     self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_SHARE => {
