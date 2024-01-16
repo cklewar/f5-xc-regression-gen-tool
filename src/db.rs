@@ -68,7 +68,7 @@ impl Db {
         o
     }
 
-    pub fn create_object_with_gv(&self, object_type: VertexTypes, path: &mut Vec<String>, label: &str, pop: usize) -> Vertex {
+    pub fn create_object_and_init(&self, object_type: VertexTypes, path: &mut Vec<String>, label: &str, pop: usize) -> Vertex {
         info!("Create new object of type <{}>...", object_type.name());
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.db.create_vertex(&o).expect("panic while creating project db entry");
