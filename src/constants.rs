@@ -22,6 +22,7 @@ pub const KEY_STAGES: &str = "stages";
 pub const KEY_MODULE: &str = "module";
 pub const KEY_SCRIPT: &str = "script";
 pub const KEY_RELEASE: &str = "release";
+pub const KEY_ID_PATH: &str = "id_path";
 pub const KEY_SCRIPTS: &str = "scripts";
 pub const KEY_SOURCE: &str = "source";
 pub const KEY_PROJECT: &str = "project";

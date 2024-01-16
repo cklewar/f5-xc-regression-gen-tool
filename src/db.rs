@@ -1,5 +1,6 @@
 use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, QueryExt, Vertex, VertexProperties};
 use log::{error, info};
+use serde_derive::{Deserialize, Serialize};
 use serde_json::{json, to_value};
 use uuid::Uuid;
 
@@ -7,6 +8,12 @@ use crate::{constants::*, EDGE_TYPES, EDGES_COUNT, EdgeTypes, PropertyType, Vert
 
 pub struct Db {
     pub db: indradb::Database<indradb::MemoryDatastore>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct IdPath {
+    vec: Vec<String>,
+    str: String
 }
 
 impl Default for Db {
@@ -20,12 +27,54 @@ impl Db {
         Db { db: indradb::MemoryDatastore::new_db() }
     }
 
+    fn gen_id_path(&self, path: &mut Vec<String>, obj_type: &str, label: &str, pop: usize) -> IdPath {
+        if pop > 0 {
+            path.truncate(path.len().saturating_sub(pop));
+        }
+
+        return if label == "" {
+            path.push(obj_type.replace('-', "_"));
+            IdPath { vec: path.clone(), str:  path.join("__")}
+
+        } else {
+            path.push(format!("{}_{}", obj_type, label).replace('-', "_"));
+            IdPath { vec: path.clone(), str:  path.join("__")}
+        };
+    }
+
+    fn add_gv_properties(&self, object: &Vertex, id: &str, label: &str) {
+        self.add_object_properties(&object, &json!({
+            KEY_GVID: id.replace('-', "_"),
+            KEY_GV_LABEL: label.replace('-', "_"),
+        }), PropertyType::Gv);
+    }
+
     pub fn create_object(&self, object_type: VertexTypes) -> Vertex {
         info!("Create new object of type <{}>...", object_type.name());
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.db.create_vertex(&o).expect("panic while creating project db entry");
         self.add_object_properties(&o, &json!({}), PropertyType::Base);
         self.add_object_properties(&o, &json!({}), PropertyType::Gv);
+        self.add_object_properties(&o, &json!({}), PropertyType::Module);
+        info!("Create new object of type <{}> -> Done", object_type.name());
+        o
+    }
+
+    pub fn create_object_with_gv(&self, object_type: VertexTypes, path: &mut Vec<String>, label: &str, pop: usize) -> Vertex {
+        info!("Create new object of type <{}>...", object_type.name());
+        let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
+        self.db.create_vertex(&o).expect("panic while creating project db entry");
+        let id_path = self.gen_id_path(path, object_type.name(), label, pop);
+        //error!("ID_PATH: {:#?}", &id_path);
+        //error!("JSON: {:?}", json!(&id_path.vec));
+        self.add_object_properties(&o, &json!({KEY_ID_PATH: id_path.vec}), PropertyType::Base);
+
+        if label == "" {
+            self.add_gv_properties(&o, &id_path.str, object_type.name());
+        } else {
+            self.add_gv_properties(&o, &id_path.str, label);
+        }
+
         self.add_object_properties(&o, &json!({}), PropertyType::Module);
         info!("Create new object of type <{}> -> Done", object_type.name());
         o
@@ -180,17 +229,10 @@ impl Db {
     }
 
     pub fn get_object_neighbour_in(&self, id: &Uuid, identifier: EdgeTypes) -> Vertex {
-        error!("ID: {:?}", id);
-        error!("IDENTIFIER: {:?}", identifier.name().to_string());
         let i = Identifier::new(identifier.name().to_string()).unwrap();
-        let ooo = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
-
-        let extracted = indradb::util::extract_edges(ooo.unwrap()).unwrap();
-        error!("OOO: {:?}", &extracted);
-        error!("O_OUT_ID: {:?}", self.get_object(&extracted.get(1).unwrap().outbound_id));
-        error!("O_IN_ID: {:?}",  self.get_object(&extracted.get(1).unwrap().inbound_id));
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
         let id = indradb::util::extract_edges(o.unwrap()).unwrap().get(1).unwrap().outbound_id;
+
         self.get_object(&id)
     }
 
