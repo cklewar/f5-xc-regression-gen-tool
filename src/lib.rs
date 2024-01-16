@@ -15,8 +15,11 @@ use uuid::Uuid;
 use crate::constants::*;
 use crate::db::Db;
 
+//use objects::Project;
+
 pub mod constants;
 pub mod db;
+pub mod objects;
 
 pub enum PropertyType {
     Gv,
@@ -225,14 +228,6 @@ impl EdgeTypes {
 }
 
 impl PropertyType {
-    fn name(&self) -> &'static str {
-        match *self {
-            PropertyType::Gv => PROPERTY_TYPE_GV,
-            PropertyType::Base => PROPERTY_TYPE_BASE,
-            PropertyType::Module => PROPERTY_TYPE_MODULE,
-        }
-    }
-
     fn index(&self) -> usize {
         match *self {
             PropertyType::Gv => 1,
@@ -597,6 +592,19 @@ pub fn render_script(context: &(impl RenderContext + serde::Serialize), input: &
     let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
     info!("Render script context -> Done.");
     rendered
+}
+
+pub fn merge_json(a: &mut Value, b: &Value) {
+    match (a, b) {
+        (&mut Value::Object(ref mut a), &Value::Object(ref b)) => {
+            for (k, v) in b {
+                merge_json(a.entry(k.clone()).or_insert(Value::Null), v);
+            }
+        }
+        (a, b) => {
+            *a = b.clone();
+        }
+    }
 }
 
 struct RteCtxParameters<'a> {
@@ -1238,6 +1246,10 @@ impl<'a> Regression<'a> {
     }
 
     pub fn init(&self) -> Uuid {
+        /*let mut id_path_1: Vec<String> = Vec::new();
+        let p1 = Project::new(self.db, &mut id_path_1, &self.config.project.name, 0);
+        error!("P1: {:?}", &p1);*/
+
         let mut id_path: Vec<String> = Vec::new();
         // Project
         let project = self.db.create_object_with_gv(VertexTypes::Project, &mut id_path, &self.config.project.name, 0);
@@ -1614,7 +1626,7 @@ impl<'a> Regression<'a> {
                         let r_p = self.db.get_object_properties(&r_o).unwrap().props;
                         let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let cfg = self.load_object_config(VertexTypes::get_name_by_object(&r_o), module);
-                        let rte_providers_id_path = rte_p_o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+                        let _rte_providers_id_path = rte_p_o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
 
                         for (k, v) in cfg.as_object().unwrap().iter() {
                             match k {
@@ -1632,50 +1644,36 @@ impl<'a> Regression<'a> {
                                 }
                                 k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
+                                        let mut rte_providers_id_path: Vec<String> = _rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
                                         let o = self.db.create_object_with_gv(VertexTypes::RteProvider,
-                                                                              &mut rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect(),
+                                                                              &mut rte_providers_id_path,
                                                                               p, 0);
-                                        let o_p = self.db.get_object_with_properties(&o.id);
                                         self.db.create_relationship(&rte_p_o, &o);
                                         self.db.add_object_properties(&o, &json!({KEY_NAME: p}), PropertyType::Module);
 
                                         for (k, v) in v.as_object().unwrap().iter() {
-                                            let o_id_path = o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
-
                                             match k {
                                                 k if k == KEY_CI => {
                                                     let p_ci_o = self.db.create_object_with_gv(VertexTypes::Ci,
-                                                                                               &mut o_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect(),
+                                                                                               &mut rte_providers_id_path,
                                                                                                "", 0);
                                                     self.db.create_relationship(&o, &p_ci_o);
                                                     self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_SHARE => {
-                                                    let s_o = self.db.create_object(VertexTypes::Share);
+                                                    let s_o = self.db.create_object_with_gv(VertexTypes::Share, &mut rte_providers_id_path, "", 0);
                                                     self.db.create_relationship(&o, &s_o);
-                                                    self.db.add_object_properties(&s_o, &json!({
-                                                        KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, k, p, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                        KEY_GV_LABEL: k
-                                                    }), PropertyType::Gv);
                                                     self.db.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_COMPONENTS => {
-                                                    let c_o = self.db.create_object(VertexTypes::Components);
+                                                    let c_o = self.db.create_object_with_gv(VertexTypes::Components, &mut rte_providers_id_path, "", 1);
                                                     self.db.create_relationship(&o, &c_o);
-                                                    self.db.add_object_properties(&c_o, &json!({
-                                                            KEY_GVID: format!("{}_{}_{}_{}", KEY_PROVIDER, p, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                            KEY_GV_LABEL: k
-                                                        }), PropertyType::Gv);
 
                                                     for (k, v) in v.as_object().unwrap().iter() {
                                                         match k {
                                                             k if k == KEY_SRC => {
-                                                                let c_src_o = self.db.create_object(VertexTypes::ComponentSrc);
+                                                                let c_src_o = self.db.create_object_with_gv(VertexTypes::ComponentSrc, &mut rte_providers_id_path, "", 0);
                                                                 self.db.create_relationship(&c_o, &c_src_o);
-                                                                self.db.add_object_properties(&c_src_o, &json!({
-                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                        KEY_GV_LABEL: k
-                                                                    }), PropertyType::Gv);
 
                                                                 for (k, v) in v.as_object().unwrap().iter() {
                                                                     let c_src_o_p = self.db.get_object_properties(&c_src_o).unwrap().props;
@@ -1700,12 +1698,8 @@ impl<'a> Regression<'a> {
                                                                 }
                                                             }
                                                             k if k == KEY_DST => {
-                                                                let c_dst_o = self.db.create_object(VertexTypes::ComponentDst);
+                                                                let c_dst_o = self.db.create_object_with_gv(VertexTypes::ComponentDst, &mut rte_providers_id_path, "", 0);
                                                                 self.db.create_relationship(&c_o, &c_dst_o);
-                                                                self.db.add_object_properties(&c_dst_o, &json!({
-                                                                        KEY_GVID: format!("{}_{}_{}_{}_{}", KEY_RTE, p, KEY_COMPONENT, k, &rte.as_object().unwrap().get(PropertyType::Module.name()).unwrap().as_str().unwrap()),
-                                                                        KEY_GV_LABEL: k
-                                                                    }), PropertyType::Gv);
 
                                                                 for (k, v) in v.as_object().unwrap().iter() {
                                                                     let c_dst_o_p = self.db.get_object_properties(&c_dst_o).unwrap().props;
@@ -1750,16 +1744,21 @@ impl<'a> Regression<'a> {
             }
         }
 
+        let ci_o_p = self.db.get_object_properties(&ci).unwrap();
+        let ci_o_p_base = ci_o_p.props.get(PropertyType::Base.index()).unwrap();
+        let _ci_id_path = ci_o_p_base.value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let mut ci_id_path: Vec<String> = _ci_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
+
         //Rte Stages Deploy
-        let rte_stage_deploy = self.add_ci_stages(&ci, &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let rte_stage_deploy = self.add_ci_stages(&mut ci_id_path, &ci, &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Feature Stages Deploy
-        let feature_stage_deploy = self.add_ci_stages(&rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let feature_stage_deploy = self.add_ci_stages(&mut ci_id_path, &rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Eut Stages Deploy
-        let eut_stage_deploy = self.add_ci_stages(&feature_stage_deploy.unwrap(), &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let eut_stage_deploy = self.add_ci_stages(&mut ci_id_path, &feature_stage_deploy.unwrap(), &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Test Stages Deploy
-        let mut test_stage_deploy = self.add_ci_stages(&eut_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let mut test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &eut_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Verification Stages Deploy
-        let verification_stage_deploy = self.add_ci_stages(&test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Test and Verification single job stages
         let _rtes = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::UsesRtes);
@@ -1799,8 +1798,8 @@ impl<'a> Regression<'a> {
             }
         }
 
-        test_stage_deploy = self.add_ci_stages(&verification_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
-        self.add_ci_stages(&test_stage_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
+        test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
+        self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
@@ -1808,17 +1807,19 @@ impl<'a> Regression<'a> {
         let features = self.db.get_object_neighbours_out(&_features.id, EdgeTypes::HasFeature);
 
         if !features.is_empty() {
-            stage_destroy = self.add_ci_stages(&ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
+            stage_destroy = self.add_ci_stages(&mut ci_id_path, &ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
         }
+
+        ci_id_path.truncate(2);
 
         //Eut Stages Destroy
         match stage_destroy {
-            Some(f) => stage_destroy = self.add_ci_stages(&f, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy),
-            None => stage_destroy = self.add_ci_stages(&ci, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy)
+            Some(f) => stage_destroy = self.add_ci_stages(&mut ci_id_path, &f, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy),
+            None => stage_destroy = self.add_ci_stages(&mut ci_id_path, &ci, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy)
         }
 
         //Rte Stages Destroy
-        self.add_ci_stages(&stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
+        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         project.id
     }
@@ -1882,16 +1883,12 @@ impl<'a> Regression<'a> {
         cfg
     }
 
-    fn add_ci_stages(&self, ancestor: &Vertex, stages: &[String], object_type: &VertexTypes) -> Option<Vertex> {
+    fn add_ci_stages(&self, id_path: &mut Vec<String>, ancestor: &Vertex, stages: &[String], object_type: &VertexTypes) -> Option<Vertex> {
         let mut curr = Vertex { id: Default::default(), t: Default::default() };
 
         for (i, stage) in stages.iter().enumerate() {
-            let new = self.db.create_object(object_type.clone());
-            self.db.add_object_properties(&new, &stage, PropertyType::Base);
-            self.db.add_object_properties(&new, &json!({
-                KEY_GVID: stage.replace('-', "_"),
-                KEY_GV_LABEL: stage,
-            }), PropertyType::Gv);
+            let new = self.db.create_object_with_gv(object_type.clone(), id_path, stage, 0);
+            self.db.add_object_properties(&new, &json!({KEY_NAME: &stage}), PropertyType::Base);
 
             if i == 0 {
                 self.db.create_relationship(ancestor, &new);
@@ -2171,9 +2168,9 @@ impl<'a> Regression<'a> {
         let project_ci = self.db.get_object_neighbour_out(&project.vertex.id, EdgeTypes::HasCi);
         let s_deploy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDeployStages).unwrap();
         let s_destroy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDestroyStages).unwrap();
-        deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
+        deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().to_string());
         self.get_next_stage(&s_deploy.vertex.id, &mut deploy_stages);
-        deploy_stages.push(s_destroy.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
+        deploy_stages.push(s_destroy.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().to_string());
         self.get_next_stage(&s_destroy.vertex.id, &mut destroy_stages);
 
         stages.append(&mut deploy_stages);
@@ -2194,7 +2191,7 @@ impl<'a> Regression<'a> {
 
     fn get_next_stage(&self, id: &Uuid, data: &mut Vec<String>) {
         for stage in self.db.get_object_neighbours_with_properties_out(id, EdgeTypes::NextStage).iter() {
-            data.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_str().unwrap().to_string());
+            data.push(stage.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
             self.get_next_stage(&stage.vertex.id, data);
         }
     }

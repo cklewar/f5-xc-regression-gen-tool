@@ -11,9 +11,25 @@ pub struct Db {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct IdPath {
+pub struct IdPath {
     vec: Vec<String>,
-    str: String
+    str: String,
+}
+
+impl IdPath {
+    pub fn new(path: &mut Vec<String>, obj_type: &str, label: &str, pop: usize) -> IdPath {
+        if pop > 0 {
+            path.truncate(path.len().saturating_sub(pop));
+        }
+
+        return if label == "" {
+            path.push(obj_type.replace('-', "_"));
+            IdPath { vec: path.clone(), str: path.join("__") }
+        } else {
+            path.push(format!("{}_{}", obj_type, label).replace('-', "_"));
+            IdPath { vec: path.clone(), str: path.join("__") }
+        };
+    }
 }
 
 impl Default for Db {
@@ -34,19 +50,11 @@ impl Db {
 
         return if label == "" {
             path.push(obj_type.replace('-', "_"));
-            IdPath { vec: path.clone(), str:  path.join("__")}
-
+            IdPath { vec: path.clone(), str: path.join("__") }
         } else {
             path.push(format!("{}_{}", obj_type, label).replace('-', "_"));
-            IdPath { vec: path.clone(), str:  path.join("__")}
+            IdPath { vec: path.clone(), str: path.join("__") }
         };
-    }
-
-    fn add_gv_properties(&self, object: &Vertex, id: &str, label: &str) {
-        self.add_object_properties(&object, &json!({
-            KEY_GVID: id.replace('-', "_"),
-            KEY_GV_LABEL: label.replace('-', "_"),
-        }), PropertyType::Gv);
     }
 
     pub fn create_object(&self, object_type: VertexTypes) -> Vertex {
@@ -65,14 +73,18 @@ impl Db {
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.db.create_vertex(&o).expect("panic while creating project db entry");
         let id_path = self.gen_id_path(path, object_type.name(), label, pop);
-        //error!("ID_PATH: {:#?}", &id_path);
-        //error!("JSON: {:?}", json!(&id_path.vec));
         self.add_object_properties(&o, &json!({KEY_ID_PATH: id_path.vec}), PropertyType::Base);
 
         if label == "" {
-            self.add_gv_properties(&o, &id_path.str, object_type.name());
+            self.add_object_properties(&o, &json!({
+                KEY_GVID: id_path.str.replace('-', "_"),
+                KEY_GV_LABEL: object_type.name().replace('-', "_"),
+            }), PropertyType::Gv);
         } else {
-            self.add_gv_properties(&o, &id_path.str, label);
+            self.add_object_properties(&o, &json!({
+                KEY_GVID: id_path.str.replace('-', "_"),
+                KEY_GV_LABEL: label.replace('-', "_"),
+            }), PropertyType::Gv);
         }
 
         self.add_object_properties(&o, &json!({}), PropertyType::Module);
@@ -107,8 +119,20 @@ impl Db {
                     .unwrap(), Json::new(v.clone()));
             }
             PropertyType::Base => {
-                p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_BASE)
-                    .unwrap(), Json::new(v.clone()));
+                let o_p = self.get_object_properties(&object);
+                match o_p {
+                    None => {
+                        p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_BASE)
+                            .unwrap(), Json::new(v.clone()));
+                    }
+                    Some(o) => {
+                        let mut current = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                        let mut a = v.as_object().unwrap().clone();
+                        a.append(&mut current);
+                        p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_BASE)
+                            .unwrap(), Json::new(to_value(a).unwrap()));
+                    }
+                }
             }
             PropertyType::Module => {
                 p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_MODULE)
@@ -262,6 +286,7 @@ impl Db {
         info!("Get object <{}> properties...", object.t.as_str());
         let b = indradb::SpecificVertexQuery::new(vec!(object.id)).properties().unwrap();
         let _r = self.db.get(b);
+
         return match _r {
             Ok(qov) => {
                 let vp = indradb::util::extract_vertex_properties(qov);
