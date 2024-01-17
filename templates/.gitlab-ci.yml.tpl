@@ -120,15 +120,15 @@ variables:
 {% for test in rte.tests %}
 .regression_{{ test.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-{{ test.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ test.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ test.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests -%}
 {% for verification in test.verifications %}
 .regression_{{ verification.job | replace(from="-", to="_") }}_rules:
   rules:
-    - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
 {% endfor %}
