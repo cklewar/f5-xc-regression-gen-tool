@@ -1773,24 +1773,26 @@ impl<'a> Regression<'a> {
                 let c_src = self.db.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc).unwrap();
                 let tests = self.db.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
                 for t in tests.iter() {
-                    let t_stage_name = format!("{}-{}-{}-{}-{}",
+                    let t_stage_name = format!("{}-{}-{}-{}-{}-{}",
                                                KEY_TEST,
                                                rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                               &t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                               KEY_APPLY
+                                               &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                               &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                               KEY_DEPLOY
                     ).replace('_', "-");
                     _test_stages.push(t_stage_name);
 
                     //Verification stages
                     let verifications = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
                     for v in verifications.iter() {
-                        let v_stage_name = format!("{}-{}-{}-{}-{}",
+                        let v_stage_name = format!("{}-{}-{}-{}-{}-{}",
                                                    KEY_VERIFICATION,
                                                    rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                                   &v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                                   KEY_APPLY
+                                                   &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                                   &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   KEY_DEPLOY
                         ).replace('_', "-");
                         _verification_stages.push(v_stage_name);
                     }
@@ -1887,8 +1889,9 @@ impl<'a> Regression<'a> {
         let mut curr = Vertex { id: Default::default(), t: Default::default() };
 
         for (i, stage) in stages.iter().enumerate() {
+            error!("STAGE: {:?}", stage);
             let new = self.db.create_object_and_init(object_type.clone(), id_path, stage, 0);
-            self.db.add_object_properties(&new, &json!({KEY_NAME: &stage}), PropertyType::Base);
+            self.db.add_object_properties(&new, &json!({KEY_NAME: stage}), PropertyType::Base);
 
             if i == 0 {
                 self.db.create_relationship(ancestor, &new);
@@ -2168,9 +2171,9 @@ impl<'a> Regression<'a> {
         let project_ci = self.db.get_object_neighbour_out(&project.vertex.id, EdgeTypes::HasCi);
         let s_deploy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDeployStages).unwrap();
         let s_destroy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDestroyStages).unwrap();
-        deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().to_string());
+        deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
         self.get_next_stage(&s_deploy.vertex.id, &mut deploy_stages);
-        deploy_stages.push(s_destroy.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().to_string());
+        deploy_stages.push(s_destroy.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
         self.get_next_stage(&s_destroy.vertex.id, &mut destroy_stages);
 
         stages.append(&mut deploy_stages);

@@ -14,6 +14,7 @@ pub const KEY_TESTS: &str = "tests";
 pub const KEY_GVID: &str = "id";
 pub const KEY_NAME: &str = "name";
 pub const KEY_APPLY: &str = "apply";
+pub const KEY_DEPLOY: &str = "deploy";
 pub const KEY_SITES: &str = "sites";
 pub const KEY_SHARE: &str = "share";
 pub const KEY_COUNT: &str = "count";
