@@ -1889,7 +1889,6 @@ impl<'a> Regression<'a> {
         let mut curr = Vertex { id: Default::default(), t: Default::default() };
 
         for (i, stage) in stages.iter().enumerate() {
-            error!("STAGE: {:?}", stage);
             let new = self.db.create_object_and_init(object_type.clone(), id_path, stage, 0);
             self.db.add_object_properties(&new, &json!({KEY_NAME: stage}), PropertyType::Base);
 
