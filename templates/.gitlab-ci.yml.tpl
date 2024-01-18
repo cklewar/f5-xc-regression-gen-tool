@@ -366,9 +366,9 @@ variables:
   <<: *base
   stage: eut-artifacts
   rules:
-    - !reference [ .deploy_rte_rules, rules ]
+    # - !reference [ .deploy_rte_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    - !reference [ .destroy_rte_rules, rules ]
+    # - !reference [ .destroy_rte_rules, rules ]
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
@@ -650,7 +650,7 @@ variables:
   {%- if rte.ci[component.provider].artifacts.needs_deploy %}
   needs:
     - project: $CI_PROJECT_PATH
-      job: {{ component.job | replace(from="_", to="-") }}
+      job: {{ component.job | replace(from="_", to="-") }}-deploy
       ref: $CI_COMMIT_REF_NAME
       artifacts: true
   {%- endif %}

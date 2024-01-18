@@ -21,7 +21,7 @@ use sense8_ci_generator::constants::PIPELINE_FILE_NAME;
 struct Cli {
     /// Regression configuration file
     #[arg(long)]
-    config_file_path: String,
+    root_path: String,
     #[arg(long)]
     config_file: String,
     /// Write CI pipeline file
@@ -43,7 +43,7 @@ fn main() {
     env_logger::init();
     let cli = Cli::parse();
     let db = sense8_ci_generator::db::Db::new();
-    let r = sense8_ci_generator::Regression::new(&db, &cli.config_file_path, &cli.config_file);
+    let r = sense8_ci_generator::Regression::new(&db, &cli.root_path, &cli.config_file);
     let p = r.init();
 
     if cli.write_ci {

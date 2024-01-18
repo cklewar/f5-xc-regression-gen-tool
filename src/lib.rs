@@ -375,7 +375,6 @@ struct RegressionConfigProjectVars {
 struct RegressionConfigProject {
     name: String,
     templates: String,
-    root_path: String,
     vars: RegressionConfigProjectVars,
 }
 
@@ -387,6 +386,7 @@ pub struct RegressionConfig {
     tests: RegressionConfigTests,
     project: RegressionConfigProject,
     features: RegressionConfigFeatures,
+    root_path: String,
     collector: RegressionConfigCollector,
     verifications: RegressionConfigVerifications,
 }
@@ -774,7 +774,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
 
                 for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     if src_p_name == p_name {
-                        let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.project.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
                         let ctx = ScriptRteRenderContext {
                             rte: params.rte_name.to_string(),
@@ -835,7 +835,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
 
                     for script in comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                         if dst_p_name == p_name {
-                            let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.project.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                            let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_dst_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                             let ctx = ScriptRteRenderContext {
                                 rte: params.rte_name.to_string(),
@@ -887,7 +887,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                 let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                    let path = format!("{}/{}/{}/{}/{}", params.config.project.root_path, params.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
                         rte: params.rte_name.to_string(),
@@ -928,7 +928,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                     let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        let path = format!("{}/{}/{}/{}/{}", params.config.project.root_path, params.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let ctx = ScriptVerificationRenderContext {
                             rte: params.rte_name.to_string(),
@@ -1068,7 +1068,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                 let rte_job_name = format!("{}_{}_{}_{}_{}", params.project.name, KEY_RTE, params.rte_name, &p_name, &conn_name).replace('_', "-");
 
                 for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                    let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.project.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
                     let ctx = ScriptRteRenderContext {
                         rte: params.rte_name.to_string(),
@@ -1115,7 +1115,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                 let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                    let path = format!("{}/{}/{}/{}/{}", params.config.project.root_path, params.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
                         rte: params.rte_name.to_string(),
@@ -1153,7 +1153,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                        let path = format!("{}/{}/{}/{}/{}", params.config.project.root_path, params.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                        let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let ctx = ScriptVerificationRenderContext {
                             rte: params.rte_name.to_string(),
@@ -1233,15 +1233,17 @@ impl<'a> Rte<Box<dyn RteCharacteristics + 'a>> {
 }
 
 pub struct Regression<'a> {
-    pub config: RegressionConfig,
     db: &'a Db,
+    pub config: RegressionConfig,
+    pub root_path: String,
 }
 
 impl<'a> Regression<'a> {
     pub fn new(db: &'a Db, path: &str, file: &str) -> Self {
         Regression {
-            config: Regression::load_regression_config(path, file),
             db,
+            config: Regression::load_regression_config(path, file),
+            root_path: path.to_string(),
         }
     }
 
@@ -1828,14 +1830,17 @@ impl<'a> Regression<'a> {
 
     fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
         info!("Loading regression configuration data...");
-        let data: String = format!("{path}/{file}");
-        error!("DATA: {}", &data);
+        let data: String = format!("{path}/{CONFIG_FILE_PATH}/{file}");
+        error!("Sense8 config file: {}", &data);
         let raw = std::fs::read_to_string(data).unwrap();
-        let cfg = serde_json::from_str::<RegressionConfig>(&raw).unwrap();
+        let _tmp: Value = serde_json::from_str(&raw).unwrap();
+        let mut _cfg = _tmp.as_object().unwrap().clone();
+        _cfg.insert("root_path".to_string(), Value::from(path.to_string()));
+        let cfg = serde_json::from_value::<RegressionConfig>(to_value(&_cfg).unwrap()).unwrap();
         info!("Loading regression configuration data -> Done.");
 
         info!("Render regression configuration file...");
-        let mut _tera = Tera::new(&*format!("{path}/*")).unwrap();
+        let mut _tera = Tera::new(&*format!("{path}/{CONFIG_FILE_PATH}/*")).unwrap();
         let mut context = Context::new();
         context.insert(KEY_EUT, &cfg.eut);
         context.insert(KEY_RTE, &cfg.rte);
@@ -1849,7 +1854,10 @@ impl<'a> Regression<'a> {
         info!("Render regression configuration file -> Done.");
 
         info!("Loading regression configuration data...");
-        let cfg = serde_json::from_str::<RegressionConfig>(&eutc).unwrap();
+        let _tmp: Value = serde_json::from_str(&eutc).unwrap();
+        let mut _cfg = _tmp.as_object().unwrap().clone();
+        _cfg.insert("root_path".to_string(), Value::from(path.to_string()));
+        let cfg = serde_json::from_value::<RegressionConfig>(to_value(&_cfg).unwrap()).unwrap();
         info!("Loading regression configuration data -> Done.");
 
         cfg
@@ -1860,19 +1868,19 @@ impl<'a> Regression<'a> {
         let file: String;
         match _type {
             KEY_EUT => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
             }
             KEY_RTE => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
             }
             KEY_FEATURE => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
             }
             KEY_TEST => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
             }
             KEY_VERIFICATION => {
-                file = format!("{}/{}/{}/{}", self.config.project.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
+                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
             }
             _ => {
                 return Null;
@@ -1936,7 +1944,7 @@ impl<'a> Regression<'a> {
 
             //Process feature scripts
             for script in feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                 let ctx = ScriptFeatureRenderContext {
                     eut: eut_name.to_string(),
@@ -2042,7 +2050,7 @@ impl<'a> Regression<'a> {
                         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
                         for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.project.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                            let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                             let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
                             let ctx = ScriptRteProviderShareRenderContext {
                                 rte: rte_name.to_string(),
@@ -2120,7 +2128,7 @@ impl<'a> Regression<'a> {
             let scripts_path = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
             for script in eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", self.config.project.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let ctx = ScriptEutRenderContext {
                     project: self.config.project.clone(),

@@ -25,6 +25,12 @@ impl Project {
         }
     }
 
+    pub fn init() {
+        //let project = self.db.create_object_and_init(VertexTypes::Project, &mut id_path, &self.config.project.name, 0);
+        //self.db.add_object_properties(&project, &self.config.project, PropertyType::Base);
+
+    }
+
     pub fn get_base_properties(&self, db: &Db) -> NamedProperty {
         let o_p = db.get_object_with_properties(&self.id).props;
         let p = o_p.get(PropertyType::Base.index()).unwrap();

@@ -1,4 +1,5 @@
 pub const CONFIG_FILE_NAME: &str = "config.json";
+pub const CONFIG_FILE_PATH: &str = "regression/config";
 
 // KEYS
 pub const KEY_CI: &str = "ci";
