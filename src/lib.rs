@@ -329,9 +329,9 @@ struct RegressionConfigCi {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigEut {
-    module: String,
-    path: String,
     ci: RegressionConfigGenericCi,
+    path: String,
+    module: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -341,28 +341,30 @@ struct RegressionConfigCollector {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigFeatures {
-    path: String,
     ci: RegressionConfigGenericCi,
+    path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigRte {
-    path: String,
     ci: RegressionConfigGenericCi,
+    path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigTests {
-    path: String,
     ci: RegressionConfigGenericCi,
+    path: String,
     data_vars_path: String,
     data_scripts_path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigVerifications {
-    path: String,
     ci: RegressionConfigGenericCi,
+    path: String,
+    data_vars_path: String,
+    data_scripts_path: String,
 }
 
 #[derive(Default, Deserialize, Serialize, Clone, Debug)]
@@ -374,8 +376,8 @@ struct RegressionConfigProjectVars {
 #[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
     name: String,
-    templates: String,
     vars: RegressionConfigProjectVars,
+    templates: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
