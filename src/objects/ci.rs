@@ -9,22 +9,22 @@ use super::super::db::IdPath;
 use super::super::VertexTypes;
 
 #[derive(Debug)]
-pub struct Project {
+pub struct Ci {
     id: Uuid,
     object: Vertex,
     id_path: IdPath,
 }
 
-impl Project {
-    pub fn init(db: &Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Project {
+impl Ci {
+    pub fn init(db: &Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Ci {
         error!("Initialize new project object");
-        let project = db.create_object_and_init(VertexTypes::Project, &mut path, &config.project.name, 0);
-        db.add_object_properties(&project, &config.project, PropertyType::Base);
+        let ci = db.create_object_and_init(VertexTypes::Ci, &mut path, "", 0);
+        db.add_object_properties(&ci, &config.ci, PropertyType::Base);
 
-        Project {
-            id: project.id,
+        Ci {
+            id: ci.id,
             id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
-            object: project,
+            object: ci,
         }
     }
 

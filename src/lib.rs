@@ -12,10 +12,11 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
+use objects::Project;
+use objects::Ci;
+
 use crate::constants::*;
 use crate::db::Db;
-
-//use objects::Project;
 
 pub mod constants;
 pub mod db;
@@ -1250,26 +1251,19 @@ impl<'a> Regression<'a> {
     }
 
     pub fn init(&self) -> Uuid {
-        /*let mut id_path_1: Vec<String> = Vec::new();
-        let p1 = Project::new(self.db, &mut id_path_1, &self.config.project.name, 0);
-        error!("P1: {:?}", &p1);*/
-
         let mut id_path: Vec<String> = Vec::new();
         // Project
-        let project = self.db.create_object_and_init(VertexTypes::Project, &mut id_path, &self.config.project.name, 0);
-        self.db.add_object_properties(&project, &self.config.project, PropertyType::Base);
-
+        let project = Project::init(self.db, &self.config, &mut id_path, &self.config.project.name, 0);
         // Ci
-        let ci = self.db.create_object_and_init(VertexTypes::Ci, &mut id_path, "", 0);
-        self.db.add_object_properties(&ci, &self.config.ci, PropertyType::Base);
-        self.db.create_relationship(&project, &ci);
+        let ci = Ci::init(self.db, &self.config, &mut id_path, "", 0);
+        self.db.create_relationship(&project.get_object(), &ci.get_object());
 
         // Eut
         let eut = self.db.create_object_and_init(VertexTypes::Eut, &mut id_path, &self.config.eut.module, 1);
         self.db.add_object_properties(&eut, &self.config.eut, PropertyType::Base);
         let module = self.load_object_config(VertexTypes::get_name_by_object(&eut), &self.config.eut.module);
         let v = to_value(module).unwrap();
-        self.db.create_relationship(&project, &eut);
+        self.db.create_relationship(&project.get_object(), &eut);
         let eut_providers = self.db.create_object_and_init(VertexTypes::Providers, &mut id_path, "", 0);
         self.db.create_relationship(&eut, &eut_providers);
 
@@ -1748,13 +1742,13 @@ impl<'a> Regression<'a> {
             }
         }
 
-        let ci_o_p = self.db.get_object_properties(&ci).unwrap();
+        let ci_o_p = self.db.get_object_properties(&ci.get_object()).unwrap();
         let ci_o_p_base = ci_o_p.props.get(PropertyType::Base.index()).unwrap();
         let _ci_id_path = ci_o_p_base.value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let mut ci_id_path: Vec<String> = _ci_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
 
         //Rte Stages Deploy
-        let rte_stage_deploy = self.add_ci_stages(&mut ci_id_path, &ci, &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let rte_stage_deploy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Feature Stages Deploy
         let feature_stage_deploy = self.add_ci_stages(&mut ci_id_path, &rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Eut Stages Deploy
@@ -1813,7 +1807,7 @@ impl<'a> Regression<'a> {
         let features = self.db.get_object_neighbours_out(&_features.id, EdgeTypes::HasFeature);
 
         if !features.is_empty() {
-            stage_destroy = self.add_ci_stages(&mut ci_id_path, &ci, &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
+            stage_destroy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.features.ci.stages.destroy, &VertexTypes::StageDestroy);
         }
 
         ci_id_path.truncate(2);
@@ -1821,13 +1815,13 @@ impl<'a> Regression<'a> {
         //Eut Stages Destroy
         match stage_destroy {
             Some(f) => stage_destroy = self.add_ci_stages(&mut ci_id_path, &f, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy),
-            None => stage_destroy = self.add_ci_stages(&mut ci_id_path, &ci, &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy)
+            None => stage_destroy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy)
         }
 
         //Rte Stages Destroy
         self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
 
-        project.id
+        project.get_id().clone()
     }
 
     fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
