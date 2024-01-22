@@ -17,14 +17,14 @@ pub struct Ci {
 
 impl Ci {
     pub fn init(db: &Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Ci {
-        error!("Initialize new project object");
-        let ci = db.create_object_and_init(VertexTypes::Ci, &mut path, "", 0);
-        db.add_object_properties(&ci, &config.ci, PropertyType::Base);
+        error!("Initialize new ci object");
+        let o = db.create_object_and_init(VertexTypes::Ci, &mut path, "", 0);
+        db.add_object_properties(&o, &config.ci, PropertyType::Base);
 
         Ci {
-            id: ci.id,
+            id: o.id,
             id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
-            object: ci,
+            object: o,
         }
     }
 

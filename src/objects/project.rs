@@ -18,13 +18,13 @@ pub struct Project {
 impl Project {
     pub fn init(db: &Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Project {
         error!("Initialize new project object");
-        let project = db.create_object_and_init(VertexTypes::Project, &mut path, &config.project.name, 0);
-        db.add_object_properties(&project, &config.project, PropertyType::Base);
+        let o = db.create_object_and_init(VertexTypes::Project, &mut path, &config.project.name, 0);
+        db.add_object_properties(&o, &config.project, PropertyType::Base);
 
         Project {
-            id: project.id,
+            id: o.id,
             id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
-            object: project,
+            object: o,
         }
     }
 

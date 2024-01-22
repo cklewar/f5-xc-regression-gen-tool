@@ -12,8 +12,9 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::Project;
 use objects::Ci;
+use objects::Eut;
+use objects::Project;
 
 use crate::constants::*;
 use crate::db::Db;
@@ -1254,33 +1255,32 @@ impl<'a> Regression<'a> {
         let mut id_path: Vec<String> = Vec::new();
         // Project
         let project = Project::init(self.db, &self.config, &mut id_path, &self.config.project.name, 0);
+
         // Ci
         let ci = Ci::init(self.db, &self.config, &mut id_path, "", 0);
         self.db.create_relationship(&project.get_object(), &ci.get_object());
 
         // Eut
-        let eut = self.db.create_object_and_init(VertexTypes::Eut, &mut id_path, &self.config.eut.module, 1);
-        self.db.add_object_properties(&eut, &self.config.eut, PropertyType::Base);
-        let module = self.load_object_config(VertexTypes::get_name_by_object(&eut), &self.config.eut.module);
-        let v = to_value(module).unwrap();
-        self.db.create_relationship(&project.get_object(), &eut);
+        let eut = Eut::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 1);
+        let v = eut.get_module_cfg();
+        self.db.create_relationship(&project.get_object(), &eut.get_object());
         let eut_providers = self.db.create_object_and_init(VertexTypes::Providers, &mut id_path, "", 0);
-        self.db.create_relationship(&eut, &eut_providers);
+        self.db.create_relationship(&eut.get_object(), &eut_providers);
 
         for k in EUT_KEY_ORDER.iter() {
-            let obj = v.as_object().unwrap().get(*k).unwrap();
+            let obj = v.get(*k).unwrap();
             match *k {
                 k if k == KEY_NAME => {
-                    let eut_o_p = self.db.get_object_properties(&eut).unwrap().props;
+                    let eut_o_p = self.db.get_object_properties(&eut.get_object()).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.to_string(), obj.clone());
-                    self.db.add_object_properties(&eut, &p, PropertyType::Module);
+                    self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
                 }
                 k if k == KEY_RELEASE => {
-                    let eut_o_p = self.db.get_object_properties(&eut).unwrap().props;
+                    let eut_o_p = self.db.get_object_properties(&eut.get_object()).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.to_string(), obj.clone());
-                    self.db.add_object_properties(&eut, &p, PropertyType::Module);
+                    self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
                 }
                 k if k == KEY_PROVIDER => {
                     for p in obj.as_array().unwrap().iter() {
@@ -1290,15 +1290,16 @@ impl<'a> Regression<'a> {
                     }
                 }
                 k if k == KEY_CI => {
-                    let eut_o_p = self.db.get_object_properties(&eut).unwrap().props;
-                    let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                    p.insert(k.to_string(), obj.clone());
-                    self.db.add_object_properties(&eut, &p, PropertyType::Module);
+                    //let eut_o_p = self.db.get_object_properties(&eut.get_object())).unwrap().props;
+                    //let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+                    //p.insert(k.to_string(), obj.clone());
+                    //self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
+                    eut.insert_module_properties(self.db, k.to_string(), obj.clone());
                 }
                 k if k == KEY_SITES => {
                     let o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 2);
-                    self.db.create_relationship(&eut, &o);
-                    let _p = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasProviders);
+                    self.db.create_relationship(&eut.get_object(), &o);
+                    let _p = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasProviders);
                     let provider = self.db.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
                     let mut id_name_map: HashMap<&str, Uuid> = HashMap::new();
 
@@ -1337,12 +1338,12 @@ impl<'a> Regression<'a> {
                 }
                 k if k == KEY_FEATURES => {
                     let o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 2);
-                    self.db.create_relationship(&eut, &o);
+                    self.db.create_relationship(&eut.get_object(), &o);
 
                     for f in obj.as_array().unwrap().iter() {
                         let f_module = f.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let f_sites = f.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap();
-                        let _sites = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasSites);
+                        let _sites = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasSites);
                         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
                         let f_o = self.db.create_object_and_init(VertexTypes::Feature, &mut id_path, f_module, 0);
                         self.db.create_relationship(&o, &f_o);
@@ -1401,20 +1402,20 @@ impl<'a> Regression<'a> {
                     }
                 }
                 k if k == KEY_SCRIPTS_PATH => {
-                    let eut_o_p = self.db.get_object_properties(&eut).unwrap().props;
+                    let eut_o_p = self.db.get_object_properties(&eut.get_object()).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.to_string(), obj.clone());
-                    self.db.add_object_properties(&eut, &p, PropertyType::Module);
+                    self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
                 }
                 k if k == KEY_SCRIPTS => {
-                    let eut_o_p = self.db.get_object_properties(&eut).unwrap().props;
+                    let eut_o_p = self.db.get_object_properties(&eut.get_object()).unwrap().props;
                     let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                     p.insert(k.to_string(), obj.clone());
-                    self.db.add_object_properties(&eut, &p, PropertyType::Module);
+                    self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
                 }
                 k if k == KEY_RTES => {
                     let o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 1);
-                    self.db.create_relationship(&eut, &o);
+                    self.db.create_relationship(&eut.get_object(), &o);
 
                     for rte in obj.as_array().unwrap().iter() {
                         let r_o = self.db.create_object_and_init(VertexTypes::Rte, &mut id_path,
@@ -1427,7 +1428,7 @@ impl<'a> Regression<'a> {
                         self.db.create_relationship(&r_o, &rte_p_o);
 
                         //RTE -> Features
-                        let eut_f_o = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasFeatures);
+                        let eut_f_o = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasFeatures);
                         self.db.create_relationship(&r_o, &eut_f_o);
 
                         //Rte
@@ -1469,7 +1470,7 @@ impl<'a> Regression<'a> {
                                         self.db.create_relationship(&c_o, &src_o);
                                         self.db.add_object_properties(&src_o, &json!({KEY_NAME: &source, KEY_RTE: &rte.as_object().
                                             unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
-                                        let _sites = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasSites);
+                                        let _sites = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasSites);
                                         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
                                         //Connection Source -> Site
@@ -1759,7 +1760,7 @@ impl<'a> Regression<'a> {
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Test and Verification single job stages
-        let _rtes = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::UsesRtes);
+        let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
         let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
         let mut _test_stages: Vec<String> = Vec::new();
         let mut _verification_stages: Vec<String> = Vec::new();
@@ -1803,7 +1804,7 @@ impl<'a> Regression<'a> {
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
-        let _features = self.db.get_object_neighbour_out(&eut.id, EdgeTypes::HasFeatures);
+        let _features = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasFeatures);
         let features = self.db.get_object_neighbours_out(&_features.id, EdgeTypes::HasFeature);
 
         if !features.is_empty() {
