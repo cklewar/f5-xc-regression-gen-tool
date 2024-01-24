@@ -5,6 +5,7 @@ use serde_json::Value::Null;
 pub use ci::Ci;
 pub use eut::Eut;
 pub use project::Project;
+pub use provider::EutProvider;
 
 use crate::constants::*;
 use crate::RegressionConfig;
@@ -12,6 +13,8 @@ use crate::RegressionConfig;
 mod project;
 mod ci;
 mod eut;
+mod provider;
+mod object;
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");

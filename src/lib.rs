@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
 use std::io::Write;
 
 use indradb::{Vertex, VertexProperties};
@@ -15,6 +16,7 @@ use uuid::Uuid;
 use objects::Ci;
 use objects::Eut;
 use objects::Project;
+use objects::EutProvider;
 
 use crate::constants::*;
 use crate::db::Db;
@@ -1266,6 +1268,9 @@ impl<'a> Regression<'a> {
         self.db.create_relationship(&project.get_object(), &eut.get_object());
         let eut_providers = self.db.create_object_and_init(VertexTypes::Providers, &mut id_path, "", 0);
         self.db.create_relationship(&eut.get_object(), &eut_providers);
+
+        let eut_provider = EutProvider::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 0);
+        error!("EUT_PROVIDER: {}", eut_provider.get_id());
 
         for k in EUT_KEY_ORDER.iter() {
             let obj = v.get(*k).unwrap();
