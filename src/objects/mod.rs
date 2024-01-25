@@ -4,9 +4,11 @@ use serde_json::Value::Null;
 
 pub use ci::Ci;
 pub use eut::Eut;
+pub use feature::Feature;
 pub use project::Project;
 pub use provider::EutProvider;
-pub use collections::Providers;
+pub use collections::{Features, Providers};
+
 pub(crate) use macros::implement_object_ext;
 
 use crate::constants::*;
@@ -19,6 +21,11 @@ mod provider;
 mod object;
 mod collections;
 mod macros;
+mod feature;
+
+enum Objects<'a>  {
+    Feature(Feature<'a>)
+}
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");

@@ -1,23 +1,22 @@
 use indradb::Vertex;
 use log::error;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
 use crate::{PropertyType, RegressionConfig};
 use crate::db::Db;
 
-use super::load_object_config;
+use super::{implement_object_ext};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 use super::object::{Object, ObjectExt};
-use super::implement_object_ext;
 
 pub struct EutProvider<'a> {
-    object: Object<'a>,
+    pub(crate) object: Object<'a>,
 }
 
 pub struct RteProvider<'a> {
-    object: Object<'a>,
+    pub (crate) object: Object<'a>,
 }
 
 impl<'a> EutProvider<'a> {
@@ -25,7 +24,6 @@ impl<'a> EutProvider<'a> {
         error!("Initialize new eut provider object");
         let o = db.create_object_and_init(VertexTypes::EutProvider, &mut path, "", 0);
         db.add_object_properties(&o, &config.eut, PropertyType::Base);
-        let cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
 
         Box::new(EutProvider {
             object: Object {
@@ -33,18 +31,17 @@ impl<'a> EutProvider<'a> {
                 id: o.id,
                 id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
                 vertex: o,
-                module_cfg: cfg,
+                module_cfg: json!(null),
             },
         })
     }
 }
 
-impl<'a> RteProvider<'a> {
+/*impl<'a> RteProvider<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new rte provider object");
         let o = db.create_object_and_init(VertexTypes::RteProvider, &mut path, "", 0);
         db.add_object_properties(&o, &config.eut, PropertyType::Base);
-        let cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
 
         Box::new(RteProvider {
             object: Object {
@@ -52,10 +49,10 @@ impl<'a> RteProvider<'a> {
                 id: o.id,
                 id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
                 vertex: o,
-                module_cfg: cfg,
+                module_cfg: json!(null),
             },
         })
     }
-}
+}*/
 
 implement_object_ext!(EutProvider, RteProvider);

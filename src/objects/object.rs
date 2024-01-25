@@ -14,27 +14,20 @@ pub struct Object<'a> {
 
 pub trait ObjectExt {
     fn get_id(&self) -> Uuid;
-    fn fn_a(&self) -> String;
-    fn fn_b(&self) -> String;
     fn get_object(&self) -> Vertex;
     fn get_id_path(&self) -> &IdPath;
     fn get_module_cfg(&self) -> Map<String, Value>;
     fn get_base_properties(&self) -> Map<String, Value>;
     fn get_module_properties(&self) -> Map<String, Value>;
+    fn add_base_properties(&self, value: Value);
+    fn add_module_properties(&self, value: Value);
+    fn insert_base_properties(&self, key: String, value: Value);
     fn insert_module_properties(&self, key: String, value: Value);
 }
 
 impl ObjectExt for Object<'_> {
     fn get_id(&self) -> Uuid {
         self.id
-    }
-
-    fn fn_a(&self) -> String {
-        "fn_a".to_string()
-    }
-
-    fn fn_b(&self) -> String {
-        "fn_b".to_string()
     }
 
     fn get_object(&self) -> Vertex {
@@ -59,9 +52,22 @@ impl ObjectExt for Object<'_> {
         p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().to_owned()
     }
 
+    fn insert_base_properties(&self, key: String, value: Value) {
+        let mut p = self.get_module_properties().clone();
+        p.insert(key, value);
+        self.db.add_object_properties(&self.vertex, &p, PropertyType::Module);
+    }
+
     fn insert_module_properties(&self, key: String, value: Value) {
         let mut p = self.get_module_properties().clone();
         p.insert(key, value);
         self.db.add_object_properties(&self.vertex, &p, PropertyType::Module);
+    }
+
+    fn add_base_properties(&self, value: Value) {
+        self.db.add_object_properties(&self.vertex, &value, PropertyType::Base);
+    }
+    fn add_module_properties(&self, value: Value) {
+        self.db.add_object_properties(&self.vertex, &value, PropertyType::Module);
     }
 }

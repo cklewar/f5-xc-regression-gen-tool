@@ -11,18 +11,18 @@ use super::{implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
-pub struct Eut<'a> {
+pub struct Feature<'a> {
     object: Object<'a>,
 }
 
-impl<'a> Eut<'a> {
+impl<'a> Feature<'a>  {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
-        error!("Initialize new eut object");
-        let o = db.create_object_and_init(VertexTypes::Eut, &mut path, "", 0);
+        error!("Initialize new feature object");
+        let o = db.create_object_and_init(VertexTypes::Feature, &mut path, "", 0);
         db.add_object_properties(&o, &config.eut, PropertyType::Base);
         let cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
 
-        Box::new(Eut {
+        Box::new(Feature {
             object: Object {
                 db,
                 id: o.id,
@@ -34,4 +34,4 @@ impl<'a> Eut<'a> {
     }
 }
 
-implement_object_ext!(Eut);
+implement_object_ext!(Feature);
