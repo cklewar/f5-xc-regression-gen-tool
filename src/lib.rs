@@ -1356,39 +1356,23 @@ impl<'a> Regression<'a> {
                         }
 
                         // FEATURE MODULE CFG
-                        //let cfg = self.load_object_config(VertexTypes::get_name_by_object(&f_o.get_object()), f_module);
                         let cfg = f_o.get_module_cfg();
                         for (k, v) in cfg.iter() {
                             match k {
                                 k if k == KEY_SCRIPTS_PATH => {
-                                    //let mut p = f_o.get_module_properties();
-                                    //p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                    //self.db.add_object_properties(&f_o.get_object(), &p, PropertyType::Module);
                                     f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
                                 }
                                 k if k == KEY_RELEASE => {
-                                    let f_o_p = self.db.get_object_properties(&f_o.get_object()).unwrap().props;
-                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                    self.db.add_object_properties(&f_o.get_object(), &p, PropertyType::Module);
+                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
                                 }
                                 k if k == KEY_NAME => {
-                                    let f_o_p = self.db.get_object_properties(&f_o.get_object()).unwrap().props;
-                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                    self.db.add_object_properties(&f_o.get_object(), &p, PropertyType::Module);
+                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
                                 }
                                 k if k == KEY_CI => {
-                                    let f_o_p = self.db.get_object_properties(&f_o.get_object()).unwrap().props;
-                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                    self.db.add_object_properties(&f_o.get_object(), &p, PropertyType::Module);
+                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
                                 }
                                 k if k == KEY_SCRIPTS => {
-                                    let f_o_p = self.db.get_object_properties(&f_o.get_object()).unwrap().props;
-                                    let mut p = f_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                    p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                    self.db.add_object_properties(&f_o.get_object(), &p, PropertyType::Module);
+                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
                                 }
                                 _ => {}
                             }
