@@ -958,7 +958,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         test: t_name.to_string(),
                         rte: params.rte_name.to_string(),
                         job: v_job_name,
-                        name: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                        name: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                         scripts,
                     };
@@ -1183,7 +1183,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         test: t_name.to_string(),
                         rte: params.rte_name.to_string(),
                         job: v_job_name,
-                        name: v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                        name: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                         scripts,
                     };

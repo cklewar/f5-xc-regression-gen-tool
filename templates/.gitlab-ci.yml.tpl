@@ -72,6 +72,10 @@ variables:
   rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+.regression_test_and_verification_rules:
+  rules:
+    - if: $ACTION == "test-and-verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-and-verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% for feature in features %}
 .deploy_{{ feature.job | replace(from="-", to="_") }}_rules:
   rules:
@@ -129,6 +133,15 @@ variables:
   rules:
     - if: $ACTION == "deploy-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "deploy-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% endfor -%}
+
+{% for test in rte.tests -%}
+{% for verification in test.verifications %}
+.regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "deploy-{{ test.job }}-and-verify-{{ verification.name }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ test.job }}-and-verify-{{ verification.name }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
 {% endfor %}
@@ -372,6 +385,9 @@ variables:
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
     {%- endfor %}
   script:
