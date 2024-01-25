@@ -1,5 +1,4 @@
-use std::slice::Iter;
-use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, NamedProperty, QueryExt, Vertex, VertexProperties};
+use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, QueryExt, Vertex, VertexProperties};
 use log::{error, info};
 use serde_derive::{Deserialize, Serialize};
 use serde_json::{json, to_value};
@@ -148,7 +147,7 @@ impl Db {
                                 p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_MODULE)
                                     .unwrap(), Json::new(v.clone()));
                             }
-                            Some(x) => {
+                            Some(_) => {
                                 let mut current = o.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
                                 let mut a = v.as_object().unwrap().clone();
                                 a.append(&mut current);

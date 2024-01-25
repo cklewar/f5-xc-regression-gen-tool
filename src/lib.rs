@@ -1337,10 +1337,8 @@ impl<'a> Regression<'a> {
                         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
                         let f_o = Feature::init(self.db, &self.config, &mut id_path, f_module, 0);
-                        // let f_o = self.db.create_object_and_init(VertexTypes::Feature, &mut id_path, f_module, 0);
+                        f_o.add_base_properties(f.clone());
                         self.db.create_relationship(&o.get_object(), &f_o.get_object());
-                        //f_o.add_base_properties(f);
-                        self.db.add_object_properties(&f_o.get_object(), f.as_object().unwrap(), PropertyType::Base);
 
                         //Feature -> Site
                         for f_site in f_sites {
