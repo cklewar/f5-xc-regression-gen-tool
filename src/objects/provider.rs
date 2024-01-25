@@ -12,7 +12,6 @@ use super::super::VertexTypes;
 use super::object::{Object, ObjectExt};
 use super::implement_object_ext;
 
-pub struct Providers {}
 pub struct EutProvider<'a> {
     object: Object<'a>,
 }
@@ -34,7 +33,7 @@ impl<'a> EutProvider<'a> {
                 id: o.id,
                 id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
                 vertex: o,
-                module_cfg: Default::default(),
+                module_cfg: cfg,
             },
         })
     }

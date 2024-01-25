@@ -6,6 +6,7 @@ pub use ci::Ci;
 pub use eut::Eut;
 pub use project::Project;
 pub use provider::EutProvider;
+pub use collections::Providers;
 pub(crate) use macros::implement_object_ext;
 
 use crate::constants::*;
@@ -16,7 +17,7 @@ mod ci;
 mod eut;
 mod provider;
 mod object;
-mod providers;
+mod collections;
 mod macros;
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {

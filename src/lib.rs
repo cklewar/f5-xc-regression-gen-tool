@@ -13,10 +13,7 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::Ci;
-use objects::Eut;
-use objects::Project;
-use objects::EutProvider;
+use objects::{Ci, Eut, Project, Providers, EutProvider,};
 
 use crate::constants::*;
 use crate::db::Db;
@@ -1266,11 +1263,9 @@ impl<'a> Regression<'a> {
         let eut = Eut::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 1);
         let v = eut.get_module_cfg();
         self.db.create_relationship(&project.get_object(), &eut.get_object());
-        let eut_providers = self.db.create_object_and_init(VertexTypes::Providers, &mut id_path, "", 0);
-        self.db.create_relationship(&eut.get_object(), &eut_providers);
-
-        let eut_provider = EutProvider::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 0);
-        error!("EUT_PROVIDER: {}", eut_provider.get_id());
+        let eut_providers = Providers::init(self.db, &self.config, &mut id_path, "", 0);
+        self.db.create_relationship(&eut.get_object(), &eut_providers.get_object());
+        EutProvider::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 0);
 
         for k in EUT_KEY_ORDER.iter() {
             let obj = v.get(*k).unwrap();
@@ -1290,15 +1285,11 @@ impl<'a> Regression<'a> {
                 k if k == KEY_PROVIDER => {
                     for p in obj.as_array().unwrap().iter() {
                         let p_o = self.db.create_object_and_init(VertexTypes::EutProvider, &mut id_path, &p.as_str().unwrap(), 0);
-                        self.db.create_relationship(&eut_providers, &p_o);
+                        self.db.create_relationship(&eut_providers.get_object(), &p_o);
                         self.db.add_object_properties(&p_o, &json!({KEY_NAME: &p.as_str().unwrap()}), PropertyType::Base);
                     }
                 }
                 k if k == KEY_CI => {
-                    //let eut_o_p = self.db.get_object_properties(&eut.get_object())).unwrap().props;
-                    //let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                    //p.insert(k.to_string(), obj.clone());
-                    //self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
                     eut.insert_module_properties(self.db, k.to_string(), obj.clone());
                 }
                 k if k == KEY_SITES => {
