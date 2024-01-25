@@ -5,30 +5,30 @@ use uuid::Uuid;
 
 use crate::{PropertyType, RegressionConfig};
 use crate::db::Db;
+use crate::objects::provider::RteProvider;
 
-use super::load_object_config;
+use super::{EutProvider, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 use super::object::{Object, ObjectExt};
-use super::implement_object_ext;
 
-pub struct Providers {}
-pub struct EutProvider<'a> {
+
+pub struct EutProviders<'a> {
     object: Object<'a>,
 }
 
-pub struct RteProvider<'a> {
+pub struct RteProviders<'a> {
     object: Object<'a>,
 }
 
-impl<'a> EutProvider<'a> {
+/*impl<'a> EutProviders<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut provider object");
         let o = db.create_object_and_init(VertexTypes::EutProvider, &mut path, "", 0);
         db.add_object_properties(&o, &config.eut, PropertyType::Base);
         let cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
 
-        Box::new(EutProvider {
+        Box::new(EutProviders {
             object: Object {
                 db,
                 id: o.id,
@@ -40,14 +40,14 @@ impl<'a> EutProvider<'a> {
     }
 }
 
-impl<'a> RteProvider<'a> {
+impl<'a> RteProviders<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new rte provider object");
         let o = db.create_object_and_init(VertexTypes::RteProvider, &mut path, "", 0);
         db.add_object_properties(&o, &config.eut, PropertyType::Base);
         let cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
 
-        Box::new(RteProvider {
+        Box::new(RteProviders {
             object: Object {
                 db,
                 id: o.id,
@@ -57,6 +57,6 @@ impl<'a> RteProvider<'a> {
             },
         })
     }
-}
+}*/
 
-implement_object_ext!(EutProvider, RteProvider);
+//implement_object_ext!(EutProvider, RteProvider);

@@ -6,6 +6,7 @@ pub use ci::Ci;
 pub use eut::Eut;
 pub use project::Project;
 pub use provider::EutProvider;
+pub(crate) use macros::implement_object_ext;
 
 use crate::constants::*;
 use crate::RegressionConfig;
@@ -15,6 +16,8 @@ mod ci;
 mod eut;
 mod provider;
 mod object;
+mod providers;
+mod macros;
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");
