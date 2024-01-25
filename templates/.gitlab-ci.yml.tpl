@@ -316,6 +316,9 @@ variables:
     - !reference [ .destroy_rules, rules ]
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
   stage: rte-artifacts
   script:
@@ -489,6 +492,9 @@ variables:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
   stage: regression-test
   script:
       - |
@@ -556,6 +562,7 @@ variables:
   rules:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
   stage: regression-test-verify
   script:
       - |
