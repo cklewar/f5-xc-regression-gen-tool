@@ -52,22 +52,22 @@ impl ObjectExt for Object<'_> {
         p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().to_owned()
     }
 
+    fn add_base_properties(&self, value: Value) {
+        self.db.add_object_properties(&self.vertex, &value, PropertyType::Base);
+    }
+
+    fn add_module_properties(&self, value: Value) {
+        self.db.add_object_properties(&self.vertex, &value, PropertyType::Module);
+    }
+
     fn insert_base_properties(&self, key: String, value: Value) {
         let mut p = self.get_module_properties().clone();
         p.insert(key, value);
         self.db.add_object_properties(&self.vertex, &p, PropertyType::Module);
     }
-
     fn insert_module_properties(&self, key: String, value: Value) {
         let mut p = self.get_module_properties().clone();
         p.insert(key, value);
         self.db.add_object_properties(&self.vertex, &p, PropertyType::Module);
-    }
-
-    fn add_base_properties(&self, value: Value) {
-        self.db.add_object_properties(&self.vertex, &value, PropertyType::Base);
-    }
-    fn add_module_properties(&self, value: Value) {
-        self.db.add_object_properties(&self.vertex, &value, PropertyType::Module);
     }
 }

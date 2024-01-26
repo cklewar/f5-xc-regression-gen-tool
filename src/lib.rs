@@ -13,7 +13,7 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider};
+use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes, Sites, Site};
 
 use crate::constants::*;
 use crate::db::Db;
@@ -1286,8 +1286,8 @@ impl<'a> Regression<'a> {
                     eut.insert_module_properties(k.to_string(), obj.clone());
                 }
                 k if k == KEY_SITES => {
-                    let o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 2);
-                    self.db.create_relationship(&eut.get_object(), &o);
+                    let o = Sites::init(self.db, &self.config, &mut id_path, "", 2);
+                    self.db.create_relationship(&eut.get_object(), &o.get_object());
                     let _p = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasProviders);
                     let provider = self.db.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
                     let mut id_name_map: HashMap<&str, Uuid> = HashMap::new();
@@ -1302,22 +1302,24 @@ impl<'a> Regression<'a> {
                         let site_count = site_attr.as_object().unwrap().get(KEY_COUNT).unwrap().as_i64().unwrap();
                         match site_count.cmp(&1i64) {
                             Ordering::Equal => {
-                                let s_o = self.db.create_object_and_init(VertexTypes::Site, &mut id_path, site_name, 0);
-                                self.db.create_relationship(&o, &s_o);
+                                let s_o = Site::init(&self.db, site_attr, &mut id_path, site_name, 0);
+                                self.db.create_relationship(&o.get_object(), &s_o.get_object());
                                 let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
                                 let p_o = self.db.get_object(id_name_map.get(provider).unwrap());
-                                self.db.create_relationship(&s_o, &p_o);
-                                self.db.add_object_properties(&s_o, &json!({KEY_NAME: site_name}), PropertyType::Base);
+                                self.db.create_relationship(&s_o.get_object(), &p_o);
+                                self.db.add_object_properties(&s_o.get_object(), &json!({KEY_NAME: site_name}), PropertyType::Base);
                             }
                             Ordering::Greater => {
                                 for c in 1..=site_count {
-                                    let s_o = self.db.create_object_and_init(VertexTypes::Site, &mut id_path,
-                                                                             &*format!("{}_{}", site_name, c), 0);
-                                    self.db.create_relationship(&o, &s_o);
+                                    let s_o = Site::init(&self.db, site_attr, &mut id_path,
+                                                         &*format!("{}_{}", site_name, c), 0);
+                                    self.db.create_relationship(&o.get_object(), &s_o.get_object());
                                     let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
                                     let p_o = self.db.get_object(id_name_map.get(provider).unwrap());
-                                    self.db.create_relationship(&s_o, &p_o);
-                                    self.db.add_object_properties(&s_o, &json!({KEY_NAME: format!("{}_{}", site_name, c)}),
+                                    self.db.create_relationship(&s_o.get_object(), &p_o);
+                                    self.db.add_object_properties(&s_o.get_object(),
+                                                                  &json!({KEY_NAME: format!("{}_{}",
+                                                                      site_name, c)}),
                                                                   PropertyType::Base);
                                 }
                             }
@@ -1382,14 +1384,14 @@ impl<'a> Regression<'a> {
                     eut.add_module_properties(to_value(json!({k: obj})).unwrap());
                 }
                 k if k == KEY_RTES => {
-                    let o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 1);
-                    self.db.create_relationship(&eut.get_object(), &o);
+                    let o = Rtes::init(&self.db, &self.config, &mut id_path, "", 1);
+                    self.db.create_relationship(&eut.get_object(), &o.get_object());
 
                     for rte in obj.as_array().unwrap().iter() {
                         let r_o = self.db.create_object_and_init(VertexTypes::Rte, &mut id_path,
                                                                  &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
                                                                  0);
-                        self.db.create_relationship(&o, &r_o);
+                        self.db.create_relationship(&o.get_object(), &r_o);
                         //RTE -> Providers
                         let rte_p_o = self.db.create_object_and_init(VertexTypes::Providers, &mut id_path, "", 0);
                         let rte_p_o_p = self.db.get_object_with_properties(&rte_p_o.id);

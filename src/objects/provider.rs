@@ -23,7 +23,7 @@ pub struct RteProvider<'a> {
 impl<'a> EutProvider<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut provider object");
-        let o = db.create_object_and_init(VertexTypes::EutProvider, &mut path, "", 0);
+        let o = db.create_object_and_init(VertexTypes::EutProvider, &mut path, "", pop);
         db.add_object_properties(&o, &json!({KEY_NAME: label}), PropertyType::Base);
 
         Box::new(EutProvider {
@@ -41,7 +41,7 @@ impl<'a> EutProvider<'a> {
 /*impl<'a> RteProvider<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new rte provider object");
-        let o = db.create_object_and_init(VertexTypes::RteProvider, &mut path, "", 0);
+        let o = db.create_object_and_init(VertexTypes::RteProvider, &mut path, "", pop);
         db.add_object_properties(&o, &json!({KEY_NAME: label}), PropertyType::Base);
 
         Box::new(RteProvider {
