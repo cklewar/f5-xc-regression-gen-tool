@@ -1,6 +1,6 @@
 [package]
 name = "sense8-ci-generator"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["cklewar <c.klewar@f5.com>"]
 description = "F5 XC Regression CI pipeline file generator"
 edition = "2021"
@@ -21,3 +21,4 @@ phf = { version = "0.11", features = ["macros"] }
 graphviz-rust = "0.6.2"
 rand = "0.8.5"
 regex = "1.9.6"
+serde_yaml = "0.9.30"

@@ -2296,4 +2296,11 @@ impl<'a> Regression<'a> {
         let mut _tera = Tera::new(&self.config.project.templates).unwrap();
         _tera.render("graph.tpl", &context).unwrap()
     }
+
+    pub fn get_action_names(&self, file: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let f = std::fs::File::open(file)?;
+        let d: String = serde_yaml::from_reader(f)?;
+        println!("Read YAML string: {}", d);
+        Ok(())
+    }
 }

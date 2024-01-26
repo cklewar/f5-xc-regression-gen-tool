@@ -29,9 +29,9 @@ mod rte;
 mod test;
 mod verification;
 
-enum Objects<'a>  {
+/*enum Objects<'a>  {
     Feature(Feature<'a>)
-}
+}*/
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");

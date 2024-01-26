@@ -6,9 +6,6 @@ Consumes input from regression configuration file provided as command line argum
 Template file relays on tool provided data structure to render stage, job or variables sections.
 Tool supports direct rendering of given template file or generates JSON output which could be
 used as input for another program or workflow.
-
-Supported command line arguments:
---config <provide regression environment configuration file>
  */
 
 use clap::Parser;
@@ -37,6 +34,9 @@ struct Cli {
     /// Write to GraphViz file
     #[arg(long)]
     write_gv: bool,
+    /// Generate action names
+    #[arg(long)]
+    gen_actions: bool,
 }
 
 fn main() {
@@ -58,5 +58,12 @@ fn main() {
     }
     if cli.write_gv {
         r.to_file(&r.to_gv(), "./out", &"graph.gv");
+    }
+    if cli.gen_actions {
+        let a = r.get_action_names("./out/softbank/.gitlab-ci.yml");
+        match a {
+            Ok(_) => {}
+            Err(_) => {}
+        }
     }
 }
