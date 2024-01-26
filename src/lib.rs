@@ -1388,6 +1388,7 @@ impl<'a> Regression<'a> {
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
 
                     for rte in obj.as_array().unwrap().iter() {
+                        //let r_o = Rte::init();
                         let r_o = self.db.create_object_and_init(VertexTypes::Rte, &mut id_path,
                                                                  &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
                                                                  0);

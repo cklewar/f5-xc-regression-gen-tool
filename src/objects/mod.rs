@@ -4,6 +4,7 @@ use serde_json::Value::Null;
 
 pub use ci::Ci;
 pub use eut::Eut;
+pub use rte::Rte;
 pub use site::Site;
 pub use feature::Feature;
 pub use project::Project;
@@ -25,6 +26,8 @@ mod macros;
 mod feature;
 mod site;
 mod rte;
+mod test;
+mod verification;
 
 enum Objects<'a>  {
     Feature(Feature<'a>)
