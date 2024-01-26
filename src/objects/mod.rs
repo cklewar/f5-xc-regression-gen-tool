@@ -24,6 +24,7 @@ mod collections;
 mod macros;
 mod feature;
 mod site;
+mod rte;
 
 enum Objects<'a>  {
     Feature(Feature<'a>)

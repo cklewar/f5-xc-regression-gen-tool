@@ -11,21 +11,21 @@ use super::{implement_object_ext};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
-pub struct Site<'a> {
+pub struct Rte<'a> {
     object: Object<'a>,
 }
 
-impl<'a> Site<'a> {
+impl<'a> Rte<'a> {
     pub fn init(db: &'a Db, config: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
-        error!("Initialize new site object");
-        let o = db.create_object_and_init(VertexTypes::Site, &mut path, "", pop);
+        error!("Initialize new rte object");
+        let o = db.create_object_and_init(VertexTypes::Rte, &mut path, "", pop);
         db.add_object_properties(&o, &config, PropertyType::Base);
 
-        Box::new(Site {
+        Box::new(Rte {
             object: Object {
                 db,
                 id: o.id,
-                id_path: IdPath::new(path, VertexTypes::Site.name(), label, pop),
+                id_path: IdPath::new(path, VertexTypes::Rte.name(), label, pop),
                 vertex: o,
                 module_cfg: json!(null),
             },
@@ -33,4 +33,4 @@ impl<'a> Site<'a> {
     }
 }
 
-implement_object_ext!(Site);
+implement_object_ext!(Rte);
