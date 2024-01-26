@@ -1,4 +1,3 @@
-use clap::parser::ValueSource::DefaultValue;
 use indradb::Vertex;
 use log::error;
 use serde_json::{json, Map, Value};

@@ -1329,7 +1329,7 @@ impl<'a> Regression<'a> {
                     let o = Features::init(self.db, &self.config, &mut id_path, "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
 
-                    for (index, f) in obj.as_array().unwrap().iter().enumerate() {
+                    for f in obj.as_array().unwrap().iter() {
                         let f_module = f.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let f_sites = f.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap();
                         let _sites = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasSites);
