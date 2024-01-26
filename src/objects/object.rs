@@ -27,7 +27,7 @@ pub trait ObjectExt {
 
 impl ObjectExt for Object<'_> {
     fn get_id(&self) -> Uuid {
-        self.id
+        self.vertex.id
     }
 
     fn get_object(&self) -> Vertex {

@@ -20,15 +20,16 @@ impl<'a> Eut<'a> {
         error!("Initialize new eut object");
         let o = db.create_object_and_init(VertexTypes::Eut, &mut path, "", 0);
         db.add_object_properties(&o, &config.eut, PropertyType::Base);
-        let cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
+        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
+        //db.add_object_properties(&o, &module_cfg, PropertyType::Module);
 
         Box::new(Eut {
             object: Object {
                 db,
                 id: o.id,
-                id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
+                id_path: IdPath::new(path, VertexTypes::Eut.name(), label, pop),
                 vertex: o,
-                module_cfg: cfg,
+                module_cfg,
             },
         })
     }

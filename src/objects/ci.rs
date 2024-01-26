@@ -23,7 +23,7 @@ impl Ci {
 
         Ci {
             id: o.id,
-            id_path: IdPath::new(path, VertexTypes::Project.name(), label, pop),
+            id_path: IdPath::new(path, VertexTypes::Ci.name(), label, pop),
             object: o,
         }
     }

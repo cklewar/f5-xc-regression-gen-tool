@@ -1,7 +1,7 @@
 use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, QueryExt, Vertex, VertexProperties};
 use log::{error, info};
 use serde_derive::{Deserialize, Serialize};
-use serde_json::{json, to_value};
+use serde_json::{json, to_value, Value};
 use uuid::Uuid;
 
 use crate::{constants::*, EDGE_TYPES, EDGES_COUNT, EdgeTypes, PropertyType, VertexTuple, VertexTypes};
@@ -43,20 +43,6 @@ impl Db {
         Db { db: indradb::MemoryDatastore::new_db() }
     }
 
-    fn gen_id_path(&self, path: &mut Vec<String>, obj_type: &str, label: &str, pop: usize) -> IdPath {
-        if pop > 0 {
-            path.truncate(path.len().saturating_sub(pop));
-        }
-
-        return if label == "" {
-            path.push(obj_type.replace('-', "_"));
-            IdPath { vec: path.clone(), str: path.join("__") }
-        } else {
-            path.push(format!("{}_{}", obj_type, label).replace('-', "_"));
-            IdPath { vec: path.clone(), str: path.join("__") }
-        };
-    }
-
     pub fn create_object(&self, object_type: VertexTypes) -> Vertex {
         info!("Create new object of type <{}>...", object_type.name());
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
@@ -72,7 +58,7 @@ impl Db {
         info!("Create new object of type <{}>...", object_type.name());
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.db.create_vertex(&o).expect("panic while creating project db entry");
-        let id_path = self.gen_id_path(path, object_type.name(), label, pop);
+        let id_path = IdPath::new(path, object_type.name(), label, pop);
         self.add_object_properties(&o, &json!({KEY_ID_PATH: id_path.vec}), PropertyType::Base);
 
         if label == "" {
@@ -152,7 +138,7 @@ impl Db {
                                 let mut a = v.as_object().unwrap().clone();
                                 a.append(&mut current);
                                 p = BulkInsertItem::VertexProperty(object.id, Identifier::new(PROPERTY_TYPE_MODULE)
-                                    .unwrap(), Json::new(v.clone()));
+                                    .unwrap(), Json::new(Value::from(a.clone())));
                             }
                         }
                     }
@@ -196,7 +182,7 @@ impl Db {
 
     fn get_relationship_type(&self, a: &Vertex, b: &Vertex) -> &str {
         info!("Get relationship type for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
-        error!("RELA -----> {:?}, {:?}", a.t, b.t);
+        //error!("RELA -----> {:?}, {:?}", a.t, b.t);
         let e = EDGE_TYPES.get(&VertexTuple(a.t.to_string(), b.t.to_string())).unwrap();
         info!("Get relationship type for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         e

@@ -1261,26 +1261,25 @@ impl<'a> Regression<'a> {
 
         // Eut
         let eut = Eut::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 1);
-        let eut_cfg = eut.get_module_cfg();
+        let eut_module_cfg = eut.get_module_cfg();
         self.db.create_relationship(&project.get_object(), &eut.get_object());
         let eut_providers = Providers::init(self.db, &self.config, &mut id_path, "", 0);
         self.db.create_relationship(&eut.get_object(), &eut_providers.get_object());
-        EutProvider::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 0);
 
         for k in EUT_KEY_ORDER.iter() {
-            let obj = eut_cfg.get(*k).unwrap();
+            let obj = eut_module_cfg.get(*k).unwrap();
             match *k {
                 k if k == KEY_NAME => {
-                    eut.insert_module_properties(k.to_string(), obj.clone());
+                    eut.add_module_properties(json!({k: obj}));
                 }
                 k if k == KEY_RELEASE => {
-                    eut.insert_module_properties(k.to_string(), obj.clone());
+                    eut.add_module_properties(json!({k: obj}));
                 }
                 k if k == KEY_PROVIDER => {
                     for p in obj.as_array().unwrap().iter() {
-                        let p_o = self.db.create_object_and_init(VertexTypes::EutProvider, &mut id_path, &p.as_str().unwrap(), 0);
-                        self.db.create_relationship(&eut_providers.get_object(), &p_o);
-                        self.db.add_object_properties(&p_o, &json!({KEY_NAME: &p.as_str().unwrap()}), PropertyType::Base);
+                        let eut_provider = EutProvider::init(self.db, &self.config, &mut id_path, &p.as_str().unwrap(), 0);
+                        self.db.create_relationship(&eut_providers.get_object(), &eut_provider.get_object());
+                        eut_provider.add_base_properties(json!({KEY_NAME: &p.as_str().unwrap()}));
                     }
                 }
                 k if k == KEY_CI => {
@@ -1330,14 +1329,13 @@ impl<'a> Regression<'a> {
                     let o = Features::init(self.db, &self.config, &mut id_path, "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
 
-                    for f in obj.as_array().unwrap().iter() {
+                    for (index, f) in obj.as_array().unwrap().iter().enumerate() {
                         let f_module = f.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let f_sites = f.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap();
                         let _sites = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasSites);
                         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
-                        let f_o = Feature::init(self.db, &self.config, &mut id_path, f_module, 0);
-                        f_o.add_base_properties(f.clone());
+                        let f_o = Feature::init(self.db, &self.config, f, &mut id_path, f_module, 0);
                         self.db.create_relationship(&o.get_object(), &f_o.get_object());
 
                         //Feature -> Site
@@ -1378,16 +1376,10 @@ impl<'a> Regression<'a> {
                     }
                 }
                 k if k == KEY_SCRIPTS_PATH => {
-                    let eut_o_p = self.db.get_object_properties(&eut.get_object()).unwrap().props;
-                    let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                    p.insert(k.to_string(), obj.clone());
-                    self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
+                    eut.add_module_properties(to_value(json!({k: obj})).unwrap());
                 }
                 k if k == KEY_SCRIPTS => {
-                    let eut_o_p = self.db.get_object_properties(&eut.get_object()).unwrap().props;
-                    let mut p = eut_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                    p.insert(k.to_string(), obj.clone());
-                    self.db.add_object_properties(&eut.get_object(), &p, PropertyType::Module);
+                    eut.add_module_properties(to_value(json!({k: obj})).unwrap());
                 }
                 k if k == KEY_RTES => {
                     let o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 1);
@@ -1891,9 +1883,9 @@ impl<'a> Regression<'a> {
         let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
 
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
-        let eut_p_base = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+        let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
-        let eut_name = eut_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+        let eut_name = eut_p_module.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
 
         //Process eut provider
         let _eut_providers = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasProviders);
@@ -1912,7 +1904,7 @@ impl<'a> Regression<'a> {
 
         for feature in features.iter() {
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-            let f_name = feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+            let f_name = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
             let scripts_path = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
             //Process feature scripts
