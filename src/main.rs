@@ -9,9 +9,9 @@ used as input for another program or workflow.
  */
 
 use clap::Parser;
-use log::info;
+use log::{error, info};
 
-use sense8_ci_generator::constants::PIPELINE_FILE_NAME;
+use sense8_ci_generator::constants::{ENTRY_FILE_NAME, PIPELINE_FILE_NAME};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -37,6 +37,7 @@ struct Cli {
     /// Generate action names
     #[arg(long)]
     gen_actions: bool,
+    entry_file_path: String,
 }
 
 fn main() {
@@ -46,24 +47,31 @@ fn main() {
     let r = sense8_ci_generator::Regression::new(&db, &cli.root_path, &cli.config_file);
     let p = r.init();
 
+    let ctx = r.build_context(p);
+
     if cli.write_ci {
-        r.to_file(&r.render(&r.build_context(p)), cli.ci_file_path.as_str(), PIPELINE_FILE_NAME);
+        r.to_file(&r.render(&ctx), cli.ci_file_path.as_str(), PIPELINE_FILE_NAME);
     }
     if cli.write_json {
         r.to_json();
         info!("{}", r.to_json());
     }
     if cli.render_ci {
-        info!("{}", r.render(&r.build_context(p)));
+        info!("{}", r.render(&ctx));
     }
     if cli.write_gv {
         r.to_file(&r.to_gv(), "./out", &"graph.gv");
     }
     if cli.gen_actions {
-        let a = r.get_action_names("./out/softbank/.gitlab-ci.yml");
+        let a = r.render_entry_page(&ctx);
         match a {
-            Ok(_) => {}
-            Err(_) => {}
+            Ok(data) => {
+                error!("OK");
+                r.to_file(&data, cli.entry_file_path.as_str(), ENTRY_FILE_NAME);
+            }
+            Err(err) => {
+                error!("ERR: {}", err)
+            }
         }
     }
 }

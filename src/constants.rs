@@ -15,8 +15,8 @@ pub const KEY_TESTS: &str = "tests";
 pub const KEY_GVID: &str = "id";
 pub const KEY_NAME: &str = "name";
 pub const KEY_APPLY: &str = "apply";
-pub const KEY_DEPLOY: &str = "deploy";
 pub const KEY_SITES: &str = "sites";
+pub const KEY_DEPLOY: &str = "deploy";
 pub const KEY_SHARE: &str = "share";
 pub const KEY_COUNT: &str = "count";
 pub const KEY_CONFIG: &str = "config";
@@ -26,6 +26,7 @@ pub const KEY_SCRIPT: &str = "script";
 pub const KEY_RELEASE: &str = "release";
 pub const KEY_ID_PATH: &str = "id_path";
 pub const KEY_SCRIPTS: &str = "scripts";
+pub const KEY_ACTIONS: &str = "actions";
 pub const KEY_SOURCE: &str = "source";
 pub const KEY_PROJECT: &str = "project";
 pub const KEY_FEATURE: &str = "feature";
@@ -44,6 +45,8 @@ pub const KEY_VERIFICATIONS: &str = "verifications";
 // miscellaneous
 pub const PIPELINE_FILE_NAME: &str = ".gitlab-ci.yml";
 pub const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
+
+pub const ENTRY_FILE_NAME: &str = "entry.md";
 
 pub const PROPERTY_TYPE_GV: &str = "gv";
 pub const PROPERTY_TYPE_BASE: &str = "base";

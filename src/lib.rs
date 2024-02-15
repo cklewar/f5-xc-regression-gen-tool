@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
+use std::error::Error;
 use std::fmt::Debug;
-use std::io::Write;
+use std::io::{Write};
 
 use indradb::{Vertex, VertexProperties};
 use lazy_static::lazy_static;
@@ -350,6 +351,7 @@ struct RegressionConfigFeatures {
 struct RegressionConfigRte {
     ci: RegressionConfigGenericCi,
     path: String,
+    data_vars_path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -392,6 +394,15 @@ pub struct RegressionConfig {
     root_path: String,
     collector: RegressionConfigCollector,
     verifications: RegressionConfigVerifications,
+}
+
+#[derive(Serialize, Debug)]
+struct ActionsRenderContext {
+    rtes: Vec<String>,
+    sites: Vec<String>,
+    tests: Vec<String>,
+    features: Vec<String>,
+    verifications: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -1881,6 +1892,13 @@ impl<'a> Regression<'a> {
 
     pub fn build_context(&self, id: Uuid) -> Context {
         info!("Build render context...");
+        let mut actions: ActionsRenderContext = ActionsRenderContext {
+            rtes: vec![],
+            sites: vec![],
+            tests: vec![],
+            features: vec![],
+            verifications: vec![],
+        };
         let project = self.db.get_object_with_properties(&id);
         let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
@@ -1942,6 +1960,7 @@ impl<'a> Regression<'a> {
                 release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 scripts,
             };
+            actions.features.push(frc.job.clone());
             features_rc.push(frc);
         }
 
@@ -2075,7 +2094,15 @@ impl<'a> Regression<'a> {
                     rte_crcs: &mut rte_crcs,
                 })
             }
-
+            for component in rte_crcs.components.iter() {
+                actions.rtes.push(component.job.clone());
+            }
+            for test in rte_crcs.tests.iter() {
+                actions.tests.push(test.job.clone());
+                for verification in test.verifications.iter() {
+                    actions.verifications.push(verification.job.clone());
+                }
+            }
             rtes_rc.push(rte_crcs);
         }
 
@@ -2127,7 +2154,7 @@ impl<'a> Regression<'a> {
                 scripts,
                 provider: provider_name.to_string(),
             };
-
+            actions.sites.push(eut_s_rc.job.clone());
             eut_sites.push(eut_s_rc);
         }
 
@@ -2161,6 +2188,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_STAGES, &stages);
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_PROJECT, &project_p_base);
+        context.insert(KEY_ACTIONS, &actions);
 
         // error!("{:#?}", context);
         info!("Build render context -> Done.");
@@ -2297,10 +2325,15 @@ impl<'a> Regression<'a> {
         _tera.render("graph.tpl", &context).unwrap()
     }
 
-    pub fn get_action_names(&self, file: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let f = std::fs::File::open(file)?;
-        let d: String = serde_yaml::from_reader(f)?;
-        println!("Read YAML string: {}", d);
-        Ok(())
+    //Result<i32,Box<Error>>
+
+    //use std::error::Error;
+    pub fn render_entry_page(&self, context: &Context) -> Result<String, Box<dyn Error>> {
+        error!("Render entry page..");
+        error!("CTX {:?}", context);
+        error!("CTX_ACTIONS {:?}", context.get(KEY_ACTIONS));
+        error!("PROJECT_NAME {:?}", context.get(KEY_PROJECT).unwrap().get(KEY_NAME).unwrap().as_str().unwrap());
+        let mut _tera = Tera::new(&self.config.project.templates).unwrap();
+        Ok(_tera.render("entry.tpl", context).unwrap())
     }
 }
