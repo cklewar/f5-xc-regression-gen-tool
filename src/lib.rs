@@ -14,7 +14,7 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes, Sites, Site};
+use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes, Sites, Site, Dashboard};
 
 use crate::constants::*;
 use crate::db::Db;
@@ -46,6 +46,7 @@ pub enum VertexTypes {
     Features,
     Providers,
     Collector,
+    Dashboard,
     Components,
     Connection,
     Connections,
@@ -109,6 +110,7 @@ impl VertexTypes {
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
             VertexTypes::Feature => VERTEX_TYPE_FEATURE,
             VertexTypes::Features => VERTEX_TYPE_FEATURES,
+            VertexTypes::Dashboard => VERTEX_TYPE_DASHBOARD,
             VertexTypes::Collector => VERTEX_TYPE_COLLECTOR,
             VertexTypes::Providers => VERTEX_TYPE_PROVIDERS,
             VertexTypes::Connection => VERTEX_TYPE_CONNECTION,
@@ -142,6 +144,7 @@ impl VertexTypes {
             VERTEX_TYPE_PROJECT => VertexTypes::Project.name(),
             VERTEX_TYPE_FEATURE => VertexTypes::Feature.name(),
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers.name(),
+            VERTEX_TYPE_DASHBOARD => VertexTypes::Dashboard.name(),
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector.name(),
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection.name(),
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components.name(),
@@ -175,6 +178,7 @@ impl VertexTypes {
             VERTEX_TYPE_FEATURE => VertexTypes::Feature,
             VERTEX_TYPE_FEATURES => VertexTypes::Features,
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers,
+            VERTEX_TYPE_DASHBOARD => VertexTypes::Dashboard,
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector,
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection,
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components,
@@ -244,6 +248,7 @@ lazy_static! {
         let mut map = HashMap::new();
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name());
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
+        map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Dashboard.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::HasFeatures.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rtes.name().to_string()), EdgeTypes::UsesRtes.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
@@ -291,7 +296,7 @@ lazy_static! {
 #[derive(Hash, Eq, PartialEq, Debug)]
 struct VertexTuple(String, String);
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigGenericCiStages {
     deploy: Vec<String>,
     destroy: Vec<String>,
@@ -376,6 +381,13 @@ struct RegressionConfigProjectVars {
     path: String,
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigDashboard {
+    ci: RegressionConfigGenericCi,
+    path: String,
+    module: String,
+}
+
 #[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
     name: String,
@@ -392,6 +404,7 @@ pub struct RegressionConfig {
     project: RegressionConfigProject,
     features: RegressionConfigFeatures,
     root_path: String,
+    dashboard: RegressionConfigDashboard,
     collector: RegressionConfigCollector,
     verifications: RegressionConfigVerifications,
 }
@@ -1265,6 +1278,10 @@ impl<'a> Regression<'a> {
         let mut id_path: Vec<String> = Vec::new();
         // Project
         let project = Project::init(self.db, &self.config, &mut id_path, &self.config.project.name, 0);
+
+        // Dashboard
+        let dashboard = Dashboard::init(self.db, &self.config, &mut id_path, "", 0);
+        self.db.create_relationship(&project.get_object(), &dashboard.get_object());
 
         // Ci
         let ci = Ci::init(self.db, &self.config, &mut id_path, "", 0);

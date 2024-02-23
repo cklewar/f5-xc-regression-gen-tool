@@ -9,6 +9,7 @@ pub use site::Site;
 pub use feature::Feature;
 pub use project::Project;
 pub use provider::EutProvider;
+pub use dashboard::Dashboard;
 pub use collections::{Features, Providers, Rtes, Sites};
 
 pub(crate) use macros::implement_object_ext;
@@ -28,6 +29,7 @@ mod site;
 mod rte;
 mod test;
 mod verification;
+mod dashboard;
 
 /*enum Objects<'a>  {
     Feature(Feature<'a>)
@@ -51,6 +53,9 @@ fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> V
         }
         KEY_VERIFICATION => {
             file = format!("{}/{}/{}/{}", config.root_path, config.verifications.path, module, CONFIG_FILE_NAME);
+        }
+        KEY_DASHBOARD => {
+            file = format!("{}/{}/{}/{}", config.root_path, config.dashboard.path, module, CONFIG_FILE_NAME);
         }
         _ => {
             return Null;
