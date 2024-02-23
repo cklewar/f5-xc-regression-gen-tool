@@ -37,7 +37,7 @@ struct Cli {
     /// Generate action names
     #[arg(long)]
     gen_actions: bool,
-    entry_file_path: String,
+    entry_file_path: Option<String>,
 }
 
 fn main() {
@@ -66,8 +66,8 @@ fn main() {
         let a = r.render_entry_page(&ctx);
         match a {
             Ok(data) => {
-                error!("OK");
-                r.to_file(&data, cli.entry_file_path.as_str(), ENTRY_FILE_NAME);
+                error!("Render entry page -> Done");
+                r.to_file(&data, cli.entry_file_path.unwrap().as_str(), ENTRY_FILE_NAME);
             }
             Err(err) => {
                 error!("ERR: {}", err)

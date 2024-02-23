@@ -2326,13 +2326,9 @@ impl<'a> Regression<'a> {
     }
 
     //Result<i32,Box<Error>>
-
     //use std::error::Error;
     pub fn render_entry_page(&self, context: &Context) -> Result<String, Box<dyn Error>> {
         error!("Render entry page..");
-        error!("CTX {:?}", context);
-        error!("CTX_ACTIONS {:?}", context.get(KEY_ACTIONS));
-        error!("PROJECT_NAME {:?}", context.get(KEY_PROJECT).unwrap().get(KEY_NAME).unwrap().as_str().unwrap());
         let mut _tera = Tera::new(&self.config.project.templates).unwrap();
         Ok(_tera.render("entry.tpl", context).unwrap())
     }
