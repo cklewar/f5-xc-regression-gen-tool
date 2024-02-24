@@ -423,6 +423,7 @@ struct DashboardRenderContext {
     base: Map<String, Value>,
     module: Map<String, Value>,
     project: RegressionConfigProject,
+    scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -1535,7 +1536,7 @@ impl<'a> Regression<'a> {
                                                 _ => _index = index
                                             }
 
-                                            let t_o = self.db.create_object_and_init(VertexTypes::Test, &mut id_path, test["name"].as_str().unwrap(), _index);
+                                            let t_o = self.db.create_object_and_init(VertexTypes::Test, &mut id_path, test[KEY_NAME].as_str().unwrap(), _index);
                                             self.db.create_relationship(&src_o, &t_o);
 
                                             for (k, v) in test.as_object().unwrap().iter() {
@@ -1946,6 +1947,38 @@ impl<'a> Regression<'a> {
         let dashboard_p_base = dashboard.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let dashboard_p_module = dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
 
+        //Process dashboard scripts
+        let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
+        let d_name = dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+        let scripts_path = dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        for script in dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+            let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.dashboard.path, d_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+            let contents = std::fs::read_to_string(path).expect("panic while opening dashboard script file");
+            let ctx = ScriptDashboardRenderContext {
+                name: d_name.to_string(),
+                project: self.config.project.clone(),
+            };
+
+            let mut commands: Vec<String> = Vec::new();
+            for command in render_script(&ctx, &contents).lines() {
+                commands.push(format!("{:indent$}{}", "", command, indent = 0));
+            }
+
+            let data: HashMap<String, Vec<String>> = [
+                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+            ].into_iter().collect();
+            scripts.push(data);
+        }
+
+        let dashboard_rc = DashboardRenderContext {
+            base: dashboard_p_base.clone(),
+            module: dashboard_p_module.clone(),
+            project: self.config.project.clone(),
+            scripts,
+        };
+
+        error!("RC_DASHBOARD: {:#?}", &dashboard_rc);
+
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
@@ -2200,12 +2233,6 @@ impl<'a> Regression<'a> {
             actions.sites.push(eut_s_rc.job.clone());
             eut_sites.push(eut_s_rc);
         }
-
-        let dashboard_rc = DashboardRenderContext {
-            base: dashboard_p_base.clone(),
-            module: dashboard_p_module.clone(),
-            project: self.config.project.clone(),
-        };
 
         let eut_rc = EutRenderContext {
             base: eut_p_base.clone(),

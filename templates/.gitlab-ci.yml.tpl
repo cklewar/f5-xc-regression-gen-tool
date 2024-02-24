@@ -23,6 +23,16 @@ variables:
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
+.deploy_dashboard_rules:
+  rules:
+    - if: $ACTION == "deploy-dashboard" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-dashboard" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_dashboard_rules:
+  rules:
+    - if: $ACTION == "destroy-dashboard" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-dashboard" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .deploy_eut_rules:
   rules:
     - if: $ACTION == "deploy-eut" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -72,6 +82,7 @@ variables:
   rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .regression_test_and_verification_rules:
   rules:
     - if: $ACTION == "test-and-verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -199,6 +210,35 @@ variables:
       cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
     - terraform version
+
+# dashboard - {{ dashboard.module.name }} - deploy
+dashboard-deploy:
+  <<: *base
+  stage: dashboard-deploy
+  rules:
+    - !reference [ .deploy_dashboard_rules, rules ]
+  script:
+      - |
+        {%- for script in dashboard.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: {{ dashboard.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
 {% for rte in rtes -%}
 {% for share in rte.shares %}
 # {{ share.job | replace(from="_", to="-") }} - deploy
@@ -713,4 +753,28 @@ variables:
       - stuck_or_timeout_failure
       - runner_system_failure
 {% endfor -%}
-{% endfor -%}
+{% endfor %}
+# dashboard - {{ dashboard.module.name }} - destroy
+dashboard-destroy:
+  <<: *base
+  stage: dashboard-destroy
+  rules:
+    - !reference [ .destroy_dashboard_rules, rules ]
+  script:
+      - |
+        {%- for script in dashboard.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "destroy" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  timeout: {{ dashboard.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
