@@ -4,11 +4,11 @@ use serde_json::{json, Map, to_value, Value};
 use uuid::Uuid;
 
 use crate::{PropertyType, RegressionConfig};
-use crate::constants::{KEY_CI, KEY_NAME, KEY_PROVIDER, KEY_RELEASE, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_CI, KEY_NAME, KEY_RELEASE, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{dashboard, EutProvider, implement_object_ext, load_object_config};
+use super::{implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 

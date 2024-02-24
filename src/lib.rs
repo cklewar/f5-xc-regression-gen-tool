@@ -419,6 +419,13 @@ struct ActionsRenderContext {
 }
 
 #[derive(Serialize, Debug)]
+struct DashboardRenderContext {
+    base: Map<String, Value>,
+    module: Map<String, Value>,
+    project: RegressionConfigProject,
+}
+
+#[derive(Serialize, Debug)]
 struct FeatureRenderContext {
     ci: Map<String, Value>,
     job: String,
@@ -599,6 +606,12 @@ struct ScriptRteProviderShareRenderContext {
     provider: String,
 }
 
+#[derive(Serialize, Debug)]
+struct ScriptDashboardRenderContext {
+    name: String,
+    project: RegressionConfigProject,
+}
+
 pub trait RenderContext {}
 
 impl RenderContext for ScriptEutRenderContext {}
@@ -608,6 +621,8 @@ impl RenderContext for ScriptRteRenderContext {}
 impl RenderContext for ScriptFeatureRenderContext {}
 
 impl RenderContext for ScriptTestRenderContext {}
+
+impl RenderContext for ScriptDashboardRenderContext {}
 
 impl RenderContext for ScriptVerificationRenderContext {}
 
@@ -1747,8 +1762,10 @@ impl<'a> Regression<'a> {
         let _ci_id_path = ci_o_p_base.value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let mut ci_id_path: Vec<String> = _ci_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
 
+        //Dashboard Stages Deploy
+        let dashboard_stage_deploy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.dashboard.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Rte Stages Deploy
-        let rte_stage_deploy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let rte_stage_deploy = self.add_ci_stages(&mut ci_id_path, &dashboard_stage_deploy.unwrap(), &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Feature Stages Deploy
         let feature_stage_deploy = self.add_ci_stages(&mut ci_id_path, &rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Eut Stages Deploy
@@ -1819,7 +1836,10 @@ impl<'a> Regression<'a> {
         }
 
         //Rte Stages Destroy
-        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
+        stage_destroy = self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
+
+        //Dashboard Stages Destroy
+        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.dashboard.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         project.get_id().clone()
     }
@@ -1843,6 +1863,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_TESTS, &cfg.tests);
         context.insert(KEY_PROJECT, &cfg.project);
         context.insert(KEY_FEATURES, &cfg.features);
+        context.insert(KEY_DASHBOARD, &cfg.dashboard);
         context.insert("collector", &cfg.collector);
         context.insert(KEY_VERIFICATIONS, &cfg.verifications);
 
@@ -1916,9 +1937,14 @@ impl<'a> Regression<'a> {
             features: vec![],
             verifications: vec![],
         };
+
         let project = self.db.get_object_with_properties(&id);
         let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+
+        let dashboard = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::Has).unwrap();
+        let dashboard_p_base = dashboard.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
+        let dashboard_p_module = dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
 
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
@@ -2175,6 +2201,12 @@ impl<'a> Regression<'a> {
             eut_sites.push(eut_s_rc);
         }
 
+        let dashboard_rc = DashboardRenderContext {
+            base: dashboard_p_base.clone(),
+            module: dashboard_p_module.clone(),
+            project: self.config.project.clone(),
+        };
+
         let eut_rc = EutRenderContext {
             base: eut_p_base.clone(),
             module: eut_p_module.clone(),
@@ -2199,13 +2231,14 @@ impl<'a> Regression<'a> {
         stages.append(&mut destroy_stages);
 
         let mut context = Context::new();
-        context.insert(KEY_RTES, &rtes_rc);
         context.insert(KEY_EUT, &eut_rc);
+        context.insert(KEY_RTES, &rtes_rc);
         context.insert(KEY_CONFIG, &self.config);
         context.insert(KEY_STAGES, &stages);
-        context.insert(KEY_FEATURES, &features_rc);
-        context.insert(KEY_PROJECT, &project_p_base);
         context.insert(KEY_ACTIONS, &actions);
+        context.insert(KEY_PROJECT, &project_p_base);
+        context.insert(KEY_FEATURES, &features_rc);
+        context.insert(KEY_DASHBOARD, &dashboard_rc);
 
         // error!("{:#?}", context);
         info!("Build render context -> Done.");
@@ -2342,8 +2375,6 @@ impl<'a> Regression<'a> {
         _tera.render("graph.tpl", &context).unwrap()
     }
 
-    //Result<i32,Box<Error>>
-    //use std::error::Error;
     pub fn render_entry_page(&self, context: &Context) -> Result<String, Box<dyn Error>> {
         error!("Render entry page..");
         let mut _tera = Tera::new(&self.config.project.templates).unwrap();
