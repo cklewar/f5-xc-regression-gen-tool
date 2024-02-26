@@ -7,7 +7,7 @@ use crate::{PropertyType};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{implement_object_ext};
+use super::implement_object_ext;
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -18,14 +18,14 @@ pub struct Test<'a> {
 impl<'a> Test<'a> {
     pub fn init(db: &'a Db, config: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new test object");
-        let o = db.create_object_and_init(VertexTypes::Test, &mut path, "", pop);
+        let (o, id_path) = db.create_object_and_init(VertexTypes::Test, &mut path, label, pop);
         db.add_object_properties(&o, &config, PropertyType::Base);
 
         Box::new(Test {
             object: Object {
                 db,
                 id: o.id,
-                id_path: IdPath::new(path, VertexTypes::Test.name(), label, pop),
+                id_path,
                 vertex: o,
                 module_cfg: json!(null),
             },

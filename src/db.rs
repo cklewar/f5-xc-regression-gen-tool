@@ -1,3 +1,4 @@
+//use graphviz_rust::dot_structures::Id;
 use indradb::{AllVertexQuery, BulkInsertItem, Edge, Identifier, Json, QueryExt, Vertex, VertexProperties};
 use log::{error, info};
 use serde_derive::{Deserialize, Serialize};
@@ -30,6 +31,24 @@ impl IdPath {
             IdPath { vec: path.clone(), str: path.join("__") }
         };
     }
+
+    pub fn load_from_str(path: &str) -> IdPath {
+        let _path = path.split("__").map(str::to_string).collect();
+        IdPath { vec: _path, str: path.parse().unwrap() }
+    }
+
+    pub fn load_from_array(path: Vec<String>) -> IdPath {
+        let _path = path.join("__");
+        IdPath { vec: path.clone(), str: _path }
+    }
+
+    pub fn get_vec(&self) -> Vec<String> {
+        self.vec.clone()
+    }
+
+    pub fn get_str(&self) -> String {
+        self.str.clone()
+    }
 }
 
 impl Default for Db {
@@ -54,11 +73,11 @@ impl Db {
         o
     }
 
-    pub fn create_object_and_init(&self, object_type: VertexTypes, path: &mut Vec<String>, label: &str, pop: usize) -> Vertex {
+    pub fn create_object_and_init(&self, object_type: VertexTypes, path: &mut Vec<String>, label: &str, pop: usize) -> (Vertex, IdPath) {
         info!("Create new object of type <{}>...", object_type.name());
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.db.create_vertex(&o).expect("panic while creating project db entry");
-        let id_path = IdPath::new(path, object_type.name(), label, pop);
+        let id_path: IdPath = IdPath::new(path, object_type.name(), label, pop);
         self.add_object_properties(&o, &json!({KEY_ID_PATH: id_path.vec}), PropertyType::Base);
 
         if label == "" {
@@ -75,7 +94,7 @@ impl Db {
 
         self.add_object_properties(&o, &json!({}), PropertyType::Module);
         info!("Create new object of type <{}> -> Done", object_type.name());
-        o
+        (o, id_path)
     }
 
     fn create_relationship_identifier(&self, a: &Vertex, b: &Vertex) -> Identifier {

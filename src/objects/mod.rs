@@ -1,18 +1,17 @@
-use log::{info};
+use log::info;
 use serde_json::Value;
 use serde_json::Value::Null;
 
 pub use ci::Ci;
+pub use collections::{Features, Providers, Rtes, Sites};
+pub use dashboard::Dashboard;
 pub use eut::Eut;
-pub use rte::Rte;
-pub use site::Site;
 pub use feature::Feature;
+pub(crate) use macros::implement_object_ext;
 pub use project::Project;
 pub use provider::EutProvider;
-pub use dashboard::Dashboard;
-pub use collections::{Features, Providers, Rtes, Sites};
-
-pub(crate) use macros::implement_object_ext;
+pub use rte::Rte;
+pub use site::Site;
 
 use crate::constants::*;
 use crate::RegressionConfig;

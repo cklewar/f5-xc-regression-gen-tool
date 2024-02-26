@@ -18,7 +18,7 @@ pub struct Feature<'a> {
 impl<'a> Feature<'a>  {
     pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new feature object");
-        let o = db.create_object_and_init(VertexTypes::Feature, &mut path, "", 0);
+        let (o, id_path) = db.create_object_and_init(VertexTypes::Feature, &mut path, label, pop);
         db.add_object_properties(&o, base_cfg, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), label, &config);
         db.add_object_properties(&o, &module_cfg, PropertyType::Module);
@@ -27,7 +27,7 @@ impl<'a> Feature<'a>  {
             object: Object {
                 db,
                 id: o.id,
-                id_path: IdPath::new(path, VertexTypes::Features.name(), label, pop),
+                id_path,
                 vertex: o,
                 module_cfg,
             },

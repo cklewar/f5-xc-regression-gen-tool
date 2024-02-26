@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Debug;
+use std::format;
 use std::io::{Write};
 
 use indradb::{Vertex, VertexProperties};
@@ -59,6 +60,7 @@ pub enum VertexTypes {
     ComponentDst,
     ConnectionSrc,
     ConnectionDst,
+    DashboardProvider,
     None,
 }
 
@@ -125,6 +127,7 @@ impl VertexTypes {
             VertexTypes::ComponentDst => VERTEX_TYPE_COMPONENT_DST,
             VertexTypes::ConnectionSrc => VERTEX_TYPE_CONNECTION_SRC,
             VertexTypes::ConnectionDst => VERTEX_TYPE_CONNECTION_DST,
+            VertexTypes::DashboardProvider => VERTEX_TYPE_DASHBOARD_PROVIDER,
             VertexTypes::None => VERTEX_TYPE_NONE,
         }
     }
@@ -158,6 +161,7 @@ impl VertexTypes {
             VERTEX_TYPE_COMPONENT_DST => VertexTypes::ComponentDst.name(),
             VERTEX_TYPE_CONNECTION_SRC => VertexTypes::ConnectionSrc.name(),
             VERTEX_TYPE_CONNECTION_DST => VertexTypes::ConnectionDst.name(),
+            VERTEX_TYPE_DASHBOARD_PROVIDER => VertexTypes::DashboardProvider.name(),
             _ => "None"
         }
     }
@@ -192,6 +196,7 @@ impl VertexTypes {
             VERTEX_TYPE_COMPONENT_DST => VertexTypes::ComponentDst,
             VERTEX_TYPE_CONNECTION_SRC => VertexTypes::ConnectionSrc,
             VERTEX_TYPE_CONNECTION_DST => VertexTypes::ConnectionDst,
+            VERTEX_TYPE_DASHBOARD_PROVIDER => VertexTypes::DashboardProvider,
             _ => VertexTypes::None
         }
     }
@@ -249,6 +254,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Eut.name().to_string()), EdgeTypes::HasEut.name());
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Dashboard.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Dashboard.name().to_string(), VertexTypes::DashboardProvider.name().to_string()), EdgeTypes::UsesProvider.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::HasFeatures.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rtes.name().to_string()), EdgeTypes::UsesRtes.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
@@ -386,6 +392,7 @@ struct RegressionConfigDashboard {
     ci: RegressionConfigGenericCi,
     path: String,
     module: String,
+    provider: String,
 }
 
 #[derive(Default, Deserialize, Serialize, Clone, Debug)]
@@ -613,23 +620,34 @@ struct ScriptDashboardRenderContext {
     project: RegressionConfigProject,
 }
 
-pub trait RenderContext {}
+pub trait RenderContext<'a> {
+    fn gen_render_ctx(&self, config: &RegressionConfig, ctx: Vec<HashMap<String, Vec<String>>>) -> Box<(dyn RenderContext + 'static)>;
+    fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>>;
+}
+//impl RenderContext for EutRenderContext {}
+//impl RenderContext for RteRenderContext {}
+//impl RenderContext for FeatureRenderContext {}
+//impl RenderContext for TestRenderContext {}
+//impl RenderContext for VerificationRenderContext {}
+//impl RenderContext for RteProviderShareRenderContext {}
 
-impl RenderContext for ScriptEutRenderContext {}
+pub trait ScriptRenderContext {}
 
-impl RenderContext for ScriptRteRenderContext {}
+impl ScriptRenderContext for ScriptEutRenderContext {}
 
-impl RenderContext for ScriptFeatureRenderContext {}
+impl ScriptRenderContext for ScriptRteRenderContext {}
 
-impl RenderContext for ScriptTestRenderContext {}
+impl ScriptRenderContext for ScriptFeatureRenderContext {}
 
-impl RenderContext for ScriptDashboardRenderContext {}
+impl ScriptRenderContext for ScriptTestRenderContext {}
 
-impl RenderContext for ScriptVerificationRenderContext {}
+impl ScriptRenderContext for ScriptDashboardRenderContext {}
 
-impl RenderContext for ScriptRteProviderShareRenderContext {}
+impl ScriptRenderContext for ScriptVerificationRenderContext {}
 
-pub fn render_script(context: &(impl RenderContext + serde::Serialize), input: &str) -> String {
+impl ScriptRenderContext for ScriptRteProviderShareRenderContext {}
+
+pub fn render_script(context: &(impl ScriptRenderContext + serde::Serialize), input: &str) -> String {
     info!("Render script context...");
     let ctx = Context::from_serialize(context);
     let rendered = Tera::one_off(input, &ctx.unwrap(), false).unwrap();
@@ -1291,23 +1309,22 @@ impl<'a> Regression<'a> {
     }
 
     pub fn init(&self) -> Uuid {
-        let mut id_path: Vec<String> = Vec::new();
         // Project
-        let project = Project::init(self.db, &self.config, &mut id_path, &self.config.project.name, 0);
+        let project = Project::init(self.db, &self.config, &mut vec![], &self.config.project.name, 0);
 
         // Dashboard
-        let dashboard = Dashboard::init(self.db, &self.config, &mut id_path, "", 0);
+        let dashboard = Dashboard::init(self.db, &self.config, &mut project.get_id_path().get_vec(), "", 0);
         self.db.create_relationship(&project.get_object(), &dashboard.get_object());
 
         // Ci
-        let ci = Ci::init(self.db, &self.config, &mut id_path, "", 0);
+        let ci = Ci::init(self.db, &self.config, &mut project.get_id_path().get_vec(), "", 0);
         self.db.create_relationship(&project.get_object(), &ci.get_object());
 
         // Eut
-        let eut = Eut::init(self.db, &self.config, &mut id_path, &self.config.eut.module, 1);
+        let eut = Eut::init(self.db, &self.config, &mut project.get_id_path().get_vec(), &self.config.eut.module, 0);
         let eut_module_cfg = eut.get_module_cfg();
         self.db.create_relationship(&project.get_object(), &eut.get_object());
-        let eut_providers = Providers::init(self.db, &self.config, &mut id_path, "", 0);
+        let eut_providers = Providers::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 0);
         self.db.create_relationship(&eut.get_object(), &eut_providers.get_object());
 
         for k in EUT_KEY_ORDER.iter() {
@@ -1321,7 +1338,7 @@ impl<'a> Regression<'a> {
                 }
                 k if k == KEY_PROVIDER => {
                     for p in obj.as_array().unwrap().iter() {
-                        let eut_provider = EutProvider::init(self.db, &self.config, &mut id_path, &p.as_str().unwrap(), 0);
+                        let eut_provider = EutProvider::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), &p.as_str().unwrap(), 0);
                         self.db.create_relationship(&eut_providers.get_object(), &eut_provider.get_object());
                         eut_provider.add_base_properties(json!({KEY_NAME: &p.as_str().unwrap()}));
                     }
@@ -1330,7 +1347,7 @@ impl<'a> Regression<'a> {
                     eut.insert_module_properties(k.to_string(), obj.clone());
                 }
                 k if k == KEY_SITES => {
-                    let o = Sites::init(self.db, &self.config, &mut id_path, "", 2);
+                    let o = Sites::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
                     let _p = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasProviders);
                     let provider = self.db.get_object_neighbours_with_properties_out(&_p.id, EdgeTypes::ProvidesProvider);
@@ -1346,7 +1363,7 @@ impl<'a> Regression<'a> {
                         let site_count = site_attr.as_object().unwrap().get(KEY_COUNT).unwrap().as_i64().unwrap();
                         match site_count.cmp(&1i64) {
                             Ordering::Equal => {
-                                let s_o = Site::init(&self.db, site_attr, &mut id_path, site_name, 0);
+                                let s_o = Site::init(&self.db, site_attr, &mut o.get_id_path().get_vec(), site_name, 0);
                                 self.db.create_relationship(&o.get_object(), &s_o.get_object());
                                 let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
                                 let p_o = self.db.get_object(id_name_map.get(provider).unwrap());
@@ -1355,7 +1372,7 @@ impl<'a> Regression<'a> {
                             }
                             Ordering::Greater => {
                                 for c in 1..=site_count {
-                                    let s_o = Site::init(&self.db, site_attr, &mut id_path,
+                                    let s_o = Site::init(&self.db, site_attr, &mut o.get_id_path().get_vec(),
                                                          &*format!("{}_{}", site_name, c), 0);
                                     self.db.create_relationship(&o.get_object(), &s_o.get_object());
                                     let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
@@ -1372,7 +1389,7 @@ impl<'a> Regression<'a> {
                     }
                 }
                 k if k == KEY_FEATURES => {
-                    let o = Features::init(self.db, &self.config, &mut id_path, "", 2);
+                    let o = Features::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
 
                     for f in obj.as_array().unwrap().iter() {
@@ -1381,7 +1398,7 @@ impl<'a> Regression<'a> {
                         let _sites = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasSites);
                         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
-                        let f_o = Feature::init(self.db, &self.config, f, &mut id_path, f_module, 0);
+                        let f_o = Feature::init(self.db, &self.config, f, &mut o.get_id_path().get_vec(), f_module, 0);
                         self.db.create_relationship(&o.get_object(), &f_o.get_object());
 
                         //Feature -> Site
@@ -1428,17 +1445,17 @@ impl<'a> Regression<'a> {
                     eut.add_module_properties(to_value(json!({k: obj})).unwrap());
                 }
                 k if k == KEY_RTES => {
-                    let o = Rtes::init(&self.db, &self.config, &mut id_path, "", 1);
+                    let o = Rtes::init(&self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 1);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
 
                     for rte in obj.as_array().unwrap().iter() {
                         //let r_o = Rte::init();
-                        let r_o = self.db.create_object_and_init(VertexTypes::Rte, &mut id_path,
-                                                                 &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
-                                                                 0);
+                        let (r_o, _id_path) = self.db.create_object_and_init(VertexTypes::Rte, &mut o.get_id_path().get_vec(),
+                                                                             &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                                                             0);
                         self.db.create_relationship(&o.get_object(), &r_o);
                         //RTE -> Providers
-                        let rte_p_o = self.db.create_object_and_init(VertexTypes::Providers, &mut id_path, "", 0);
+                        let (rte_p_o, _id_path) = self.db.create_object_and_init(VertexTypes::Providers, &mut _id_path.get_vec(), "", 0);
                         let rte_p_o_p = self.db.get_object_with_properties(&rte_p_o.id);
                         self.db.create_relationship(&r_o, &rte_p_o);
 
@@ -1463,25 +1480,25 @@ impl<'a> Regression<'a> {
                                     self.db.add_object_properties(&r_o, &p, PropertyType::Base);
                                 }
                                 //Collector
-                                k if k == "collector" => {
-                                    let c_o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 1);
+                                /*k if k == "collector" => {
+                                    let (c_o, _id_path) = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 1);
                                     self.db.create_relationship(&r_o, &c_o);
-                                }
+                                }*/
                                 //Connections
                                 k if k == KEY_CONNECTIONS => {
-                                    let cs_o = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 1);
+                                    let (cs_o, _id_path) = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut _id_path.get_vec(), "", 1);
                                     self.db.create_relationship(&r_o, &cs_o);
 
                                     for item in v.as_array().unwrap().iter() {
                                         //Connection
                                         let c_name = item.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                                        let c_o = self.db.create_object_and_init(VertexTypes::Connection, &mut id_path, c_name, 0);
+                                        let (c_o, _id_path) = self.db.create_object_and_init(VertexTypes::Connection, &mut _id_path.get_vec(), c_name, 0);
                                         self.db.create_relationship(&cs_o, &c_o);
                                         self.db.add_object_properties(&c_o, &json!({KEY_NAME: c_name}), PropertyType::Base);
 
                                         //Connection Source
                                         let source = item.as_object().unwrap().get(KEY_SOURCE).unwrap().as_str().unwrap();
-                                        let src_o = self.db.create_object_and_init(VertexTypes::ConnectionSrc, &mut id_path, source, 0);
+                                        let (src_o, _id_path) = self.db.create_object_and_init(VertexTypes::ConnectionSrc, &mut _id_path.get_vec(), source, 0);
                                         self.db.create_relationship(&c_o, &src_o);
                                         self.db.add_object_properties(&src_o, &json!({KEY_NAME: &source, KEY_RTE: &rte.as_object().
                                             unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}), PropertyType::Base);
@@ -1511,8 +1528,8 @@ impl<'a> Regression<'a> {
                                                     unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                                                 if let Some(_t) = re.captures(site_name) {
-                                                    let dst_o = self.db.create_object_and_init(VertexTypes::ConnectionDst,
-                                                                                               &mut id_path, d.as_str().unwrap(), 1);
+                                                    let (dst_o, _id_path) = self.db.create_object_and_init(VertexTypes::ConnectionDst,
+                                                                                                           &mut _id_path.get_vec(), d.as_str().unwrap(), 1);
                                                     self.db.create_relationship(&src_o, &dst_o);
                                                     self.db.add_object_properties(&dst_o, &json!({KEY_NAME: &d,
                                                         KEY_RTE: &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}),
@@ -1536,7 +1553,7 @@ impl<'a> Regression<'a> {
                                                 _ => _index = index
                                             }
 
-                                            let t_o = self.db.create_object_and_init(VertexTypes::Test, &mut id_path, test[KEY_NAME].as_str().unwrap(), _index);
+                                            let (t_o, _id_path) = self.db.create_object_and_init(VertexTypes::Test, &mut _id_path.get_vec(), test[KEY_NAME].as_str().unwrap(), _index);
                                             self.db.create_relationship(&src_o, &t_o);
 
                                             for (k, v) in test.as_object().unwrap().iter() {
@@ -1569,7 +1586,7 @@ impl<'a> Regression<'a> {
                                                         for v in v.as_array().unwrap().iter() {
                                                             let v_name = v.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                                                             let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                                                            let v_o = self.db.create_object_and_init(VertexTypes::Verification, &mut id_path, v_name, 0);
+                                                            let (v_o, _id_path) = self.db.create_object_and_init(VertexTypes::Verification, &mut _id_path.get_vec(), v_name, 0);
                                                             self.db.create_relationship(&t_o, &v_o);
                                                             self.db.add_object_properties(&v_o, v, PropertyType::Base);
 
@@ -1659,34 +1676,34 @@ impl<'a> Regression<'a> {
                                 k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
                                         let mut rte_providers_id_path: Vec<String> = _rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
-                                        let o = self.db.create_object_and_init(VertexTypes::RteProvider,
-                                                                               &mut rte_providers_id_path,
-                                                                               p, 0);
+                                        let (o, _id_path) = self.db.create_object_and_init(VertexTypes::RteProvider,
+                                                                                           &mut rte_providers_id_path,
+                                                                                           p, 0);
                                         self.db.create_relationship(&rte_p_o, &o);
                                         self.db.add_object_properties(&o, &json!({KEY_NAME: p}), PropertyType::Module);
 
                                         for (k, v) in v.as_object().unwrap().iter() {
                                             match k {
                                                 k if k == KEY_CI => {
-                                                    let p_ci_o = self.db.create_object_and_init(VertexTypes::Ci,
-                                                                                                &mut rte_providers_id_path,
-                                                                                                "", 0);
+                                                    let (p_ci_o, _id_path) = self.db.create_object_and_init(VertexTypes::Ci,
+                                                                                                            &mut rte_providers_id_path,
+                                                                                                            "", 0);
                                                     self.db.create_relationship(&o, &p_ci_o);
                                                     self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_SHARE => {
-                                                    let s_o = self.db.create_object_and_init(VertexTypes::Share, &mut rte_providers_id_path, "", 0);
+                                                    let (s_o, _id_path) = self.db.create_object_and_init(VertexTypes::Share, &mut rte_providers_id_path, "", 0);
                                                     self.db.create_relationship(&o, &s_o);
                                                     self.db.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_COMPONENTS => {
-                                                    let c_o = self.db.create_object_and_init(VertexTypes::Components, &mut rte_providers_id_path, "", 1);
+                                                    let (c_o, _id_path) = self.db.create_object_and_init(VertexTypes::Components, &mut rte_providers_id_path, "", 1);
                                                     self.db.create_relationship(&o, &c_o);
 
                                                     for (k, v) in v.as_object().unwrap().iter() {
                                                         match k {
                                                             k if k == KEY_SRC => {
-                                                                let c_src_o = self.db.create_object_and_init(VertexTypes::ComponentSrc, &mut rte_providers_id_path, "", 0);
+                                                                let (c_src_o, _id_path) = self.db.create_object_and_init(VertexTypes::ComponentSrc, &mut rte_providers_id_path, "", 0);
                                                                 self.db.create_relationship(&c_o, &c_src_o);
 
                                                                 for (k, v) in v.as_object().unwrap().iter() {
@@ -1712,7 +1729,7 @@ impl<'a> Regression<'a> {
                                                                 }
                                                             }
                                                             k if k == KEY_DST => {
-                                                                let c_dst_o = self.db.create_object_and_init(VertexTypes::ComponentDst, &mut rte_providers_id_path, "", 0);
+                                                                let (c_dst_o, _id_path) = self.db.create_object_and_init(VertexTypes::ComponentDst, &mut rte_providers_id_path, "", 0);
                                                                 self.db.create_relationship(&c_o, &c_dst_o);
 
                                                                 for (k, v) in v.as_object().unwrap().iter() {
@@ -1915,7 +1932,7 @@ impl<'a> Regression<'a> {
         let mut curr = Vertex { id: Default::default(), t: Default::default() };
 
         for (i, stage) in stages.iter().enumerate() {
-            let new = self.db.create_object_and_init(object_type.clone(), id_path, stage, 0);
+            let (new, _id_path) = self.db.create_object_and_init(object_type.clone(), id_path, stage, 0);
             self.db.add_object_properties(&new, &json!({KEY_NAME: stage}), PropertyType::Base);
 
             if i == 0 {
@@ -1943,41 +1960,14 @@ impl<'a> Regression<'a> {
         let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
 
-        let dashboard = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::Has).unwrap();
-        let dashboard_p_base = dashboard.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
-        let dashboard_p_module = dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+        let dashboard = Dashboard::load(self.db, &project.vertex);
+        error!("DASHBOARD_OBJ: {:?}", dashboard.get_object());
+        error!("DASHBOARD_ID_PATH: {:?}", dashboard.get_id_path());
+        //dashboard.test123();
 
-        //Process dashboard scripts
-        let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-        let d_name = dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
-        let scripts_path = dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-        for script in dashboard.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-            let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.dashboard.path, d_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-            let contents = std::fs::read_to_string(path).expect("panic while opening dashboard script file");
-            let ctx = ScriptDashboardRenderContext {
-                name: d_name.to_string(),
-                project: self.config.project.clone(),
-            };
-
-            let mut commands: Vec<String> = Vec::new();
-            for command in render_script(&ctx, &contents).lines() {
-                commands.push(format!("{:indent$}{}", "", command, indent = 0));
-            }
-
-            let data: HashMap<String, Vec<String>> = [
-                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-            ].into_iter().collect();
-            scripts.push(data);
-        }
-
-        let dashboard_rc = DashboardRenderContext {
-            base: dashboard_p_base.clone(),
-            module: dashboard_p_module.clone(),
-            project: self.config.project.clone(),
-            scripts,
-        };
-
-        error!("RC_DASHBOARD: {:#?}", &dashboard_rc);
+        /*let ctx = dashboard.gen_script_render_ctx(&self.config);
+        let dashboard_rc = dashboard.gen_render_ctx(&self.config, ctx);
+        error!("RC: {:?}", dashboard_rc);*/
 
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
@@ -2265,7 +2255,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_ACTIONS, &actions);
         context.insert(KEY_PROJECT, &project_p_base);
         context.insert(KEY_FEATURES, &features_rc);
-        context.insert(KEY_DASHBOARD, &dashboard_rc);
+        //context.insert(KEY_DASHBOARD, &dashboard_rc);
 
         // error!("{:#?}", context);
         info!("Build render context -> Done.");

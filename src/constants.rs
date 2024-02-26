@@ -86,7 +86,7 @@ pub const VERTEX_TYPE_COMPONENT_SRC: &str = "component_src";
 pub const VERTEX_TYPE_COMPONENT_DST: &str = "component_dst";
 pub const VERTEX_TYPE_CONNECTION_SRC: &str = "connection_src";
 pub const VERTEX_TYPE_CONNECTION_DST: &str = "connection_dst";
-
+pub const VERTEX_TYPE_DASHBOARD_PROVIDER: &str = "dashboard_provider";
 // Rel type
 pub const EDGE_TYPE_HAS: &str = "has";
 pub const EDGE_TYPE_RUNS: &str = "runs";

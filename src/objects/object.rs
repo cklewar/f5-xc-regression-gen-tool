@@ -1,6 +1,7 @@
 use indradb::Vertex;
 use serde_json::{Map, Value};
 use uuid::Uuid;
+
 use crate::db::{Db, IdPath};
 use crate::PropertyType;
 
@@ -65,6 +66,7 @@ impl ObjectExt for Object<'_> {
         p.insert(key, value);
         self.db.add_object_properties(&self.vertex, &p, PropertyType::Module);
     }
+
     fn insert_module_properties(&self, key: String, value: Value) {
         let mut p = self.get_module_properties().clone();
         p.insert(key, value);
