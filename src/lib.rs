@@ -430,6 +430,7 @@ struct DashboardRenderContext {
     base: Map<String, Value>,
     module: Map<String, Value>,
     project: RegressionConfigProject,
+    provider: Map<String, Value>,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
@@ -617,19 +618,17 @@ struct ScriptRteProviderShareRenderContext {
 #[derive(Serialize, Debug)]
 struct ScriptDashboardRenderContext {
     name: String,
+    module: String,
     project: RegressionConfigProject,
 }
 
-pub trait RenderContext<'a> {
-    fn gen_render_ctx(&self, config: &RegressionConfig, ctx: Vec<HashMap<String, Vec<String>>>) -> Box<(dyn RenderContext + 'static)>;
+#[typetag::serialize(tag = "type")]
+pub trait RenderContext {}
+
+pub trait Renderer<'a> {
+    fn gen_render_ctx(&self, config: &RegressionConfig, ctx: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext>;
     fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>>;
 }
-//impl RenderContext for EutRenderContext {}
-//impl RenderContext for RteRenderContext {}
-//impl RenderContext for FeatureRenderContext {}
-//impl RenderContext for TestRenderContext {}
-//impl RenderContext for VerificationRenderContext {}
-//impl RenderContext for RteProviderShareRenderContext {}
 
 pub trait ScriptRenderContext {}
 
@@ -1960,14 +1959,12 @@ impl<'a> Regression<'a> {
         let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
 
-        let dashboard = Dashboard::load(self.db, &project.vertex);
-        error!("DASHBOARD_OBJ: {:?}", dashboard.get_object());
-        error!("DASHBOARD_ID_PATH: {:?}", dashboard.get_id_path());
-        //dashboard.test123();
+        let dashboard = Dashboard::load(self.db, &project.vertex, &self.config);
+        let scripts = dashboard.gen_script_render_ctx(&self.config);
+        //let binding = dashboard.gen_render_ctx(&self.config, scripts.clone());
+        //let dashboard_rc: &dyn RenderContext = binding.as_ref();
+        let dashboard_rc = dashboard.gen_render_ctx(&self.config, scripts.clone());
 
-        /*let ctx = dashboard.gen_script_render_ctx(&self.config);
-        let dashboard_rc = dashboard.gen_render_ctx(&self.config, ctx);
-        error!("RC: {:?}", dashboard_rc);*/
 
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
@@ -2255,9 +2252,9 @@ impl<'a> Regression<'a> {
         context.insert(KEY_ACTIONS, &actions);
         context.insert(KEY_PROJECT, &project_p_base);
         context.insert(KEY_FEATURES, &features_rc);
-        //context.insert(KEY_DASHBOARD, &dashboard_rc);
+        context.insert(KEY_DASHBOARD, &dashboard_rc);
 
-        // error!("{:#?}", context);
+        //error!("{:#?}", context.get(KEY_DASHBOARD));
         info!("Build render context -> Done.");
         context
     }

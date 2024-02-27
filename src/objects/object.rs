@@ -5,9 +5,12 @@ use uuid::Uuid;
 use crate::db::{Db, IdPath};
 use crate::PropertyType;
 
+#[derive(serde::Serialize)]
 pub struct Object<'a> {
+    #[serde(skip_serializing)]
     pub(crate) db: &'a Db,
     pub(crate) id: Uuid,
+    #[serde(skip_serializing)]
     pub(crate) vertex: Vertex,
     pub(crate) id_path: IdPath,
     pub(crate) module_cfg: Value,

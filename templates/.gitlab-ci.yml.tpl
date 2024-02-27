@@ -211,7 +211,7 @@ variables:
     - echo $CI_PROJECT_DIR
     - terraform version
 
-# dashboard - {{ dashboard.module.name }} - deploy
+# dashboard - {{ dashboard.base.module }} - deploy
 dashboard-deploy:
   <<: *base
   stage: dashboard-deploy
@@ -232,7 +232,7 @@ dashboard-deploy:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
-  timeout: {{ dashboard.module.ci.timeout }}
+  timeout: {{ dashboard.provider.ci.timeout }}
   retry:
     max: 1
     when:
@@ -754,7 +754,7 @@ dashboard-deploy:
       - runner_system_failure
 {% endfor -%}
 {% endfor %}
-# dashboard - {{ dashboard.module.name }} - destroy
+# dashboard - {{ dashboard.base.module }} - destroy
 dashboard-destroy:
   <<: *base
   stage: dashboard-destroy
@@ -771,7 +771,7 @@ dashboard-destroy:
         {%- endif %}
         {%- endfor %}
         {%- endfor %}
-  timeout: {{ dashboard.module.ci.timeout }}
+  timeout: {{ dashboard.provider.ci.timeout }}
   retry:
     max: 1
     when:

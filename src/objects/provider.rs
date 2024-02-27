@@ -3,11 +3,11 @@ use log::error;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use crate::{PropertyType, RegressionConfig};
-use crate::constants::KEY_NAME;
+use crate::{EdgeTypes, PropertyType, RegressionConfig};
+use crate::constants::{KEY_ID_PATH, KEY_NAME};
 use crate::db::Db;
 
-use super::implement_object_ext;
+use super::{implement_object_ext};
 use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
@@ -60,6 +60,28 @@ impl<'a> DashboardProvider<'a> {
 
         provider.add_module_properties(config.clone());
         provider
+    }
+
+    pub fn load(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Vec<Box<(dyn ObjectExt + 'a)>> {
+        let objects = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::UsesProvider);
+        let mut providers: Vec<Box<(dyn ObjectExt + 'a)>> = vec![];
+
+        for obj in objects {
+            let as_arr = obj.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+            let id_path = IdPath::load_from_array(as_arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
+            let module_props = obj.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
+            let provider = Box::new(DashboardProvider {
+                object: Object {
+                    db,
+                    id: obj.vertex.id,
+                    id_path,
+                    vertex: obj.vertex,
+                    module_cfg: Value::Object(module_props),
+                },
+            });
+            providers.push(provider);
+        }
+        providers
     }
 }
 

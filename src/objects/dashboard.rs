@@ -5,8 +5,8 @@ use log::error;
 use serde_json::{json, Map, to_value, Value};
 use uuid::Uuid;
 
-use crate::{EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, ScriptDashboardRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_NAME, KEY_PROVIDER, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{DashboardRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptDashboardRenderContext};
+use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 use crate::objects::provider::DashboardProvider;
@@ -15,8 +15,10 @@ use super::{implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
-pub trait DashboardExt<'a>:ObjectExt + RenderContext<'a> {}
+#[typetag::serialize(tag = "type")]
+pub trait DashboardExt<'a>: ObjectExt + Renderer<'a> + RenderContext {}
 
+#[derive(serde::Serialize)]
 pub struct Dashboard<'a> {
     object: Object<'a>,
 }
@@ -61,44 +63,77 @@ impl<'a> Dashboard<'a> {
         dashboard
     }
 
-    pub fn load(db: &'a Db, object: &Vertex) -> Box<(dyn DashboardExt<'a> + 'a)> {
+    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Box<(dyn DashboardExt<'a> + 'a)> {
         let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::Has).unwrap();
         let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
+        let module = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o.vertex), module, &config);
 
         let dashboard = Box::new(Dashboard {
             object: Object {
                 db,
-                id: object.id,
+                id: o.vertex.id,
                 id_path,
                 vertex: o.vertex,
-                module_cfg: json!(null),
+                module_cfg,
             },
         });
 
         dashboard
     }
 }
-impl DashboardExt<'_> for Dashboard<'_> {}
-impl RenderContext<'_> for Dashboard<'_> {
-    fn gen_render_ctx(&self, _config: &RegressionConfig, _ctx: Vec<HashMap<String, Vec<String>>>) -> Box<(dyn RenderContext + 'static)> {
-        todo!()
+
+#[typetag::serialize]
+impl RenderContext for DashboardRenderContext {}
+
+#[typetag::serialize]
+impl RenderContext for Dashboard<'_> {}
+
+impl Renderer<'_> for Dashboard<'_> {
+    fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
+        let p_name = self.get_base_properties().get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
+        let dashboard_provider = DashboardProvider::load(&self.object.db, &self.get_object(), config);
+        let mut ctx: Box<DashboardRenderContext> = Box::new(DashboardRenderContext {
+            base: Default::default(),
+            module: Default::default(),
+            project: Default::default(),
+            provider: Default::default(),
+            scripts: Default::default(),
+        });
+
+        for p in dashboard_provider {
+            let m_props = p.get_module_properties();
+
+            if p_name == m_props.get(KEY_NAME).unwrap().as_str().unwrap() {
+                ctx = Box::new(DashboardRenderContext {
+                    base: self.get_base_properties(),
+                    module: self.get_module_properties(),
+                    project: config.project.clone(),
+                    provider: m_props.clone(),
+                    scripts: scripts.clone(),
+                });
+            }
+        }
+        ctx
     }
 
     fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-        let dashboard_provider = self.object.db.get_object_neighbours_with_properties_out(&self.get_id(), EdgeTypes::UsesProvider);
+        let dashboard_provider = DashboardProvider::load(&self.object.db, &self.get_object(), config);
+        let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+        let p_name = self.get_base_properties().get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
 
         for provider in dashboard_provider {
-            error!("PROVIDER: {:#?}", provider.props.get(PropertyType::Base.index()));
-            let module_props = self.get_module_properties();
-            let d_name = module_props.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
-            let scripts_path = module_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-            for script in module_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", config.root_path, config.dashboard.path, d_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+            let m_props = provider.get_module_properties();
+            let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+
+            for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                let path = format!("{}/{}/{}/{}/{}/{}", config.root_path, config.dashboard.path, module, scripts_path, p_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening dashboard script file");
                 let ctx = ScriptDashboardRenderContext {
-                    name: d_name.to_string(),
+                    name: p_name.to_string(),
+                    module: module.to_string(),
                     project: config.project.clone(),
                 };
 
@@ -116,5 +151,8 @@ impl RenderContext<'_> for Dashboard<'_> {
         scripts
     }
 }
+
+#[typetag::serialize]
+impl DashboardExt<'_> for Dashboard<'_> {}
 
 implement_object_ext!(Dashboard);
