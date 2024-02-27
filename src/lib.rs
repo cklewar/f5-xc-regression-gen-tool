@@ -2394,4 +2394,10 @@ impl<'a> Regression<'a> {
         let mut _tera = Tera::new(&self.config.project.templates).unwrap();
         Ok(_tera.render("entry.tpl", context).unwrap())
     }
+
+    pub fn render_actions_json_file(&self, context: &Context) -> Result<String, Box<dyn Error>> {
+        error!("Render actions json file..");
+        let mut _tera = Tera::new(&self.config.project.templates).unwrap();
+        Ok(_tera.render("actions.tpl", context).unwrap())
+    }
 }

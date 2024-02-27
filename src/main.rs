@@ -11,7 +11,7 @@ used as input for another program or workflow.
 use clap::Parser;
 use log::{error, info};
 
-use sense8_ci_generator::constants::{ENTRY_FILE_NAME, PIPELINE_FILE_NAME};
+use sense8_ci_generator::constants::{ACTIONS_FILE_NAME, ENTRY_FILE_NAME, PIPELINE_FILE_NAME};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -28,7 +28,7 @@ struct Cli {
     /// Export data to json file
     #[arg(long)]
     write_json: bool,
-    /// Render CI pipline file
+    /// Render CI pipeline file
     #[arg(short, long)]
     render_ci: bool,
     /// Write to GraphViz file
@@ -38,6 +38,9 @@ struct Cli {
     #[arg(long)]
     gen_actions: bool,
     entry_file_path: Option<String>,
+    #[arg(long)]
+    gen_actions_json: bool,
+    json_file_path: Option<String>,
 }
 
 fn main() {
@@ -61,6 +64,18 @@ fn main() {
     }
     if cli.write_gv {
         r.to_file(&r.to_gv(), "./out", &"graph.gv");
+    }
+    if cli.gen_actions_json {
+        let a = r.render_actions_json_file(&ctx);
+        match a {
+            Ok(data) => {
+                error!("Render actions json -> Done");
+                r.to_file(&data, cli.json_file_path.unwrap().as_str(), ACTIONS_FILE_NAME);
+            }
+            Err(err) => {
+                error!("ERR: {}", err)
+            }
+        }
     }
     if cli.gen_actions {
         let a = r.render_entry_page(&ctx);

@@ -48,6 +48,7 @@ pub const PIPELINE_FILE_NAME: &str = ".gitlab-ci.yml";
 pub const PIPELINE_TEMPLATE_FILE_NAME: &str = ".gitlab-ci.yml.tpl";
 
 pub const ENTRY_FILE_NAME: &str = "entry.md";
+pub const ACTIONS_FILE_NAME: &str = "actions.json";
 
 pub const PROPERTY_TYPE_GV: &str = "gv";
 pub const PROPERTY_TYPE_BASE: &str = "base";
