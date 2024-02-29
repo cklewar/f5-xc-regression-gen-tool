@@ -27,6 +27,10 @@ pub struct Rtes<'a> {
     object: Object<'a>,
 }
 
+pub struct Applications<'a> {
+    object: Object<'a>,
+}
+
 impl<'a> Features<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut features collection object");
@@ -99,4 +103,22 @@ impl<'a> Sites<'a> {
     }
 }
 
-implement_object_ext!(Features, Providers, Rtes, Sites);
+impl<'a> Applications<'a> {
+    pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Initialize new eut applications collection object");
+        let (o, id_path) = db.create_object_and_init(VertexTypes::Applications, &mut path, label, pop);
+        db.add_object_properties(&o, &config.applications, PropertyType::Base);
+
+        Box::new(Applications {
+            object: Object {
+                db,
+                id: o.id,
+                id_path,
+                vertex: o,
+                module_cfg: json!(null),
+            },
+        })
+    }
+}
+
+implement_object_ext!(Features, Providers, Rtes, Sites, Applications);

@@ -40,6 +40,7 @@ pub const KEY_COMPONENTS: &str = "components";
 pub const KEY_CONNECTION: &str = "connection";
 pub const KEY_CONNECTIONS: &str = "connections";
 pub const KEY_APPLICATION: &str = "application";
+pub const KEY_APPLICATIONS: &str = "applications";
 pub const KEY_VERIFICATION: &str = "verification";
 pub const KEY_SCRIPTS_PATH: &str = "scripts_path";
 pub const KEY_VERIFICATIONS: &str = "verifications";
@@ -56,7 +57,7 @@ pub const PROPERTY_TYPE_BASE: &str = "base";
 pub const PROPERTY_TYPE_MODULE: &str = "module";
 
 // Key order
-pub const EUT_KEY_ORDER: &[&str] = &["ci", "provider", "sites", "features", "name", "release", "rtes", "scripts", "scripts_path"];
+pub const EUT_KEY_ORDER: &[&str] = &["ci", "provider", "sites", "features", "applications", "name", "release", "rtes", "scripts", "scripts_path"];
 
 //Objects types
 pub const VERTEX_TYPE_CI: &str = "ci";

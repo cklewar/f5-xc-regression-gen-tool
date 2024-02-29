@@ -15,7 +15,8 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes, Sites, Site, Dashboard};
+use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider,
+              Rtes, Sites, Site, Dashboard, Application, Applications};
 
 use crate::constants::*;
 use crate::db::Db;
@@ -358,7 +359,6 @@ struct RegressionConfigCi {
 struct RegressionConfigApplications {
     ci: RegressionConfigGenericCi,
     path: String,
-    module: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -1066,7 +1066,7 @@ struct RteTypeB<'a> {
 
 impl<'a> RteCharacteristics for RteTypeB<'a> {
     fn init(&self, r_o: &Vertex) {
-        error!("RTE TYPE B init connection component --> {:?}", &r_o);
+        error!("RTE TYPE B init connection component --> {:?}", &r_o.t.as_str());
         // Connection -> Component
         let _c = self.db.get_object_neighbour_out(&r_o.id, EdgeTypes::HasConnections);
         let connections = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
@@ -1093,7 +1093,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
     }
 
     fn build_ctx(&self, rte: &VertexProperties, mut site_count: usize, srsd: &mut HashMap<String, ScriptRteSitesShareDataRenderContext>) {
-        error!("RTE TYPE B build ctx --> {:?}", rte);
+        error!("RTE TYPE B build ctx --> {:?}", rte.vertex.t.as_str());
         let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         srsd.insert(rte_name.to_string(), ScriptRteSitesShareDataRenderContext { sites: Default::default() });
 
@@ -1436,7 +1436,7 @@ impl<'a> Regression<'a> {
                         }
 
                         // FEATURE MODULE CFG
-                        let cfg = f_o.get_module_cfg();
+                        /*let cfg = f_o.get_module_cfg();
                         for (k, v) in cfg.iter() {
                             match k {
                                 k if k == KEY_SCRIPTS_PATH => {
@@ -1456,9 +1456,20 @@ impl<'a> Regression<'a> {
                                 }
                                 _ => {}
                             }
-                        }
+                        }*/
                     }
                 }
+                k if k == KEY_APPLICATIONS => {
+                    let o = Applications::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
+                    self.db.create_relationship(&eut.get_object(), &o.get_object());
+
+                    for a in obj.as_array().unwrap().iter() {
+                        let a_module = a.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                        let a_o = Application::init(self.db, &self.config, a, &mut o.get_id_path().get_vec(), a_module, 0);
+                        self.db.create_relationship(&o.get_object(), &a_o.get_object());
+                    }
+                }
+
                 k if k == KEY_SCRIPTS_PATH => {
                     eut.add_module_properties(to_value(json!({k: obj})).unwrap());
                 }

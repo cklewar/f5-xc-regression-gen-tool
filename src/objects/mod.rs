@@ -3,7 +3,7 @@ use serde_json::Value;
 use serde_json::Value::Null;
 
 pub use ci::Ci;
-pub use collections::{Features, Providers, Rtes, Sites};
+pub use collections::{Features, Providers, Rtes, Sites, Applications};
 pub use dashboard::Dashboard;
 pub use eut::Eut;
 pub use feature::Feature;
@@ -12,6 +12,7 @@ pub use project::Project;
 pub use provider::EutProvider;
 pub use rte::Rte;
 pub use site::Site;
+pub use application::Application;
 
 use crate::constants::*;
 use crate::RegressionConfig;

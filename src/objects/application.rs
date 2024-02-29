@@ -1,13 +1,15 @@
 use indradb::Vertex;
 use log::error;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, to_value, Value};
 use uuid::Uuid;
 
 use crate::{PropertyType, RegressionConfig};
+use crate::constants::{KEY_NAME, KEY_PROVIDER};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
+use crate::objects::provider::DashboardProvider;
 
-use super::{implement_object_ext, load_object_config};
+use super::{application, implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -17,7 +19,7 @@ pub struct Application<'a> {
 
 impl<'a> Application<'a>  {
     pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
-        error!("Initialize new Application object");
+        error!("Initialize new application object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Application, &mut path, label, pop);
         db.add_object_properties(&o, base_cfg, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), label, &config);
