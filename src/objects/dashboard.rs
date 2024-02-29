@@ -128,24 +128,26 @@ impl Renderer<'_> for Dashboard<'_> {
             let m_props = provider.get_module_properties();
             let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
-            for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}/{}", config.root_path, config.dashboard.path, module, scripts_path, p_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                let contents = std::fs::read_to_string(path).expect("panic while opening dashboard script file");
-                let ctx = ScriptDashboardRenderContext {
-                    name: p_name.to_string(),
-                    module: module.to_string(),
-                    project: config.project.clone(),
-                };
+            if m_props.get(KEY_NAME).unwrap().as_str().unwrap() == p_name {
+                for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    let path = format!("{}/{}/{}/{}/{}/{}", config.root_path, config.dashboard.path, module, scripts_path, p_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                    let contents = std::fs::read_to_string(path).expect("panic while opening dashboard script file");
+                    let ctx = ScriptDashboardRenderContext {
+                        name: p_name.to_string(),
+                        module: module.to_string(),
+                        project: config.project.clone(),
+                    };
 
-                let mut commands: Vec<String> = Vec::new();
-                for command in render_script(&ctx, &contents).lines() {
-                    commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    let mut commands: Vec<String> = Vec::new();
+                    for command in render_script(&ctx, &contents).lines() {
+                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
+                    }
+
+                    let data: HashMap<String, Vec<String>> = [
+                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+                    ].into_iter().collect();
+                    scripts.push(data);
                 }
-
-                let data: HashMap<String, Vec<String>> = [
-                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                ].into_iter().collect();
-                scripts.push(data);
             }
         }
         scripts

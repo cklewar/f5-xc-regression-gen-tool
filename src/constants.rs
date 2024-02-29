@@ -39,6 +39,7 @@ pub const KEY_COMPONENT: &str = "component";
 pub const KEY_COMPONENTS: &str = "components";
 pub const KEY_CONNECTION: &str = "connection";
 pub const KEY_CONNECTIONS: &str = "connections";
+pub const KEY_APPLICATION: &str = "application";
 pub const KEY_VERIFICATION: &str = "verification";
 pub const KEY_SCRIPTS_PATH: &str = "scripts_path";
 pub const KEY_VERIFICATIONS: &str = "verifications";
@@ -78,6 +79,8 @@ pub const VERTEX_TYPE_DASHBOARD: &str = "dashboard";
 pub const VERTEX_TYPE_COMPONENTS: &str = "components";
 pub const VERTEX_TYPE_CONNECTION: &str = "connection";
 pub const VERTEX_TYPE_CONNECTIONS: &str = "connections";
+pub const VERTEX_TYPE_APPLICATION: &str = "application";
+pub const VERTEX_TYPE_APPLICATIONS: &str = "applications";
 pub const VERTEX_TYPE_VERIFICATION: &str = "verification";
 pub const VERTEX_TYPE_EUT_PROVIDER: &str = "eut_provider";
 pub const VERTEX_TYPE_RTE_PROVIDER: &str = "rte_provider";
@@ -109,6 +112,7 @@ pub const EDGE_TYPE_NEEDS_PROVIDER: &str = "needs_provider";
 pub const EDGE_TYPE_HAS_COMPONENTS: &str = "has_components";
 pub const EDGE_TYPE_HAS_CONNECTION: &str = "has_connection";
 pub const EDGE_TYPE_HAS_CONNECTIONS: &str = "has_connections";
+pub const EDGE_TYPE_HAS_APPLICATIONS: &str = "has_applications";
 pub const EDGE_TYPE_SITE_REFERS_RTE: &str = "site_refers_rte";
 pub const EDGE_TYPE_PROVIDES_PROVIDER: &str = "provides_provider";
 pub const EDGE_TYPE_HAS_COMPONENT_SRC: &str = "has_component_src";
@@ -118,7 +122,7 @@ pub const EDGE_TYPE_HAS_CONNECTION_DST: &str = "has_connection_dst";
 pub const EDGE_TYPE_HAS_DEPLOY_STAGES: &str = "has_deploy_stages";
 pub const EDGE_TYPE_HAS_DESTROY_STAGES: &str = "has_destroy_stages";
 pub const EDGE_TYPE_FEATURE_REFERS_SITE: &str = "feature_refers_site";
-
+pub const EDGE_TYPE_PROVIDES_APPLICATION: &str = "provides_application";
 //RTE TYPES
 
 pub const RTE_TYPE_A: &str = "rte_type_a";

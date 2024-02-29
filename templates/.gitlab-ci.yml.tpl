@@ -422,9 +422,7 @@ dashboard-deploy:
   <<: *base
   stage: eut-artifacts
   rules:
-    # - !reference [ .deploy_rte_rules, rules ]
     - !reference [ .destroy_rules, rules ]
-    # - !reference [ .destroy_rte_rules, rules ]
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]

@@ -1,4 +1,4 @@
-use log::info;
+use log::{info};
 use serde_json::Value;
 use serde_json::Value::Null;
 
@@ -29,10 +29,7 @@ mod rte;
 mod test;
 mod verification;
 mod dashboard;
-
-/*enum Objects<'a>  {
-    Feature(Feature<'a>)
-}*/
+mod application;
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");
@@ -55,6 +52,9 @@ fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> V
         }
         KEY_DASHBOARD => {
             file = format!("{}/{}/{}/{}", config.root_path, config.dashboard.path, module, CONFIG_FILE_NAME);
+        }
+        KEY_APPLICATION => {
+            file = format!("{}/{}/{}/{}", config.root_path, config.applications.path, module, CONFIG_FILE_NAME);
         }
         _ => {
             return Null;

@@ -51,10 +51,12 @@ pub enum VertexTypes {
     Components,
     Connection,
     Connections,
+    Application,
     RteProvider,
     EutProvider,
     StageDeploy,
     StageDestroy,
+    Applications,
     Verification,
     ComponentSrc,
     ComponentDst,
@@ -87,6 +89,7 @@ pub enum EdgeTypes {
     SiteRefersRte,
     HasConnections,
     HasDeployStages,
+    HasApplications,
     HasComponentSrc,
     HasComponentDst,
     ProvidesProvider,
@@ -94,6 +97,7 @@ pub enum EdgeTypes {
     HasConnectionDst,
     HasDestroyStages,
     FeatureRefersSite,
+    ProvidesApplication,
 }
 
 impl VertexTypes {
@@ -118,6 +122,8 @@ impl VertexTypes {
             VertexTypes::Connection => VERTEX_TYPE_CONNECTION,
             VertexTypes::Components => VERTEX_TYPE_COMPONENTS,
             VertexTypes::Connections => VERTEX_TYPE_CONNECTIONS,
+            VertexTypes::Application => VERTEX_TYPE_APPLICATION,
+            VertexTypes::Applications => VERTEX_TYPE_APPLICATIONS,
             VertexTypes::EutProvider => VERTEX_TYPE_EUT_PROVIDER,
             VertexTypes::RteProvider => VERTEX_TYPE_RTE_PROVIDER,
             VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
@@ -152,6 +158,8 @@ impl VertexTypes {
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection.name(),
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components.name(),
             VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections.name(),
+            VERTEX_TYPE_APPLICATION => VertexTypes::Application.name(),
+            VERTEX_TYPE_APPLICATIONS => VertexTypes::Applications.name(),
             VERTEX_TYPE_VERIFICATION => VertexTypes::Verification.name(),
             VERTEX_TYPE_STAGE_DEPLOY => VertexTypes::StageDeploy.name(),
             VERTEX_TYPE_EUT_PROVIDER => VertexTypes::EutProvider.name(),
@@ -187,6 +195,8 @@ impl VertexTypes {
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection,
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components,
             VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections,
+            VERTEX_TYPE_APPLICATION => VertexTypes::Application,
+            VERTEX_TYPE_APPLICATIONS => VertexTypes::Applications,
             VERTEX_TYPE_VERIFICATION => VertexTypes::Verification,
             VERTEX_TYPE_EUT_PROVIDER => VertexTypes::EutProvider,
             VERTEX_TYPE_RTE_PROVIDER => VertexTypes::RteProvider,
@@ -228,12 +238,14 @@ impl EdgeTypes {
             EdgeTypes::HasConnections => EDGE_TYPE_HAS_CONNECTIONS,
             EdgeTypes::HasComponentSrc => EDGE_TYPE_HAS_COMPONENT_SRC,
             EdgeTypes::HasComponentDst => EDGE_TYPE_HAS_COMPONENT_DST,
+            EdgeTypes::HasApplications => EDGE_TYPE_HAS_APPLICATIONS,
             EdgeTypes::HasDeployStages => EDGE_TYPE_HAS_DEPLOY_STAGES,
             EdgeTypes::HasDestroyStages => EDGE_TYPE_HAS_DESTROY_STAGES,
             EdgeTypes::ProvidesProvider => EDGE_TYPE_PROVIDES_PROVIDER,
             EdgeTypes::HasConnectionSrc => EDGE_TYPE_HAS_CONNECTION_SRC,
             EdgeTypes::HasConnectionDst => EDGE_TYPE_HAS_CONNECTION_DST,
             EdgeTypes::FeatureRefersSite => EDGE_TYPE_FEATURE_REFERS_SITE,
+            EdgeTypes::ProvidesApplication => EDGE_TYPE_PROVIDES_APPLICATION,
         }
     }
 }
@@ -255,6 +267,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Dashboard.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Dashboard.name().to_string(), VertexTypes::DashboardProvider.name().to_string()), EdgeTypes::UsesProvider.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Applications.name().to_string()), EdgeTypes::HasApplications.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::HasFeatures.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rtes.name().to_string()), EdgeTypes::UsesRtes.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
@@ -291,6 +304,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::HasDestroyStages.name());
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::StageDestroy.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::NextStage.name());
+        map.insert(VertexTuple(VertexTypes::Applications.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::ProvidesApplication.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
@@ -338,6 +352,13 @@ struct RegressionConfigCi {
     artifacts: RegressionConfigCiArtifacts,
     variables: Vec<RegressionConfigCiVariables>,
     job_templates: Vec<RegressionConfigJobTemplates>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigApplications {
+    ci: RegressionConfigGenericCi,
+    path: String,
+    module: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -413,6 +434,7 @@ pub struct RegressionConfig {
     root_path: String,
     dashboard: RegressionConfigDashboard,
     collector: RegressionConfigCollector,
+    applications: RegressionConfigApplications,
     verifications: RegressionConfigVerifications,
 }
 
@@ -1961,10 +1983,7 @@ impl<'a> Regression<'a> {
 
         let dashboard = Dashboard::load(self.db, &project.vertex, &self.config);
         let scripts = dashboard.gen_script_render_ctx(&self.config);
-        //let binding = dashboard.gen_render_ctx(&self.config, scripts.clone());
-        //let dashboard_rc: &dyn RenderContext = binding.as_ref();
         let dashboard_rc = dashboard.gen_render_ctx(&self.config, scripts.clone());
-
 
         let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
         let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
