@@ -444,6 +444,7 @@ struct ActionsRenderContext {
     sites: Vec<String>,
     tests: Vec<String>,
     features: Vec<String>,
+    applications: Vec<String>,
     verifications: Vec<String>,
 }
 
@@ -580,6 +581,14 @@ struct ScriptFeatureRenderContext {
 }
 
 #[derive(Serialize, Debug)]
+struct ScriptApplicationRenderContext {
+    eut: String,
+    name: String,
+    release: String,
+    project: RegressionConfigProject,
+}
+
+#[derive(Serialize, Debug)]
 struct ScriptVerificationRenderContext {
     rte: String,
     name: String,
@@ -658,11 +667,13 @@ impl ScriptRenderContext for ScriptEutRenderContext {}
 
 impl ScriptRenderContext for ScriptRteRenderContext {}
 
-impl ScriptRenderContext for ScriptFeatureRenderContext {}
-
 impl ScriptRenderContext for ScriptTestRenderContext {}
 
+impl ScriptRenderContext for ScriptFeatureRenderContext {}
+
 impl ScriptRenderContext for ScriptDashboardRenderContext {}
+
+impl ScriptRenderContext for ScriptApplicationRenderContext {}
 
 impl ScriptRenderContext for ScriptVerificationRenderContext {}
 
@@ -1434,29 +1445,6 @@ impl<'a> Regression<'a> {
                                 }
                             }
                         }
-
-                        // FEATURE MODULE CFG
-                        /*let cfg = f_o.get_module_cfg();
-                        for (k, v) in cfg.iter() {
-                            match k {
-                                k if k == KEY_SCRIPTS_PATH => {
-                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
-                                }
-                                k if k == KEY_RELEASE => {
-                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
-                                }
-                                k if k == KEY_NAME => {
-                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
-                                }
-                                k if k == KEY_CI => {
-                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
-                                }
-                                k if k == KEY_SCRIPTS => {
-                                    f_o.add_module_properties(to_value(json!({k: v.clone()}).as_object().unwrap().clone()).unwrap());
-                                }
-                                _ => {}
-                            }
-                        }*/
                     }
                 }
                 k if k == KEY_APPLICATIONS => {
@@ -1985,6 +1973,7 @@ impl<'a> Regression<'a> {
             sites: vec![],
             tests: vec![],
             features: vec![],
+            applications: vec![],
             verifications: vec![],
         };
 
@@ -2056,6 +2045,13 @@ impl<'a> Regression<'a> {
             actions.features.push(frc.job.clone());
             features_rc.push(frc);
         }
+
+        //Process applications
+        let _applications = Applications::load(self.db, &eut.vertex, &self.config);
+        //let mut features_rc: Vec<FeatureRenderContext> = Vec::new();
+
+        let scripts = dashboard.gen_script_render_ctx(&self.config);
+        let dashboard_rc = dashboard.gen_render_ctx(&self.config, scripts.clone());
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);
