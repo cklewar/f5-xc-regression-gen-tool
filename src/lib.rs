@@ -2,7 +2,7 @@ use std::any::Any;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::fmt::{Debug, Pointer};
+use std::fmt::{Debug};
 use std::format;
 use std::io::{Write};
 
@@ -1815,9 +1815,9 @@ impl<'a> Regression<'a> {
         //Application Stages Deploy
         let application_stage_deploy = self.add_ci_stages(&mut ci_id_path, &eut_stage_deploy.unwrap(), &self.config.applications.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Test Stages Deploy
-        let mut test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &application_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &application_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Verification Stages Deploy
-        let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+        self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
@@ -2097,18 +2097,11 @@ impl<'a> Regression<'a> {
             let mut feature_names: Vec<String> = Vec::new();
 
             for _feature in &features_rc {
-                let b: &FeatureRenderContext = match _feature.as_any().downcast_ref::<FeatureRenderContext>() {
-                    Some(b) => {
-                        error!("#####################################  {:?}", b);
-                        b
-                    },
-                    None => panic!("&a isn't a FeatureRenderContext!"),
+                let feature: &FeatureRenderContext = match _feature.as_any().downcast_ref::<FeatureRenderContext>() {
+                    Some(f) => f,
+                    None => panic!("&f isn't a FeatureRenderContext!"),
                 };
-
-                //_feature.as_any().downcast_ref()
-                //let feature = _feature as FeatureRenderContext;
-                //let box_dyn = Box::new(_feature) as Box<dyn 'a + FeatureRenderContext>;
-                //feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
+                feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
             }
 
             if let Some(r) = _rte {
