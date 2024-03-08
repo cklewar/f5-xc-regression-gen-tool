@@ -449,6 +449,15 @@ struct ActionsRenderContext {
 }
 
 #[derive(Serialize, Debug)]
+struct ApplicationRenderContext {
+    base: Map<String, Value>,
+    module: Map<String, Value>,
+    project: RegressionConfigProject,
+    provider: Map<String, Value>,
+    scripts: Vec<HashMap<String, Vec<String>>>,
+}
+
+#[derive(Serialize, Debug)]
 struct DashboardRenderContext {
     base: Map<String, Value>,
     module: Map<String, Value>,
@@ -1808,8 +1817,10 @@ impl<'a> Regression<'a> {
         let feature_stage_deploy = self.add_ci_stages(&mut ci_id_path, &rte_stage_deploy.unwrap(), &self.config.features.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Eut Stages Deploy
         let eut_stage_deploy = self.add_ci_stages(&mut ci_id_path, &feature_stage_deploy.unwrap(), &self.config.eut.ci.stages.deploy, &VertexTypes::StageDeploy);
+        //Application Stages Deploy
+        let application_stage_deploy = self.add_ci_stages(&mut ci_id_path, &eut_stage_deploy.unwrap(), &self.config.applications.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Test Stages Deploy
-        let mut test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &eut_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let mut test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &application_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
@@ -1873,8 +1884,19 @@ impl<'a> Regression<'a> {
             None => stage_destroy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.eut.ci.stages.destroy, &VertexTypes::StageDestroy)
         }
 
+        //Application Stages Destroy
+        let _applications = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasApplications);
+        let applications = self.db.get_object_neighbours_out(&_applications.id, EdgeTypes::ProvidesApplication);
+
+        if !applications.is_empty() {
+            stage_destroy = self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.applications.ci.stages.destroy, &VertexTypes::StageDestroy);
+        }
+
         //Rte Stages Destroy
-        stage_destroy = self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy);
+        match stage_destroy {
+            Some(a) => stage_destroy = self.add_ci_stages(&mut ci_id_path, &a, &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy),
+            None => stage_destroy = self.add_ci_stages(&mut ci_id_path, &eut.get_object(), &self.config.rte.ci.stages.destroy, &VertexTypes::StageDestroy)
+        }
 
         //Dashboard Stages Destroy
         self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.dashboard.ci.stages.destroy, &VertexTypes::StageDestroy);
@@ -1981,6 +2003,7 @@ impl<'a> Regression<'a> {
         let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
         let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
 
+        //Dashboard
         let dashboard = Dashboard::load(self.db, &project.vertex, &self.config);
         let scripts = dashboard.gen_script_render_ctx(&self.config);
         let dashboard_rc = dashboard.gen_render_ctx(&self.config, scripts.clone());
@@ -2048,10 +2071,9 @@ impl<'a> Regression<'a> {
 
         //Process applications
         let _applications = Applications::load(self.db, &eut.vertex, &self.config);
-        //let mut features_rc: Vec<FeatureRenderContext> = Vec::new();
-
-        let scripts = dashboard.gen_script_render_ctx(&self.config);
-        let dashboard_rc = dashboard.gen_render_ctx(&self.config, scripts.clone());
+        //let mut applications_rc: Vec<ApplicationRenderContext> = Vec::new();
+        //let scripts = application.gen_script_render_ctx(&self.config);
+        //let application_rc = application.gen_render_ctx(&self.config, scripts.clone());
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);

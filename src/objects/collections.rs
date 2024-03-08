@@ -3,7 +3,7 @@ use log::error;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use crate::{EdgeTypes, PropertyType, RegressionConfig};
+use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext, Renderer};
 use crate::constants::{KEY_ID_PATH, KEY_MODULE};
 use crate::db::Db;
 use crate::objects::dashboard::DashboardExt;
@@ -122,13 +122,26 @@ impl<'a> Applications<'a> {
         })
     }
 
-    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Box<(dyn DashboardExt<'a> + 'a)> {
-        error!("Loading eut applications object");
+    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn ObjectExt + 'a)>> {
+        error!("Loading eut application objects");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasApplications).unwrap();
+        let mut applications: Vec<Box<(dyn ObjectExt + 'a)>> = Vec::new();
+        let _applications = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::ProvidesApplication).unwrap();
+
+        for app in _applications {
+            let a = Application::load(db, &o.vertex, config);
+            error!("{:?}", a.get_object());
+            applications.push(a.clone());
+        }
+
+        applications
+    }
+
+    pub fn load_collection(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Loading eut applications collection object");
         let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasApplications).unwrap();
         let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
-        let module = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o.vertex), module, &config);
 
         let applications = Box::new(Applications {
             object: Object {
@@ -136,13 +149,12 @@ impl<'a> Applications<'a> {
                 id: o.vertex.id,
                 id_path,
                 vertex: o.vertex,
-                module_cfg,
+                module_cfg: json!(null),
             },
         });
 
         applications
     }
-
 }
 
 implement_object_ext!(Features, Providers, Rtes, Sites, Applications);
