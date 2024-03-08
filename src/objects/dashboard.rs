@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::collections::HashMap;
 
 use indradb::Vertex;
@@ -85,10 +86,18 @@ impl<'a> Dashboard<'a> {
 }
 
 #[typetag::serialize]
-impl RenderContext for DashboardRenderContext {}
+impl RenderContext for DashboardRenderContext {
+    fn as_any(&self) -> &dyn Any {
+        todo!()
+    }
+}
 
 #[typetag::serialize]
-impl RenderContext for Dashboard<'_> {}
+impl RenderContext for Dashboard<'_> {
+    fn as_any(&self) -> &dyn Any {
+        todo!()
+    }
+}
 
 impl Renderer<'_> for Dashboard<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {

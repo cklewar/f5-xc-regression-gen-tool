@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::collections::HashMap;
 use indradb::{Vertex, VertexProperties};
 use log::error;
@@ -48,7 +49,7 @@ impl<'a> Application<'a> {
         let module = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
 
-        let application = Box::new(Application {
+        Box::new(Application {
             object: Object {
                 db,
                 id: object.vertex.id,
@@ -56,17 +57,23 @@ impl<'a> Application<'a> {
                 vertex: object.vertex.clone(),
                 module_cfg,
             },
-        });
-
-        application
+        })
     }
 }
 
 #[typetag::serialize]
-impl RenderContext for ApplicationRenderContext {}
+impl RenderContext for ApplicationRenderContext {
+    fn as_any(&self) -> &dyn Any {
+        todo!()
+    }
+}
 
 #[typetag::serialize]
-impl RenderContext for Application<'_> {}
+impl RenderContext for Application<'_> {
+    fn as_any(&self) -> &dyn Any {
+        todo!()
+    }
+}
 
 impl Renderer<'_> for Application<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {

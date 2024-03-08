@@ -7,8 +7,9 @@ use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext};
 use crate::constants::{KEY_APPLICATION, KEY_DEPLOY, KEY_DESTROY, KEY_ID_PATH, KEY_NAME};
 use crate::db::Db;
 use crate::objects::application::ApplicationExt;
+use crate::objects::feature::FeatureExt;
 
-use super::{Application, implement_object_ext};
+use super::{Application, Feature, implement_object_ext};
 use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
@@ -48,6 +49,48 @@ impl<'a> Features<'a> {
                 module_cfg: json!(null),
             },
         })
+    }
+
+    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn FeatureExt<'a> + 'a)>> {
+        error!("Loading eut feature objects");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasFeatures).unwrap();
+        let mut features: Vec<Box<(dyn FeatureExt + 'a)>> = Vec::new();
+        let _features = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::HasFeature);
+
+        for app in _features {
+            features.push(Feature::load(db, &app, config));
+        }
+
+        features
+    }
+
+    pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Loading eut feature collection object");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasFeatures).unwrap();
+        let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
+
+        Box::new(Features {
+            object: Object {
+                db,
+                id: o.vertex.id,
+                id_path,
+                vertex: o.vertex,
+                module_cfg: json!(null),
+            },
+        })
+    }
+
+    pub fn gen_render_ctx(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<dyn RenderContext>> {
+        let mut features_rc: Vec<Box<dyn RenderContext>> = Vec::new();
+        let features = Self::load(db, object, config);
+
+        for f in features {
+            let feature_rc = f.gen_render_ctx(config, f.gen_script_render_ctx(config));
+            features_rc.push(feature_rc);
+        }
+
+        features_rc
     }
 }
 

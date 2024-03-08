@@ -1,7 +1,8 @@
+use std::any::Any;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::fmt::Debug;
+use std::fmt::{Debug, Pointer};
 use std::format;
 use std::io::{Write};
 
@@ -468,11 +469,11 @@ struct DashboardRenderContext {
 
 #[derive(Serialize, Debug)]
 struct FeatureRenderContext {
-    ci: Map<String, Value>,
     job: String,
     eut: String,
-    name: String,
-    release: String,
+    base: Map<String, Value>,
+    module: Map<String, Value>,
+    project: RegressionConfigProject,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
@@ -582,11 +583,8 @@ struct ScriptEutRenderContext {
 struct ScriptFeatureRenderContext {
     eut: String,
     name: String,
-    sites: String,
     release: String,
     project: RegressionConfigProject,
-    provider: Vec<String>,
-
 }
 
 #[derive(Serialize, Debug)]
@@ -663,7 +661,9 @@ struct ScriptDashboardRenderContext {
 }
 
 #[typetag::serialize(tag = "type")]
-pub trait RenderContext {}
+pub trait RenderContext {
+    fn as_any(&self) -> &dyn Any;
+}
 
 pub trait Renderer<'a> {
     fn gen_render_ctx(&self, config: &RegressionConfig, ctx: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext>;
@@ -1508,11 +1508,6 @@ impl<'a> Regression<'a> {
                                     p.insert(k.clone(), v.clone());
                                     self.db.add_object_properties(&r_o, &p, PropertyType::Base);
                                 }
-                                //Collector
-                                /*k if k == "collector" => {
-                                    let (c_o, _id_path) = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut id_path, "", 1);
-                                    self.db.create_relationship(&r_o, &c_o);
-                                }*/
                                 //Connections
                                 k if k == KEY_CONNECTIONS => {
                                     let (cs_o, _id_path) = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut _id_path.get_vec(), "", 1);
@@ -1823,55 +1818,6 @@ impl<'a> Regression<'a> {
         let mut test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &application_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
-        //Test and Verification single deploy job stages
-        /*
-        let _rtes = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::UsesRtes);
-        let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
-        let mut _test_stages: Vec<String> = Vec::new();
-        let mut _verification_stages: Vec<String> = Vec::new();
-
-        for rte in rtes.iter() {
-            let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
-            let _conns = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
-            for conn in _conns.iter() {
-                let c_src = self.db.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc).unwrap();
-                let tests = self.db.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
-                for t in tests.iter() {
-                    let t_stage_name = format!("{}-{}-{}-{}-{}-{}",
-                                               KEY_TEST,
-                                               rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                               c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                               &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
-                                               &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                               KEY_DEPLOY
-                    ).replace('_', "-");
-                    _test_stages.push(t_stage_name);
-
-                    //Verification stages
-                    let verifications = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
-                    for v in verifications.iter() {
-                        let v_stage_name = format!("{}-{}-{}-{}-{}-{}",
-                                                   KEY_VERIFICATION,
-                                                   rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                                   c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                                   &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
-                                                   &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                                   KEY_DEPLOY
-                        ).replace('_', "-");
-                        _verification_stages.push(v_stage_name);
-                    }
-                }
-            }
-        }
-
-        test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
-        let verification_stages = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
-        */
-
-        //Applications single deploy job stages
-        /*let app_deploy_stages = Applications::gen_deploy_stage(&self.db, &eut.get_object(), &self.config);
-        self.add_ci_stages(&mut ci_id_path, &verification_stages.unwrap(), &app_deploy_stages, &VertexTypes::StageDeploy);
-        */
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
@@ -1930,7 +1876,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_PROJECT, &cfg.project);
         context.insert(KEY_FEATURES, &cfg.features);
         context.insert(KEY_DASHBOARD, &cfg.dashboard);
-        context.insert("collector", &cfg.collector);
+        //context.insert("collector", &cfg.collector);
         context.insert(KEY_APPLICATIONS, &cfg.applications);
         context.insert(KEY_VERIFICATIONS, &cfg.verifications);
 
@@ -2031,50 +1977,7 @@ impl<'a> Regression<'a> {
         }
 
         //Process features
-        let _features = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasFeatures);
-        let features = self.db.get_object_neighbours_with_properties_out(&_features.id, EdgeTypes::HasFeature);
-        let mut features_rc: Vec<FeatureRenderContext> = Vec::new();
-
-        for feature in features.iter() {
-            let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-            let f_name = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
-            let scripts_path = feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-
-            //Process feature scripts
-            for script in feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.features.path, f_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
-                let ctx = ScriptFeatureRenderContext {
-                    eut: eut_name.to_string(),
-                    name: f_name.to_string(),
-                    sites: serde_json::to_string(&feature.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap()).unwrap(),
-                    release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
-                    provider: eut_provider_p_base.clone(),
-                    project: self.config.project.clone(),
-                };
-
-                let mut commands: Vec<String> = Vec::new();
-                for command in render_script(&ctx, &contents).lines() {
-                    commands.push(format!("{:indent$}{}", "", command, indent = 0));
-                }
-
-                let data: HashMap<String, Vec<String>> = [
-                    (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                ].into_iter().collect();
-                scripts.push(data);
-            }
-
-            let frc = FeatureRenderContext {
-                ci: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
-                job: format!("{}_{}_{}_{}", project_name, KEY_FEATURE, &eut_name, &f_name).replace('_', "-"),
-                eut: eut_name.to_string(),
-                name: f_name,
-                release: feature.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
-                scripts,
-            };
-            actions.features.push(frc.job.clone());
-            features_rc.push(frc);
-        }
+        let features_rc: Vec<Box<dyn RenderContext>> = Features::gen_render_ctx(self.db, &eut.vertex, &self.config);
 
         //Process applications
         let applications_rc: Vec<Box<dyn RenderContext>> = Applications::gen_render_ctx(self.db, &eut.vertex, &self.config);
@@ -2193,8 +2096,19 @@ impl<'a> Regression<'a> {
             let _rte = Rte::new(rte_type, self.db);
             let mut feature_names: Vec<String> = Vec::new();
 
-            for feature in features_rc.iter() {
-                feature_names.push(feature.name.to_string());
+            for _feature in &features_rc {
+                let b: &FeatureRenderContext = match _feature.as_any().downcast_ref::<FeatureRenderContext>() {
+                    Some(b) => {
+                        error!("#####################################  {:?}", b);
+                        b
+                    },
+                    None => panic!("&a isn't a FeatureRenderContext!"),
+                };
+
+                //_feature.as_any().downcast_ref()
+                //let feature = _feature as FeatureRenderContext;
+                //let box_dyn = Box::new(_feature) as Box<dyn 'a + FeatureRenderContext>;
+                //feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
             }
 
             if let Some(r) = _rte {
@@ -2296,8 +2210,6 @@ impl<'a> Regression<'a> {
         stages.append(&mut deploy_stages);
         stages.append(&mut destroy_stages);
 
-        error!("STAGES: {:?}", stages);
-
         let mut context = Context::new();
         context.insert(KEY_EUT, &eut_rc);
         context.insert(KEY_RTES, &rtes_rc);
@@ -2309,7 +2221,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_DASHBOARD, &dashboard_rc);
         context.insert(KEY_APPLICATIONS, &applications_rc);
 
-        error!("{:#?}", context.get(KEY_APPLICATIONS));
+        //error!("{:#?}", context.get(KEY_APPLICATIONS));
         info!("Build render context -> Done.");
         context
     }

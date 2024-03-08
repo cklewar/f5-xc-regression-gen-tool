@@ -11,7 +11,7 @@ variables:
   {{ variable.name | upper }}: "{{ variable.value }}"
   {% endfor -%}
   {% for feature in features -%}
-  FEATURE_{{ feature.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURES_ROOT_DIR/{{ feature.name }}/terraform.tfvars"
+  FEATURE_{{ feature.module.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURES_ROOT_DIR/{{ feature.module.name }}/terraform.tfvars"
   {% endfor -%}
   {% for application in applications -%}
   APPLICATION_{{ application.module.name | upper }}_ROOT_TF_VAR_FILE: "$APPLICATIONS_ROOT_DIR/{{ application.module.name }}/terraform.tfvars"
@@ -492,7 +492,7 @@ dashboard-deploy:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
-  timeout: {{ feature.ci.timeout }}
+  timeout: {{ feature.module.ci.timeout }}
   retry:
     max: 1
     when:
@@ -528,7 +528,7 @@ dashboard-deploy:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
-  timeout: {{ feature.ci.timeout }}
+  timeout: {{ feature.module.ci.timeout }}
   retry:
     max: 1
     when:
@@ -724,7 +724,7 @@ dashboard-deploy:
         {%- endif %}
         {%- endfor %}
         {%- endfor %}
-  timeout: {{ feature.ci.timeout }}
+  timeout: {{ feature.module.ci.timeout }}
   retry:
     max: 1
     when:
