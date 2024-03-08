@@ -11,7 +11,10 @@ variables:
   {{ variable.name | upper }}: "{{ variable.value }}"
   {% endfor -%}
   {% for feature in features -%}
-  FEATURE_{{ feature.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURE_ROOT_DIR/{{ feature.name }}/terraform.tfvars"
+  FEATURE_{{ feature.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURES_ROOT_DIR/{{ feature.name }}/terraform.tfvars"
+  {% endfor -%}
+  {% for application in applications -%}
+  APPLICATION_{{ application.module.name | upper }}_ROOT_TF_VAR_FILE: "$APPLICATIONS_ROOT_DIR/{{ application.module.name }}/terraform.tfvars"
   {% endfor %}
 .deploy_rules:
   rules:
@@ -155,6 +158,17 @@ variables:
     - if: $ACTION == "deploy-{{ test.job }}-and-verify-{{ verification.name }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
+{% endfor -%}
+{% for application in applications %}
+.deploy_{{ application.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "deploy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_{{ application.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "destroy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor %}
 .base: &base
   tags:
@@ -515,6 +529,71 @@ dashboard-deploy:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
   timeout: {{ feature.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% for application in applications %}
+# application - {{ application.job }} - deploy
+{{ application.job }}-deploy:
+  <<: *base
+  stage: application-deploy
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_application_rules, rules ]
+    - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+  script:
+      - |
+        {%- for script in application.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: {{ application.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# application - {{ application.job }} - artifacts
+{{ application.job }}-artifacts:
+  <<: *base
+  stage: application-artifacts
+  rules:
+    {%- for rte in rtes %}
+    {%- for test in rte.tests %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- endfor %}
+  script:
+      - |
+        {%- for script in application.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: {{ application.module.ci.timeout }}
   retry:
     max: 1
     when:

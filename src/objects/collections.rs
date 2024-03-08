@@ -3,13 +3,12 @@ use log::error;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext, Renderer};
-use crate::constants::{KEY_ID_PATH, KEY_MODULE};
+use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext};
+use crate::constants::{KEY_APPLICATION, KEY_DEPLOY, KEY_DESTROY, KEY_ID_PATH, KEY_NAME};
 use crate::db::Db;
 use crate::objects::application::ApplicationExt;
-use crate::objects::dashboard::DashboardExt;
 
-use super::{Application, implement_object_ext, load_object_config};
+use super::{Application, implement_object_ext};
 use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
@@ -130,19 +129,19 @@ impl<'a> Applications<'a> {
         let _applications = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::ProvidesApplication);
 
         for app in _applications {
-            applications.push(Application::load(db, &o.vertex, config));
+            applications.push(Application::load(db, &app, config));
         }
 
         applications
     }
 
-    pub fn load_collection(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+    pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
         error!("Loading eut applications collection object");
         let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasApplications).unwrap();
         let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
 
-        let applications = Box::new(Applications {
+        Box::new(Applications {
             object: Object {
                 db,
                 id: o.vertex.id,
@@ -150,9 +149,54 @@ impl<'a> Applications<'a> {
                 vertex: o.vertex,
                 module_cfg: json!(null),
             },
-        });
+        })
+    }
 
-        applications
+    pub fn gen_deploy_stage(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<String> {
+        error!("Generating eut application deploy stages");
+        let mut stages: Vec<String> = Vec::new();
+        let applications = Self::load(db, object, config);
+
+        for a in applications {
+            let name = format!("{}-{}-{}",
+                               KEY_APPLICATION,
+                               a.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                               KEY_DEPLOY
+            ).replace('_', "-");
+            stages.push(name);
+        }
+
+        stages
+    }
+
+    pub fn gen_destroy_stage(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<String> {
+        error!("Generating eut application destroy stages");
+        let mut stages: Vec<String> = Vec::new();
+        let applications = Self::load(db, object, config);
+
+        for a in applications {
+            let name = format!("{}-{}-{}",
+                               KEY_APPLICATION,
+                               a.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                               KEY_DESTROY
+            ).replace('_', "-");
+            stages.push(name);
+        }
+
+        stages
+    }
+
+    pub fn gen_render_ctx(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<dyn RenderContext>> {
+        let mut applications_rc: Vec<Box<dyn RenderContext>> = Vec::new();
+        let applications = Self::load(db, object, config);
+
+        for a in applications {
+            let scripts = a.gen_script_render_ctx(config);
+            let application_rc = a.gen_render_ctx(config, scripts.clone());
+            applications_rc.push(application_rc);
+        }
+
+        applications_rc
     }
 }
 

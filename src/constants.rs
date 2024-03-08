@@ -17,6 +17,7 @@ pub const KEY_NAME: &str = "name";
 pub const KEY_APPLY: &str = "apply";
 pub const KEY_SITES: &str = "sites";
 pub const KEY_DEPLOY: &str = "deploy";
+pub const KEY_DESTROY: &str = "destroy";
 pub const KEY_SHARE: &str = "share";
 pub const KEY_COUNT: &str = "count";
 pub const KEY_CONFIG: &str = "config";

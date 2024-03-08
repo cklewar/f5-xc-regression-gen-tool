@@ -1,17 +1,16 @@
 use std::collections::HashMap;
-use indradb::Vertex;
+use indradb::{Vertex, VertexProperties};
 use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ApplicationRenderContext, DashboardRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptApplicationRenderContext, ScriptDashboardRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{ApplicationRenderContext, PropertyType, RegressionConfig, render_script,
+            RenderContext, Renderer, ScriptApplicationRenderContext};
+use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
-use crate::objects::dashboard::DashboardExt;
 use crate::objects::object::{Object, ObjectExt};
-use crate::objects::provider::DashboardProvider;
 
-use super::{Dashboard, implement_object_ext, load_object_config};
+use super::{implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -42,20 +41,19 @@ impl<'a> Application<'a> {
         })
     }
 
-    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Box<(dyn ApplicationExt<'a> + 'a)> {
+    pub fn load(db: &'a Db, object: &VertexProperties, config: &RegressionConfig) -> Box<(dyn ApplicationExt<'a> + 'a)> {
         error!("Loading application object");
-        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::ProvidesApplication).unwrap();
-        let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let arr = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
-        let module = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o.vertex), module, &config);
+        let module = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
 
         let application = Box::new(Application {
             object: Object {
                 db,
-                id: o.vertex.id,
+                id: object.vertex.id,
                 id_path,
-                vertex: o.vertex,
+                vertex: object.vertex.clone(),
                 module_cfg,
             },
         });
@@ -73,6 +71,7 @@ impl RenderContext for Application<'_> {}
 impl Renderer<'_> for Application<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         Box::new(ApplicationRenderContext {
+            job: format!("{}_{}_{}", config.project.name, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             base: self.get_base_properties(),
             module: self.get_module_properties(),
             project: config.project.clone(),

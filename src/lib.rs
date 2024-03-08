@@ -15,8 +15,8 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider,
-              Rtes, Sites, Site, Dashboard, Application, Applications};
+use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes, Sites, Site,
+              Dashboard, Application, Applications};
 
 use crate::constants::*;
 use crate::db::Db;
@@ -450,6 +450,7 @@ struct ActionsRenderContext {
 
 #[derive(Serialize, Debug)]
 struct ApplicationRenderContext {
+    job: String,
     base: Map<String, Value>,
     module: Map<String, Value>,
     project: RegressionConfigProject,
@@ -1822,9 +1823,9 @@ impl<'a> Regression<'a> {
         let mut test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &application_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
-
-        //Test and Verification single job stages
-        let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
+        //Test and Verification single deploy job stages
+        /*
+        let _rtes = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::UsesRtes);
         let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
         let mut _test_stages: Vec<String> = Vec::new();
         let mut _verification_stages: Vec<String> = Vec::new();
@@ -1864,11 +1865,17 @@ impl<'a> Regression<'a> {
         }
 
         test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
-        self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
+        let verification_stages = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &_verification_stages, &VertexTypes::StageDeploy);
+        */
+
+        //Applications single deploy job stages
+        /*let app_deploy_stages = Applications::gen_deploy_stage(&self.db, &eut.get_object(), &self.config);
+        self.add_ci_stages(&mut ci_id_path, &verification_stages.unwrap(), &app_deploy_stages, &VertexTypes::StageDeploy);
+        */
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
-        let _features = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasFeatures);
+        let _features = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasFeatures);
         let features = self.db.get_object_neighbours_out(&_features.id, EdgeTypes::HasFeature);
 
         if !features.is_empty() {
@@ -2070,14 +2077,7 @@ impl<'a> Regression<'a> {
         }
 
         //Process applications
-        let applications = Applications::load(self.db, &eut.vertex, &self.config);
-        let mut applications_rc: Vec<Box<dyn RenderContext>> = Vec::new();
-
-        for a in applications {
-            let scripts = a.gen_script_render_ctx(&self.config);
-            let application_rc = a.gen_render_ctx(&self.config, scripts.clone());
-            applications_rc.push(application_rc);
-        }
+        let applications_rc: Vec<Box<dyn RenderContext>> = Applications::gen_render_ctx(self.db, &eut.vertex, &self.config);
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);
@@ -2296,6 +2296,8 @@ impl<'a> Regression<'a> {
         stages.append(&mut deploy_stages);
         stages.append(&mut destroy_stages);
 
+        error!("STAGES: {:?}", stages);
+
         let mut context = Context::new();
         context.insert(KEY_EUT, &eut_rc);
         context.insert(KEY_RTES, &rtes_rc);
@@ -2305,8 +2307,9 @@ impl<'a> Regression<'a> {
         context.insert(KEY_PROJECT, &project_p_base);
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_DASHBOARD, &dashboard_rc);
+        context.insert(KEY_APPLICATIONS, &applications_rc);
 
-        //error!("{:#?}", context.get(KEY_DASHBOARD));
+        error!("{:#?}", context.get(KEY_APPLICATIONS));
         info!("Build render context -> Done.");
         context
     }
