@@ -6,6 +6,7 @@ use uuid::Uuid;
 use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext, Renderer};
 use crate::constants::{KEY_ID_PATH, KEY_MODULE};
 use crate::db::Db;
+use crate::objects::application::ApplicationExt;
 use crate::objects::dashboard::DashboardExt;
 
 use super::{Application, implement_object_ext, load_object_config};
@@ -122,16 +123,14 @@ impl<'a> Applications<'a> {
         })
     }
 
-    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn ObjectExt + 'a)>> {
+    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn ApplicationExt<'a> + 'a)>> {
         error!("Loading eut application objects");
         let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasApplications).unwrap();
-        let mut applications: Vec<Box<(dyn ObjectExt + 'a)>> = Vec::new();
-        let _applications = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::ProvidesApplication).unwrap();
+        let mut applications: Vec<Box<(dyn ApplicationExt + 'a)>> = Vec::new();
+        let _applications = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::ProvidesApplication);
 
         for app in _applications {
-            let a = Application::load(db, &o.vertex, config);
-            error!("{:?}", a.get_object());
-            applications.push(a.clone());
+            applications.push(Application::load(db, &o.vertex, config));
         }
 
         applications

@@ -453,7 +453,6 @@ struct ApplicationRenderContext {
     base: Map<String, Value>,
     module: Map<String, Value>,
     project: RegressionConfigProject,
-    provider: Map<String, Value>,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
@@ -1925,6 +1924,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_FEATURES, &cfg.features);
         context.insert(KEY_DASHBOARD, &cfg.dashboard);
         context.insert("collector", &cfg.collector);
+        context.insert(KEY_APPLICATIONS, &cfg.applications);
         context.insert(KEY_VERIFICATIONS, &cfg.verifications);
 
         let eutc = _tera.render(file, &context).unwrap();
@@ -2070,10 +2070,14 @@ impl<'a> Regression<'a> {
         }
 
         //Process applications
-        let _applications = Applications::load(self.db, &eut.vertex, &self.config);
-        //let mut applications_rc: Vec<ApplicationRenderContext> = Vec::new();
-        //let scripts = application.gen_script_render_ctx(&self.config);
-        //let application_rc = application.gen_render_ctx(&self.config, scripts.clone());
+        let applications = Applications::load(self.db, &eut.vertex, &self.config);
+        let mut applications_rc: Vec<Box<dyn RenderContext>> = Vec::new();
+
+        for a in applications {
+            let scripts = a.gen_script_render_ctx(&self.config);
+            let application_rc = a.gen_render_ctx(&self.config, scripts.clone());
+            applications_rc.push(application_rc);
+        }
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);

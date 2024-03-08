@@ -4,8 +4,8 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ApplicationRenderContext, DashboardRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptDashboardRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{ApplicationRenderContext, DashboardRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptApplicationRenderContext, ScriptDashboardRenderContext};
+use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::dashboard::DashboardExt;
 use crate::objects::object::{Object, ObjectExt};
@@ -72,64 +72,41 @@ impl RenderContext for Application<'_> {}
 
 impl Renderer<'_> for Application<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
-        let p_name = self.get_base_properties().get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
-        let dashboard_provider = DashboardProvider::load(&self.object.db, &self.get_object(), config);
-        let mut ctx: Box<DashboardRenderContext> = Box::new(DashboardRenderContext {
-            base: Default::default(),
-            module: Default::default(),
-            project: Default::default(),
-            provider: Default::default(),
-            scripts: Default::default(),
-        });
-
-        for p in dashboard_provider {
-            let m_props = p.get_module_properties();
-
-            if p_name == m_props.get(KEY_NAME).unwrap().as_str().unwrap() {
-                ctx = Box::new(DashboardRenderContext {
-                    base: self.get_base_properties(),
-                    module: self.get_module_properties(),
-                    project: config.project.clone(),
-                    provider: m_props.clone(),
-                    scripts: scripts.clone(),
-                });
-            }
-        }
-        ctx
+        Box::new(ApplicationRenderContext {
+            base: self.get_base_properties(),
+            module: self.get_module_properties(),
+            project: config.project.clone(),
+            scripts: scripts.clone(),
+        })
     }
 
     fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-        let dashboard_provider = DashboardProvider::load(&self.object.db, &self.get_object(), config);
         let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
-        let p_name = self.get_base_properties().get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
+        let m_props: Map<String, Value> = self.get_module_properties();
+        let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
-        for provider in dashboard_provider {
-            let m_props = provider.get_module_properties();
-            let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+            let path = format!("{}/{}/{}/{}/{}", config.root_path, config.applications.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+            let contents = std::fs::read_to_string(path).expect("panic while opening application script file");
+            let ctx = ScriptApplicationRenderContext {
+                eut: config.eut.module.to_string(),
+                name: module.to_string(),
+                release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
+                project: config.project.clone(),
+            };
 
-            if m_props.get(KEY_NAME).unwrap().as_str().unwrap() == p_name {
-                for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                    let path = format!("{}/{}/{}/{}/{}/{}", config.root_path, config.dashboard.path, module, scripts_path, p_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                    let contents = std::fs::read_to_string(path).expect("panic while opening dashboard script file");
-                    let ctx = ScriptDashboardRenderContext {
-                        name: p_name.to_string(),
-                        module: module.to_string(),
-                        project: config.project.clone(),
-                    };
-
-                    let mut commands: Vec<String> = Vec::new();
-                    for command in render_script(&ctx, &contents).lines() {
-                        commands.push(format!("{:indent$}{}", "", command, indent = 0));
-                    }
-
-                    let data: HashMap<String, Vec<String>> = [
-                        (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
-                    ].into_iter().collect();
-                    scripts.push(data);
-                }
+            let mut commands: Vec<String> = Vec::new();
+            for command in render_script(&ctx, &contents).lines() {
+                commands.push(format!("{:indent$}{}", "", command, indent = 0));
             }
+
+            let data: HashMap<String, Vec<String>> = [
+                (script.as_object().unwrap().get(KEY_SCRIPT).unwrap().as_str().unwrap().to_string(), commands),
+            ].into_iter().collect();
+            scripts.push(data);
         }
+
         scripts
     }
 }
