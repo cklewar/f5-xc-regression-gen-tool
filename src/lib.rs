@@ -1952,22 +1952,24 @@ impl<'a> Regression<'a> {
             verifications: vec![],
         };
 
-        let project = self.db.get_object_with_properties(&id);
-        let project_p_base = project.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
+        //Project
+        let project = Project::load(&self.db, &id, &self.config);
+        let project_p_base = project.get_base_properties();
         let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
 
         //Dashboard
-        let dashboard = Dashboard::load(self.db, &project.vertex, &self.config);
+        let dashboard = Dashboard::load(self.db, &project.get_object(), &self.config);
         let scripts = dashboard.gen_script_render_ctx(&self.config);
         let dashboard_rc = dashboard.gen_render_ctx(&self.config, scripts.clone());
 
-        let eut = self.db.get_object_neighbour_with_properties_out(&project.vertex.id, EdgeTypes::HasEut).unwrap();
-        let eut_p_base = eut.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
-        let eut_p_module = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+        // Eut
+        let eut = Eut::load(&self.db, &project, &self.config);
+        let eut_p_base = eut.get_base_properties();
+        let eut_p_module = eut.get_module_properties();
         let eut_name = eut_p_module.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
 
         //Process eut provider
-        let _eut_providers = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasProviders);
+        let _eut_providers = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasProviders);
         let eut_provider = self.db.get_object_neighbours_with_properties_out(&_eut_providers.id, EdgeTypes::ProvidesProvider);
 
         let mut eut_provider_p_base = Vec::new();
@@ -1977,17 +1979,17 @@ impl<'a> Regression<'a> {
         }
 
         //Process features
-        let features_rc: Vec<Box<dyn RenderContext>> = Features::gen_render_ctx(self.db, &eut.vertex, &self.config);
+        let features_rc: Vec<Box<dyn RenderContext>> = Features::gen_render_ctx(self.db, &eut.get_object(), &self.config);
 
         //Process applications
-        let applications_rc: Vec<Box<dyn RenderContext>> = Applications::gen_render_ctx(self.db, &eut.vertex, &self.config);
+        let applications_rc: Vec<Box<dyn RenderContext>> = Applications::gen_render_ctx(self.db, &eut.get_object(), &self.config);
 
         //Get EUT sites
-        let _sites = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::HasSites);
+        let _sites = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasSites);
         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
 
         //Get EUT rtes
-        let _rtes = self.db.get_object_neighbour_out(&eut.vertex.id, EdgeTypes::UsesRtes);
+        let _rtes = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::UsesRtes);
         let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
 
         //Process rte share data script render context
@@ -2142,9 +2144,9 @@ impl<'a> Regression<'a> {
             }
 
             //Process eut site scripts
-            let scripts_path = eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+            let scripts_path = eut_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-            for script in eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+            for script in eut_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                 let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let ctx = ScriptEutRenderContext {
@@ -2192,7 +2194,7 @@ impl<'a> Regression<'a> {
         let mut deploy_stages: Vec<String> = Vec::new();
         let mut destroy_stages: Vec<String> = Vec::new();
 
-        let project_ci = self.db.get_object_neighbour_out(&project.vertex.id, EdgeTypes::HasCi);
+        let project_ci = self.db.get_object_neighbour_out(&project.get_id(), EdgeTypes::HasCi);
         let s_deploy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDeployStages).unwrap();
         let s_destroy = self.db.get_object_neighbour_with_properties_out(&project_ci.id, EdgeTypes::HasDestroyStages).unwrap();
         deploy_stages.push(s_deploy.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string());
