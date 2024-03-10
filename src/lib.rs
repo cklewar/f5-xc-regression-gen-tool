@@ -89,6 +89,7 @@ pub enum EdgeTypes {
     HasComponents,
     HasConnection,
     SiteRefersRte,
+    RefersFeature,
     HasConnections,
     HasDeployStages,
     HasApplications,
@@ -235,7 +236,8 @@ impl EdgeTypes {
             EdgeTypes::UsesProvider => EDGE_TYPE_USES_PROVIDER,
             EdgeTypes::NeedsProvider => EDGE_TYPE_NEEDS_PROVIDER,
             EdgeTypes::HasComponents => EDGE_TYPE_HAS_COMPONENTS,
-            EdgeTypes::SiteRefersRte => EDGE_TYPE_SITE_REFERS_RTE,
+            EdgeTypes::RefersFeature => EDGE_TYPE_SITE_REFERS_RTE,
+            EdgeTypes::SiteRefersRte => EDGE_TYPE_APPLICATION_REFERS_FEATURE,
             EdgeTypes::HasConnection => EDGE_TYPE_HAS_CONNECTION,
             EdgeTypes::HasConnections => EDGE_TYPE_HAS_CONNECTIONS,
             EdgeTypes::HasComponentSrc => EDGE_TYPE_HAS_COMPONENT_SRC,
@@ -307,6 +309,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::StageDestroy.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::Applications.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::ProvidesApplication.name());
+        map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::RefersSite.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
@@ -1464,6 +1467,58 @@ impl<'a> Regression<'a> {
                         let a_module = a.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let a_o = Application::init(self.db, &self.config, a, &mut o.get_id_path().get_vec(), a_module, 0);
                         self.db.create_relationship(&o.get_object(), &a_o.get_object());
+
+                        //Build rel Application --> Feature
+                        let props = a_o.get_base_properties();
+                        let refs = props.get("refs").unwrap().as_array().unwrap();
+
+                        for r in refs {
+                            let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
+                            let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+
+                            match v_type {
+                                VertexTypes::Feature => {
+                                    let features = Features::load(&self.db, &eut.get_object(), &self.config);
+
+                                    for f in features {
+                                        if f.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap() == ref_module {
+                                            self.db.create_relationship(&a_o.get_object(), &f.get_object());
+                                        }
+                                    }
+                                },
+                                VertexTypes::Ci => {}
+                                VertexTypes::Eut => {}
+                                VertexTypes::Rte => {}
+                                VertexTypes::Rtes => {}
+                                VertexTypes::Test => {}
+                                VertexTypes::Site => {}
+                                VertexTypes::Sites => {}
+                                VertexTypes::Share => {}
+                                VertexTypes::Script => {}
+                                VertexTypes::Project => {}
+                                VertexTypes::Scripts => {}
+                                VertexTypes::Features => {}
+                                VertexTypes::Providers => {}
+                                VertexTypes::Collector => {}
+                                VertexTypes::Dashboard => {}
+                                VertexTypes::Components => {}
+                                VertexTypes::Connection => {}
+                                VertexTypes::Connections => {}
+                                VertexTypes::Application => {}
+                                VertexTypes::RteProvider => {}
+                                VertexTypes::EutProvider => {}
+                                VertexTypes::StageDeploy => {}
+                                VertexTypes::StageDestroy => {}
+                                VertexTypes::Applications => {}
+                                VertexTypes::Verification => {}
+                                VertexTypes::ComponentSrc => {}
+                                VertexTypes::ComponentDst => {}
+                                VertexTypes::ConnectionSrc => {}
+                                VertexTypes::ConnectionDst => {}
+                                VertexTypes::DashboardProvider => {}
+                                VertexTypes::None => {}
+                            }
+                        }
                     }
                 }
 

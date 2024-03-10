@@ -58,11 +58,11 @@ impl<'a> Project<'a> {
 }
 
 impl Renderer<'_> for Project<'_> {
-    fn gen_render_ctx(&self, config: &RegressionConfig, ctx: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
+    fn gen_render_ctx(&self, _config: &RegressionConfig, _ctx: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         todo!()
     }
 
-    fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
+    fn gen_script_render_ctx(&self, _config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
         todo!()
     }
 }

@@ -6,7 +6,7 @@ use serde_json::{Map, Value};
 use uuid::Uuid;
 
 use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext, Renderer};
-use crate::constants::{KEY_ID_PATH, KEY_MODULE, KEY_PROVIDER};
+use crate::constants::{KEY_ID_PATH, KEY_MODULE};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 use crate::objects::project::ProjectExt;
@@ -63,11 +63,11 @@ impl<'a> Eut<'a> {
 }
 
 impl Renderer<'_> for Eut<'_> {
-    fn gen_render_ctx(&self, config: &RegressionConfig, ctx: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
+    fn gen_render_ctx(&self, _config: &RegressionConfig, _ctx: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         todo!()
     }
 
-    fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
+    fn gen_script_render_ctx(&self, _config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
         todo!()
     }
 }
