@@ -668,6 +668,7 @@ struct ScriptDashboardRenderContext {
 #[derive(Serialize, Debug)]
 struct ScriptProjectRenderContext {
     project: RegressionConfigProject,
+    release: String,
 }
 
 #[typetag::serialize(tag = "type")]

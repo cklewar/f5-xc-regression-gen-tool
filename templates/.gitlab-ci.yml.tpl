@@ -246,7 +246,7 @@ project-deploy:
     paths:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: 3h
-  timeout: {{ project.ci.timeout }}
+  timeout: {{ project.module.ci.timeout }}
   retry:
     max: 1
     when:

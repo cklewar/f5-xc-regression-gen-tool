@@ -7,8 +7,7 @@ use uuid::Uuid;
 
 use crate::{ProjectRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
             Renderer, ScriptProjectRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_PROJECT, KEY_SCRIPT, KEY_SCRIPTS,
-                       KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_PROJECT, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -80,8 +79,10 @@ impl Renderer<'_> for Project<'_> {
         let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
         error!("MODULE: {:?}", module);
         let m_props = self.get_module_properties();
-        error!("M_PROPS: {:?}", m_props);
+        error!("M_PROPS: {:#?}", m_props);
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+
+        error!("RELEASE: {}", m_props.get(KEY_RELEASE).unwrap().as_f64().unwrap());
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.project.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
@@ -89,6 +90,7 @@ impl Renderer<'_> for Project<'_> {
             let contents = std::fs::read_to_string(path).expect("panic while opening project script file");
             let ctx = ScriptProjectRenderContext {
                 project: config.project.clone(),
+                release: m_props.get(KEY_RELEASE).unwrap().to_string(),
             };
 
             let mut commands: Vec<String> = Vec::new();
