@@ -57,6 +57,9 @@ fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> V
         KEY_APPLICATION => {
             file = format!("{}/{}/{}/{}", config.root_path, config.applications.path, module, CONFIG_FILE_NAME);
         }
+        KEY_PROJECT => {
+            file = format!("{}/{}/{}/{}", config.root_path, config.project.path, module, CONFIG_FILE_NAME);
+        }
         _ => {
             return Null;
         }

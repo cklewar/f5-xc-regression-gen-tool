@@ -1,4 +1,4 @@
-# Project: {{ config.project.name }}
+# Project: {{ config.project.module }}
 
 # Actions
 

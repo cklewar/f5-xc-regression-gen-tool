@@ -309,7 +309,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::StageDestroy.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::Applications.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::ProvidesApplication.name());
-        map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::RefersSite.name());
+        map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::RefersFeature.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
@@ -327,7 +327,7 @@ struct RegressionConfigGenericCiStages {
     destroy: Vec<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigGenericCi {
     stages: RegressionConfigGenericCiStages,
 }
@@ -406,12 +406,6 @@ struct RegressionConfigVerifications {
     data_scripts_path: String,
 }
 
-#[derive(Default, Deserialize, Serialize, Clone, Debug)]
-struct RegressionConfigProjectVars {
-    file: String,
-    path: String,
-}
-
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigDashboard {
     ci: RegressionConfigGenericCi,
@@ -422,8 +416,9 @@ struct RegressionConfigDashboard {
 
 #[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
-    name: String,
-    vars: RegressionConfigProjectVars,
+    ci: RegressionConfigGenericCi,
+    path: String,
+    module: String,
     templates: String,
 }
 
@@ -453,6 +448,14 @@ struct ActionsRenderContext {
 }
 
 #[derive(Serialize, Debug)]
+struct ProjectRenderContext {
+    job: String,
+    base: Map<String, Value>,
+    module: Map<String, Value>,
+    scripts: Vec<HashMap<String, Vec<String>>>,
+}
+
+#[derive(Serialize, Debug)]
 struct ApplicationRenderContext {
     job: String,
     base: Map<String, Value>,
@@ -461,7 +464,7 @@ struct ApplicationRenderContext {
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Default, Serialize, Debug)]
 struct DashboardRenderContext {
     base: Map<String, Value>,
     module: Map<String, Value>,
@@ -649,10 +652,9 @@ struct ScriptRteProviderShareRenderContext {
     eut: String,
     rte: String,
     map: String,
-    vars: RegressionConfigProjectVars,
     sites: String,
     counter: usize,
-    project: String,
+    project: RegressionConfigProject,
     provider: String,
 }
 
@@ -660,6 +662,11 @@ struct ScriptRteProviderShareRenderContext {
 struct ScriptDashboardRenderContext {
     name: String,
     module: String,
+    project: RegressionConfigProject,
+}
+
+#[derive(Serialize, Debug)]
+struct ScriptProjectRenderContext {
     project: RegressionConfigProject,
 }
 
@@ -680,6 +687,8 @@ impl ScriptRenderContext for ScriptEutRenderContext {}
 impl ScriptRenderContext for ScriptRteRenderContext {}
 
 impl ScriptRenderContext for ScriptTestRenderContext {}
+
+impl ScriptRenderContext for ScriptProjectRenderContext {}
 
 impl ScriptRenderContext for ScriptFeatureRenderContext {}
 
@@ -703,7 +712,7 @@ pub fn merge_json(a: &mut Value, b: &Value) {
     match (a, b) {
         (&mut Value::Object(ref mut a), &Value::Object(ref b)) => {
             for (k, v) in b {
-                merge_json(a.entry(k.clone()).or_insert(Value::Null), v);
+                merge_json(a.entry(k.clone()).or_insert(Null), v);
             }
         }
         (a, b) => {
@@ -856,7 +865,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
             let src_p_name = src_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
             let comp_src = self.db.get_object_neighbour_with_properties_out(&src.vertex.id, EdgeTypes::HasComponentSrc).unwrap();
             let comp_src_name = &comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-            let rte_job_name = format!("{}_{}_{}_{}_{}_{}_{}", params.project.name, KEY_RTE, params.rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace('_', "-");
+            let rte_job_name = format!("{}_{}_{}_{}_{}_{}_{}", params.project.module, KEY_RTE, params.rte_name, &connection_name, &src_p_name, &src_name, &comp_src_name).replace('_', "-");
 
             //Process site_to_rte_map
             let mut _rtes: HashSet<String> = HashSet::new();
@@ -923,7 +932,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                 let dst_p_name = dst_provider.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let comp_dst = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::HasComponentDst).unwrap();
                 let comp_dst_name = &comp_dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}_{}_{}_{}", params.project.name, KEY_RTE, &params.rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace('_', "-");
+                let rte_job_name = format!("{}_{}_{}_{}_{}_{}_{}", params.project.module, KEY_RTE, &params.rte_name, &connection_name, &dst_p_name, &dst_name, &comp_dst_name).replace('_', "-");
 
                 //Process server destination list
                 let rt_dsts = self.db.get_object_neighbours_with_properties_in(&dst.vertex.id, EdgeTypes::HasConnectionDst);
@@ -980,7 +989,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
             let tests_p = self.db.get_object_neighbours_with_properties_out(&src.vertex.id, EdgeTypes::Runs);
             for t in tests_p.iter() {
                 let t_job_name = format!("{}_{}_{}_{}",
-                                         params.project.name,
+                                         params.project.module,
                                          KEY_TEST,
                                          src_name,
                                          t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()
@@ -1170,7 +1179,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             for p in params.provider.iter() {
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let rte_job_name = format!("{}_{}_{}_{}_{}", params.project.name, KEY_RTE, params.rte_name, &p_name, &conn_name).replace('_', "-");
+                let rte_job_name = format!("{}_{}_{}_{}_{}", params.project.module, KEY_RTE, params.rte_name, &p_name, &conn_name).replace('_', "-");
 
                 for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}/{}/{}", params.config.root_path, params.config.rte.path, params.rte_name, scripts_path, p_name, comp_src_name, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
@@ -1214,7 +1223,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                 let t_name = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                 let t_job_name = format!("{}_{}_{}",
-                                         params.project.name,
+                                         params.project.module,
                                          KEY_TEST,
                                          t_name).replace('_', "-");
                 let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
@@ -1252,7 +1261,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let v_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                     let v_job_name = format!("{}_{}_{}",
-                                             params.project.name,
+                                             params.project.module,
                                              KEY_VERIFICATION,
                                              v_name).replace('_', "-");
                     let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
@@ -1354,7 +1363,7 @@ impl<'a> Regression<'a> {
 
     pub fn init(&self) -> Uuid {
         // Project
-        let project = Project::init(self.db, &self.config, &mut vec![], &self.config.project.name, 0);
+        let project = Project::init(self.db, &self.config, &mut vec![], &self.config.project.module, 0);
 
         // Dashboard
         let dashboard = Dashboard::init(self.db, &self.config, &mut project.get_id_path().get_vec(), "", 0);
@@ -1485,38 +1494,8 @@ impl<'a> Regression<'a> {
                                             self.db.create_relationship(&a_o.get_object(), &f.get_object());
                                         }
                                     }
-                                },
-                                VertexTypes::Ci => {}
-                                VertexTypes::Eut => {}
-                                VertexTypes::Rte => {}
-                                VertexTypes::Rtes => {}
-                                VertexTypes::Test => {}
-                                VertexTypes::Site => {}
-                                VertexTypes::Sites => {}
-                                VertexTypes::Share => {}
-                                VertexTypes::Script => {}
-                                VertexTypes::Project => {}
-                                VertexTypes::Scripts => {}
-                                VertexTypes::Features => {}
-                                VertexTypes::Providers => {}
-                                VertexTypes::Collector => {}
-                                VertexTypes::Dashboard => {}
-                                VertexTypes::Components => {}
-                                VertexTypes::Connection => {}
-                                VertexTypes::Connections => {}
-                                VertexTypes::Application => {}
-                                VertexTypes::RteProvider => {}
-                                VertexTypes::EutProvider => {}
-                                VertexTypes::StageDeploy => {}
-                                VertexTypes::StageDestroy => {}
-                                VertexTypes::Applications => {}
-                                VertexTypes::Verification => {}
-                                VertexTypes::ComponentSrc => {}
-                                VertexTypes::ComponentDst => {}
-                                VertexTypes::ConnectionSrc => {}
-                                VertexTypes::ConnectionDst => {}
-                                VertexTypes::DashboardProvider => {}
-                                VertexTypes::None => {}
+                                }
+                                _ => {}
                             }
                         }
                     }
@@ -1859,8 +1838,10 @@ impl<'a> Regression<'a> {
         let _ci_id_path = ci_o_p_base.value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let mut ci_id_path: Vec<String> = _ci_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
 
+        //Project Stages Deploy
+        let project_stage_deploy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.project.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Dashboard Stages Deploy
-        let dashboard_stage_deploy = self.add_ci_stages(&mut ci_id_path, &ci.get_object(), &self.config.dashboard.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let dashboard_stage_deploy = self.add_ci_stages(&mut ci_id_path, &project_stage_deploy.unwrap(), &self.config.dashboard.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Rte Stages Deploy
         let rte_stage_deploy = self.add_ci_stages(&mut ci_id_path, &dashboard_stage_deploy.unwrap(), &self.config.rte.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Feature Stages Deploy
@@ -1906,7 +1887,10 @@ impl<'a> Regression<'a> {
         }
 
         //Dashboard Stages Destroy
-        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.dashboard.ci.stages.destroy, &VertexTypes::StageDestroy);
+        stage_destroy = self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.dashboard.ci.stages.destroy, &VertexTypes::StageDestroy);
+
+        //Project Stages Destroy
+        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.project.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         project.get_id().clone()
     }
@@ -2010,7 +1994,9 @@ impl<'a> Regression<'a> {
         //Project
         let project = Project::load(&self.db, &id, &self.config);
         let project_p_base = project.get_base_properties();
-        let project_name = project_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+        let project_module = project_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
+        let scripts = project.gen_script_render_ctx(&self.config);
+        let project_rc = project.gen_render_ctx(&self.config, scripts.clone());
 
         //Dashboard
         let dashboard = Dashboard::load(self.db, &project.get_object(), &self.config);
@@ -2118,11 +2104,10 @@ impl<'a> Regression<'a> {
                                 rte: rte_name.to_string(),
                                 eut: eut_name.to_string(),
                                 map: serde_json::to_string(&rte_to_site_map).unwrap(),
-                                vars: self.config.project.vars.clone(),
                                 sites: serde_json::to_string(&srsd_rc).unwrap(),
                                 counter: site_count,
                                 provider: p_name.to_string(),
-                                project: self.config.project.name.to_string(),
+                                project: self.config.project.clone(),
                             };
 
                             let mut commands: Vec<String> = Vec::new();
@@ -2138,7 +2123,7 @@ impl<'a> Regression<'a> {
                         }
 
                         rte_crcs.shares.push(RteProviderShareRenderContext {
-                            job: format!("{}_{}_{}_{}_{}", project_name, KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
+                            job: format!("{}_{}_{}_{}_{}", project_module, KEY_RTE, &rte_name, p_name, KEY_SHARE).replace('_', "-"),
                             rte: rte_name.to_string(),
                             eut: eut_name.to_string(),
                             provider: p_name.to_string(),
@@ -2227,7 +2212,7 @@ impl<'a> Regression<'a> {
                 scripts.push(data);
             }
             let eut_s_rc = EutSiteRenderContext {
-                job: format!("{}_{}_{}_{}", project_name, KEY_EUT, &eut_name, &site_name).replace('_', "-"),
+                job: format!("{}_{}_{}_{}", project_module, KEY_EUT, &eut_name, &site_name).replace('_', "-"),
                 name: site_name.to_string(),
                 index: i,
                 scripts,
@@ -2266,7 +2251,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_CONFIG, &self.config);
         context.insert(KEY_STAGES, &stages);
         context.insert(KEY_ACTIONS, &actions);
-        context.insert(KEY_PROJECT, &project_p_base);
+        context.insert(KEY_PROJECT, &project_rc);
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_DASHBOARD, &dashboard_rc);
         context.insert(KEY_APPLICATIONS, &applications_rc);

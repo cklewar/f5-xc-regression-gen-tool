@@ -79,7 +79,7 @@ impl RenderContext for Feature<'_> {
 impl Renderer<'_> for Feature<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         Box::new(FeatureRenderContext {
-            job: format!("{}_{}_{}", config.project.name, KEY_FEATURE, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
+            job: format!("{}_{}_{}", config.project.module, KEY_FEATURE, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             eut: config.eut.module.to_string(),
             base: self.get_base_properties(),
             module: self.get_module_properties(),

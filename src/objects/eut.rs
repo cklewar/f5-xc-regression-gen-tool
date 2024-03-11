@@ -29,6 +29,7 @@ impl<'a> Eut<'a> {
         let (o, id_path) = db.create_object_and_init(VertexTypes::Eut, &mut path, label, pop);
         db.add_object_properties(&o, &config.eut, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
+        db.add_object_properties(&o, &module_cfg, PropertyType::Module);
 
         Box::new(Eut {
             object: Object {
@@ -43,19 +44,19 @@ impl<'a> Eut<'a> {
 
     pub fn load(db: &'a Db, object: &Box<(dyn ProjectExt + 'a)>, config: &RegressionConfig) -> Box<(dyn EutExt<'a> + 'a)> {
         error!("Loading eut object");
-        let eut = db.get_object_neighbour_with_properties_out(&object.get_id(), EdgeTypes::HasEut).unwrap();
-        let p_base = eut.props.get(PropertyType::Base.index()).unwrap();
+        let o = db.get_object_neighbour_with_properties_out(&object.get_id(), EdgeTypes::HasEut).unwrap();
+        let p_base = o.props.get(PropertyType::Base.index()).unwrap();
         let arr = p_base.value.get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
         let module = p_base.value.get(KEY_MODULE).unwrap().as_str().unwrap();
-        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&eut.vertex), module, &config);
+        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o.vertex), module, &config);
 
         Box::new(Eut {
             object: Object {
                 db,
-                id: eut.vertex.id,
+                id: o.vertex.id,
                 id_path,
-                vertex: eut.vertex.clone(),
+                vertex: o.vertex.clone(),
                 module_cfg,
             },
         })
@@ -72,12 +73,9 @@ impl Renderer<'_> for Eut<'_> {
     }
 }
 
+#[typetag::serialize]
 impl RenderContext for Eut<'_> {
     fn as_any(&self) -> &dyn Any {
-        todo!()
-    }
-
-    fn typetag_name(&self) -> &'static str {
         todo!()
     }
 }

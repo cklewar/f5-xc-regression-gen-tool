@@ -225,6 +225,35 @@ variables:
     - echo $CI_PROJECT_DIR
     - terraform version
 
+# project - {{ project.module }} - deploy
+project-deploy:
+  <<: *base
+  stage: project-deploy
+  rules:
+    - !reference [ .deploy_project_rules, rules ]
+  script:
+      - |
+        {%- for script in project.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: {{ project.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
 # dashboard - {{ dashboard.base.module }} - deploy
 dashboard-deploy:
   <<: *base

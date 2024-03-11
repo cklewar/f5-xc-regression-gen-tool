@@ -5,9 +5,10 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ApplicationRenderContext, PropertyType, RegressionConfig, render_script,
-            RenderContext, Renderer, ScriptApplicationRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{ApplicationRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
+            Renderer, ScriptApplicationRenderContext};
+use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE,
+                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -21,6 +22,7 @@ pub trait ApplicationExt<'a>: ObjectExt + Renderer<'a> + RenderContext {}
 #[derive(serde::Serialize)]
 pub struct Application<'a> {
     object: Object<'a>,
+    refs: HashMap<String, Vec<String>>,
 }
 
 impl<'a> Application<'a> {
@@ -39,6 +41,7 @@ impl<'a> Application<'a> {
                 vertex: o,
                 module_cfg,
             },
+            refs: HashMap::new(),
         })
     }
 
@@ -48,6 +51,11 @@ impl<'a> Application<'a> {
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
         let module = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
+        //let features = db.get_object_neighbours_with_properties_out(&object.vertex.id, EdgeTypes::RefersFeature);
+
+        /*for f in features {
+            error!("REFERRED FEATURE: {}", f.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().to_string());
+        }*/
 
         Box::new(Application {
             object: Object {
@@ -57,15 +65,14 @@ impl<'a> Application<'a> {
                 vertex: object.vertex.clone(),
                 module_cfg,
             },
+            refs: HashMap::new(),
         })
     }
 }
 
 #[typetag::serialize]
 impl RenderContext for ApplicationRenderContext {
-    fn as_any(&self) -> &dyn Any {
-        todo!()
-    }
+    fn as_any(&self) -> &dyn Any { self }
 }
 
 #[typetag::serialize]
@@ -78,7 +85,7 @@ impl RenderContext for Application<'_> {
 impl Renderer<'_> for Application<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         Box::new(ApplicationRenderContext {
-            job: format!("{}_{}_{}", config.project.name, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
+            job: format!("{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             base: self.get_base_properties(),
             module: self.get_module_properties(),
             project: config.project.clone(),
