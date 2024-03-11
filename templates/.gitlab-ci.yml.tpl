@@ -11,10 +11,10 @@ variables:
   {{ variable.name | upper }}: "{{ variable.value }}"
   {% endfor -%}
   {% for feature in features -%}
-  FEATURE_{{ feature.module.name | upper }}_ROOT_TF_VAR_FILE: "$FEATURES_ROOT_DIR/{{ feature.module.name }}/terraform.tfvars"
+  FEATURE_{{ feature.module.name | upper }}_DATA_TF_VAR_FILE: "$FEATURE_DATA_ROOT_DIR/{{ feature.module.name }}/$FEATURE_TF_VAR_FILE"
   {% endfor -%}
   {% for application in applications -%}
-  APPLICATION_{{ application.module.name | upper }}_ROOT_TF_VAR_FILE: "$APPLICATIONS_ROOT_DIR/{{ application.module.name }}/terraform.tfvars"
+  APPLICATION_{{ application.module.name | upper }}_DATA_TF_VAR_FILE: "$APPLICATION_DATA_ROOT_DIR/{{ application.module.name }}/$APPLICATION_TF_VAR_FILE"
   {% endfor %}
 .deploy_rules:
   rules:
@@ -25,6 +25,16 @@ variables:
   rules:
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_project_rules:
+  rules:
+    - if: $ACTION == "deploy-project" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-project" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_project_rules:
+  rules:
+    - if: $ACTION == "destroy-project" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-project" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_dashboard_rules:
   rules:
@@ -55,6 +65,16 @@ variables:
   rules:
     - if: $ACTION == "destroy-feature" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-feature" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_application_rules:
+  rules:
+    - if: $ACTION == "deploy-application" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-application" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_application_rules:
+  rules:
+    - if: $ACTION == "destroy-application" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-application" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_rte_rules:
   rules:
@@ -225,7 +245,7 @@ variables:
     - echo $CI_PROJECT_DIR
     - terraform version
 
-# project - {{ project.module }} - deploy
+# project - {{ project.module.name }} - deploy
 project-deploy:
   <<: *base
   stage: project-deploy
@@ -236,6 +256,44 @@ project-deploy:
         {%- for script in project.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: {{ project.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# project - {{ project.module.name }} - artifacts
+project-artifacts:
+  <<: *base
+  stage: project-artifacts
+  rules:
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rules, rules ]
+    {%- for feature in features %}
+    - !reference [ .deploy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- for application in applications %}
+    - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+  script:
+      - |
+        {%- for script in project.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "artifacts" %}
         {%- for command in v %}
         {{ command }}
         {%- endfor %}
@@ -878,6 +936,31 @@ dashboard-destroy:
         {%- endfor %}
         {%- endfor %}
   timeout: {{ dashboard.provider.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# project - {{ project.base.module }} - destroy
+project-destroy:
+  <<: *base
+  stage: project-destroy
+  rules:
+    - !reference [ .destroy_project_rules, rules ]
+  script:
+      - |
+        {%- for script in project.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "destroy" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  timeout: {{ project.module.ci.timeout }}
   retry:
     max: 1
     when:
