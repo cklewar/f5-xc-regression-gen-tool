@@ -51,7 +51,6 @@ impl<'a> Project<'a> {
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
         let module = p_base.value.get(KEY_MODULE).unwrap().as_str().unwrap();
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o.vertex), module, &config);
-        error!("MODULE_CFG: {:?}", module_cfg);
 
         Box::new(Project {
             object: Object {
@@ -78,16 +77,11 @@ impl Renderer<'_> for Project<'_> {
     fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
         let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
-        error!("MODULE: {:?}", module);
         let m_props = self.get_module_properties();
-        error!("M_PROPS: {:#?}", m_props);
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-
-        error!("RELEASE: {}", m_props.get(KEY_RELEASE).unwrap().as_f64().unwrap());
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.project.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-            error!("PATH: {}", &path);
             let contents = std::fs::read_to_string(path).expect("panic while opening project script file");
             let ctx = ScriptProjectRenderContext {
                 project: config.project.clone(),

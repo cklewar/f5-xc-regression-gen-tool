@@ -126,6 +126,7 @@ pub const EDGE_TYPE_HAS_DEPLOY_STAGES: &str = "has_deploy_stages";
 pub const EDGE_TYPE_HAS_DESTROY_STAGES: &str = "has_destroy_stages";
 pub const EDGE_TYPE_FEATURE_REFERS_SITE: &str = "feature_refers_site";
 pub const EDGE_TYPE_PROVIDES_APPLICATION: &str = "provides_application";
+pub const EDGE_TYPE_TEST_REFERS_APPLICATION: &str = "test_refers_application";
 pub const EDGE_TYPE_APPLICATION_REFERS_FEATURE: &str = "application_refers_feature";
 
 //RTE TYPES

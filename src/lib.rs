@@ -21,7 +21,6 @@ use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes,
 
 use crate::constants::*;
 use crate::db::Db;
-use crate::objects::EutExt;
 
 pub mod constants;
 pub mod db;
@@ -102,6 +101,7 @@ pub enum EdgeTypes {
     HasDestroyStages,
     FeatureRefersSite,
     ProvidesApplication,
+    TestRefersApplication,
 }
 
 impl VertexTypes {
@@ -251,6 +251,7 @@ impl EdgeTypes {
             EdgeTypes::HasConnectionDst => EDGE_TYPE_HAS_CONNECTION_DST,
             EdgeTypes::FeatureRefersSite => EDGE_TYPE_FEATURE_REFERS_SITE,
             EdgeTypes::ProvidesApplication => EDGE_TYPE_PROVIDES_APPLICATION,
+            EdgeTypes::TestRefersApplication => EDGE_TYPE_TEST_REFERS_APPLICATION,
         }
     }
 }
@@ -305,6 +306,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::RefersSite.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
+        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::TestRefersApplication.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasDeployStages.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::HasDestroyStages.name());
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
@@ -621,7 +623,7 @@ struct ScriptTestRenderContext {
     project: RegressionConfigProject,
     provider: String,
     features: Vec<String>,
-    application: String,
+    refs: ObjectRefs,
 }
 
 #[derive(Serialize, Debug)]
@@ -671,6 +673,33 @@ struct ScriptDashboardRenderContext {
 struct ScriptProjectRenderContext {
     project: RegressionConfigProject,
     release: String,
+}
+
+#[derive(Serialize, Debug)]
+struct ObjectRefs {
+    refs: HashMap<String, Vec<String>>,
+}
+
+impl ObjectRefs {
+    pub fn new(object: &Map<String, Value>) -> Self {
+        let mut refs: HashMap<String, Vec<String>> = Default::default();
+
+        for r#ref in object.get(KEY_REFS).unwrap().as_array().unwrap().iter() {
+            let module = r#ref.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+            let r#type = r#ref.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
+
+            return if refs.get(r#type).is_none() {
+                refs.insert(r#type.to_string(), vec!(module));
+                Self { refs: refs.clone() }
+            } else {
+                let items: &mut Vec<String> = refs.get_mut(r#type).unwrap();
+                items.push(module);
+                Self { refs: refs.clone() }
+            }
+        }
+
+        Self { refs: refs.clone()}
+    }
 }
 
 #[typetag::serialize(tag = "type")]
@@ -999,11 +1028,13 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                 ).replace('_', "-");
 
                 //Process test scripts
-                let t_name = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let t_p_base=  t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+                let t_p_module = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+                let t_name = t_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                let t_module = t_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
+                let scripts_path = t_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-                for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                for script in t_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
@@ -1014,7 +1045,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         project: params.config.project.clone(),
                         provider: src_name.to_string(),
                         features: params.features.to_vec(),
-                        application: "".to_string(),
+                        refs: ObjectRefs::new(t_p_base),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1232,12 +1263,6 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                                          params.project.module,
                                          KEY_TEST,
                                          t_name).replace('_', "-");
-                error!("TEST BASE PROPS: {:#?}", t_p_base);
-                if
-
-
-
-                let applications = Applications::load_application(&self.db, &params.eut.vertex, params.config);
 
                 let scripts_path = t_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
@@ -1252,7 +1277,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         project: params.config.project.clone(),
                         provider: component_provider.to_string(),
                         features: params.features.to_vec(),
-                        application: "".to_string(),
+                        refs: ObjectRefs::new(t_p_base),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1659,6 +1684,25 @@ impl<'a> Regression<'a> {
                                                         let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                                         p.insert(k.clone(), v.clone());
                                                         self.db.add_object_properties(&t_o, &p, PropertyType::Base);
+
+                                                        // Ref Test -> Application
+                                                        if v.as_array().unwrap().len() > 0 {
+                                                            for r#ref in v.as_array().unwrap().iter() {
+                                                                match VertexTypes::get_type_by_key(r#ref.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap()) {
+                                                                    VertexTypes::Application => {
+                                                                        let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
+                                                                        let application = Applications::load_application(&self.db, &applications.get_object(), &r#ref.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &self.config);
+                                                                        match application {
+                                                                            Some(a) => {
+                                                                                self.db.create_relationship(&t_o, &a.get_object());
+                                                                            }
+                                                                            None => error!("no application object found")
+                                                                        }
+                                                                    }
+                                                                    _ => {}
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                     k if k == KEY_VERIFICATIONS => {
                                                         for v in v.as_array().unwrap().iter() {
@@ -2178,15 +2222,18 @@ impl<'a> Regression<'a> {
                     rte_crcs: &mut rte_crcs,
                 })
             }
+
             for component in rte_crcs.components.iter() {
                 actions.rtes.push(component.job.clone());
             }
+
             for test in rte_crcs.tests.iter() {
                 actions.tests.push(test.job.clone());
                 for verification in test.verifications.iter() {
                     actions.verifications.push(verification.job.clone());
                 }
             }
+
             rtes_rc.push(rte_crcs);
         }
 

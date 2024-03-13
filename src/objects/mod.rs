@@ -21,7 +21,7 @@ mod project;
 mod ci;
 mod eut;
 mod provider;
-mod object;
+pub(crate) mod object;
 mod collections;
 mod macros;
 mod feature;
