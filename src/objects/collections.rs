@@ -1,4 +1,4 @@
-use indradb::Vertex;
+use indradb::{Vertex, VertexProperties};
 use log::error;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
@@ -8,6 +8,7 @@ use crate::constants::{KEY_APPLICATION, KEY_DEPLOY, KEY_DESTROY, KEY_ID_PATH, KE
 use crate::db::Db;
 use crate::objects::application::ApplicationExt;
 use crate::objects::feature::FeatureExt;
+use crate::VertexTypes::{Application, Applications};
 
 use super::{Application, Feature, implement_object_ext};
 use super::object::{Object, ObjectExt};
@@ -193,6 +194,21 @@ impl<'a> Applications<'a> {
                 module_cfg: json!(null),
             },
         })
+    }
+
+    pub fn load_application(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn ApplicationExt + 'a)>> {
+        error!("Loading single eut application object");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasApplications).unwrap();
+        let applications = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::ProvidesApplication);
+
+        for app in applications {
+            let a = app.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().to_string();
+            if name == a {
+                return Some(Application::load(db, &app, config));
+            }
+        }
+
+        None
     }
 
     pub fn gen_deploy_stage(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<String> {

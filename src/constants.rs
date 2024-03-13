@@ -7,6 +7,7 @@ pub const KEY_EUT: &str = "eut";
 pub const KEY_RTE: &str = "rte";
 pub const KEY_SRC: &str = "src";
 pub const KEY_DST: &str = "dst";
+pub const KEY_REFS: &str = "refs";
 pub const KEY_FILE: &str = "file";
 pub const KEY_RTES: &str = "rtes";
 pub const KEY_TYPE: &str = "type";

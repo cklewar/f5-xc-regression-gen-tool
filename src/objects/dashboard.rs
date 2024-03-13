@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::collections::HashMap;
 
-use indradb::Vertex;
+use indradb::{Vertex, VertexProperties};
 use log::error;
 use serde_json::{json, Map, to_value, Value};
 use uuid::Uuid;

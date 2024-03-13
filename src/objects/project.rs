@@ -1,13 +1,14 @@
 use std::any::Any;
 use std::collections::HashMap;
-use indradb::{Vertex};
+use indradb::{Vertex, VertexProperties};
 use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
 use crate::{ProjectRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
             Renderer, ScriptProjectRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_PROJECT, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_PROJECT, KEY_RELEASE, KEY_SCRIPT,
+                       KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 

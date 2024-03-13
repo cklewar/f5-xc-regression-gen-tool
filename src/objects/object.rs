@@ -1,4 +1,4 @@
-use indradb::Vertex;
+use indradb::{Vertex, VertexProperties};
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
@@ -24,6 +24,7 @@ pub trait ObjectExt {
     fn get_base_properties(&self) -> Map<String, Value>;
     fn get_module_properties(&self) -> Map<String, Value>;
     fn add_base_properties(&self, value: Value);
+    fn get_object_with_properties(&self) -> VertexProperties;
     fn add_module_properties(&self, value: Value);
     fn insert_base_properties(&self, key: String, value: Value);
     fn insert_module_properties(&self, key: String, value: Value);
@@ -58,6 +59,10 @@ impl ObjectExt for Object<'_> {
 
     fn add_base_properties(&self, value: Value) {
         self.db.add_object_properties(&self.vertex, &value, PropertyType::Base);
+    }
+
+    fn get_object_with_properties(&self) -> VertexProperties {
+        self.db.get_object_with_properties(&self.vertex.id)
     }
 
     fn add_module_properties(&self, value: Value) {

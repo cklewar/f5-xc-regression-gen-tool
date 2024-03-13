@@ -281,6 +281,11 @@ project-artifacts:
   rules:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_eut_rules, rules ]
+    {% for site in eut.sites -%}
+    - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- for feature in features %}
     - !reference [ .deploy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .destroy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
@@ -844,6 +849,38 @@ dashboard-deploy:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ eut.module.ci.timeout }}
+  retry:
+    max: 1
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+{% for application in applications %}
+# application - {{ application.job }} - destroy
+{{ application.job }}-destroy:
+  <<: *base
+  stage: application-destroy
+  rules:
+    - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_application_rules, rules ]
+    - !reference [ .destroy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+  script:
+      - |
+        {%- for script in application.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "destroy" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: 3h
+  timeout: {{ application.module.ci.timeout }}
   retry:
     max: 1
     when:

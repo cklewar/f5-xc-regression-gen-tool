@@ -21,6 +21,7 @@ use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes,
 
 use crate::constants::*;
 use crate::db::Db;
+use crate::objects::EutExt;
 
 pub mod constants;
 pub mod db;
@@ -620,6 +621,7 @@ struct ScriptTestRenderContext {
     project: RegressionConfigProject,
     provider: String,
     features: Vec<String>,
+    application: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -726,7 +728,7 @@ struct RteCtxParameters<'a> {
     rte: &'a VertexProperties,
     config: &'a RegressionConfig,
     project: RegressionConfigProject,
-    eut_name: String,
+    eut: &'a VertexProperties,
     rte_name: String,
     features: Vec<String>,
     provider: Vec<&'a VertexProperties>,
@@ -893,7 +895,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
                         let ctx = ScriptRteRenderContext {
                             rte: params.rte_name.to_string(),
-                            eut: params.eut_name.to_string(),
+                            eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                             site: src_site_name.to_string(),
                             release: "".to_string(),
                             provider: p_name.to_string(),
@@ -954,7 +956,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                             let contents = std::fs::read_to_string(path).expect("panic while opening rte apply.script file");
                             let ctx = ScriptRteRenderContext {
                                 rte: params.rte_name.to_string(),
-                                eut: params.eut_name.to_string(),
+                                eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                                 site: dst_site_name.to_string(),
                                 release: "".to_string(),
                                 provider: p_name.to_string(),
@@ -1006,12 +1008,13 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
                         rte: params.rte_name.to_string(),
-                        eut: params.eut_name.to_string(),
+                        eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
                         project: params.config.project.clone(),
                         provider: src_name.to_string(),
                         features: params.features.to_vec(),
+                        application: "".to_string(),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1187,7 +1190,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let contents = std::fs::read_to_string(&path).expect("panic while opening rte apply.script file");
                     let ctx = ScriptRteRenderContext {
                         rte: params.rte_name.to_string(),
-                        eut: params.eut_name.to_string(),
+                        eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         site: "".to_string(),
                         release: "".to_string(),
                         project: params.config.project.clone(),
@@ -1221,25 +1224,35 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             let tests_p = self.db.get_object_neighbours_with_properties_out(&conn_src.vertex.id, EdgeTypes::Runs);
             for t in tests_p.iter() {
                 //Process test scripts
-                let t_name = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                let t_module = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                let t_p_base = t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
+                let t_p_module = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+                let t_name = t_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                let t_module = t_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
                 let t_job_name = format!("{}_{}_{}",
                                          params.project.module,
                                          KEY_TEST,
                                          t_name).replace('_', "-");
-                let scripts_path = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                error!("TEST BASE PROPS: {:#?}", t_p_base);
+                if
+
+
+
+                let applications = Applications::load_application(&self.db, &params.eut.vertex, params.config);
+
+                let scripts_path = t_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-                for script in t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                for script in t_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                     let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
                         rte: params.rte_name.to_string(),
-                        eut: params.eut_name.to_string(),
+                        eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         name: t_name.to_string(),
                         module: t_module.to_string(),
                         project: params.config.project.clone(),
                         provider: component_provider.to_string(),
                         features: params.features.to_vec(),
+                        application: "".to_string(),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1639,6 +1652,12 @@ impl<'a> Regression<'a> {
                                                         let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
                                                         let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                                         p.append(&mut json!({k: v.as_object().unwrap().clone()}).as_object().unwrap().clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
+                                                    }
+                                                    k if k == KEY_REFS => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.insert(k.clone(), v.clone());
                                                         self.db.add_object_properties(&t_o, &p, PropertyType::Base);
                                                     }
                                                     k if k == KEY_VERIFICATIONS => {
@@ -2152,7 +2171,7 @@ impl<'a> Regression<'a> {
                     rte,
                     config: &self.config,
                     project: self.config.project.clone(),
-                    eut_name: eut_name.to_string(),
+                    eut: &eut.get_object_with_properties(),
                     rte_name: rte_name.to_string(),
                     features: feature_names,
                     provider: active_provider,

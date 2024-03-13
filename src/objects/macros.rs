@@ -8,6 +8,7 @@ macro_rules! implement_object_ext {
                 fn get_module_cfg(&self) -> Map<String, Value> { self.object.get_module_cfg() }
                 fn get_base_properties(&self) -> Map<String, Value> { self.object.get_base_properties() }
                 fn get_module_properties(&self) -> Map<String, Value> { self.object.get_module_properties() }
+                fn get_object_with_properties(&self) -> VertexProperties { self.object.get_object_with_properties() }
                 fn add_base_properties(&self, value: Value) { self.object.add_module_properties(value) }
                 fn add_module_properties(&self, value: Value) { self.object.add_module_properties(value) }
                 fn insert_base_properties(&self, key: String, value: Value) {

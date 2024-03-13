@@ -53,10 +53,6 @@ impl<'a> Application<'a> {
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
         //let features = db.get_object_neighbours_with_properties_out(&object.vertex.id, EdgeTypes::RefersFeature);
 
-        /*for f in features {
-            error!("REFERRED FEATURE: {}", f.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().to_string());
-        }*/
-
         Box::new(Application {
             object: Object {
                 db,

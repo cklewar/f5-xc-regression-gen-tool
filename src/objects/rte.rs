@@ -1,4 +1,4 @@
-use indradb::Vertex;
+use indradb::{Vertex, VertexProperties};
 use log::error;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
