@@ -240,6 +240,7 @@ variables:
       F5XC_TENANT=$(terraform output -json | jq -r .data.value.tenant)
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
       [ -z "$data_branch" ] && export data_branch="main"
+      echo "data_branch: $data_branch"
       git clone -b $data_branch https://gitlab-ci-token:$CI_JOB_TOKEN@$SENSE8_DATA_REPOSITORY /$CI_PROJECT_DIR/data
       cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
@@ -293,6 +294,11 @@ project-artifacts:
     {%- for application in applications %}
     - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .destroy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor -%}
+    {% for rte in rtes -%}
+    {% for test in rte.tests %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
   script:
       - |
