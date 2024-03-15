@@ -241,9 +241,7 @@ variables:
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
       [ -z "$data_branch" ] && export data_branch="main"
       echo "data_branch: $data_branch"
-      ls -la $CI_PROJECT_DIR
       git clone -b $data_branch https://gitlab-ci-token:$CI_JOB_TOKEN@$SENSE8_DATA_REPOSITORY $CI_PROJECT_DIR/data
-      ls -la $CI_PROJECT_DIR/data
       cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
     - terraform version
@@ -285,6 +283,7 @@ project-artifacts:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .destroy_eut_rules, rules ]
     {% for site in eut.sites -%}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
@@ -539,9 +538,9 @@ dashboard-deploy:
     - !reference [ .destroy_rules, rules ]
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
-    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    #- !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
     {%- for verification in test.verifications %}
-    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    #- !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- endfor %}
     {%- endfor %}
@@ -610,7 +609,7 @@ dashboard-deploy:
     {%- endfor %}
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
-    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    #- !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- endfor %}
   script:
