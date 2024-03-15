@@ -957,7 +957,8 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
 
             //Process connection destinations
             for dst in dsts.iter() {
-                let dst_name = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let dst_p_base = dst.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
+                let dst_name = dst_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
                 let dst_site = self.db.get_object_neighbour_with_properties_out(&dst.vertex.id, EdgeTypes::RefersSite).unwrap();
                 let dst_site_name = dst_site.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let dst_provider = self.db.get_object_neighbour_with_properties_out(&dst_site.vertex.id, EdgeTypes::UsesProvider).unwrap();
@@ -1297,15 +1298,17 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
 
                 for v in verifications_p.iter() {
                     //Process test scripts
-                    let v_name = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                    let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let v_p_base = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
+                    let v_p_module = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+                    let v_name = v_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                    let v_module = v_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
                     let v_job_name = format!("{}_{}_{}",
                                              params.project.module,
                                              KEY_VERIFICATION,
                                              v_name).replace('_', "-");
-                    let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                    let scripts_path = v_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-                    for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+                    for script in v_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                         let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let ctx = ScriptVerificationRenderContext {
@@ -1329,23 +1332,23 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     }
 
                     let rte_vrc = RteVerificationRenderContext {
-                        ci: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                        ci: v_p_base.get(KEY_CI).unwrap().as_object().unwrap().clone(),
                         test: t_name.to_string(),
                         rte: params.rte_name.to_string(),
                         job: v_job_name,
-                        name: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                        module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                        name: v_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                        module: v_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                         scripts,
                     };
                     verifications.push(rte_vrc);
                 }
 
                 let rterc = RteTestRenderContext {
-                    ci: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
+                    ci: t_p_base.get(KEY_CI).unwrap().as_object().unwrap().clone(),
                     rte: params.rte_name.to_string(),
                     job: t_job_name,
-                    name: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                    module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                    name: t_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    module:t_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                     provider: conn_src_name.to_string(),
                     scripts,
                     verifications,
@@ -1917,7 +1920,49 @@ impl<'a> Regression<'a> {
         //Test Stages Deploy
         let test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &application_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Verification Stages Deploy
-        self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+
+        //Test and Verification sequential job stages
+        let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
+        let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
+        let mut _test_stages: Vec<String> = Vec::new();
+        let mut _verification_stages: Vec<String> = Vec::new();
+
+        for rte in rtes.iter() {
+            let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
+            let _conns = self.db.get_object_neighbours_out(&_c.id, EdgeTypes::HasConnection);
+            for conn in _conns.iter() {
+                let c_src = self.db.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc).unwrap();
+                let tests = self.db.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
+                for t in tests.iter() {
+                    let t_stage_name = format!("{}-{}-{}-{}-{}-{}",
+                                               KEY_TEST,
+                                               rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                               c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                               &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                               &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                               KEY_DEPLOY
+                    ).replace('_', "-");
+                    _test_stages.push(t_stage_name);
+
+                    //Verification stages
+                    let verifications = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
+                    for v in verifications.iter() {
+                        let v_stage_name = format!("{}-{}-{}-{}-{}-{}",
+                                                   KEY_VERIFICATION,
+                                                   rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                                   &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   KEY_DEPLOY
+                        ).replace('_', "-");
+                        _verification_stages.push(v_stage_name);
+                    }
+                }
+            }
+        }
+
+        self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;

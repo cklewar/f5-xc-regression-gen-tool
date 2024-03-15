@@ -110,6 +110,11 @@ variables:
   rules:
     - if: $ACTION == "test-and-verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test-and-verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_sequential_test_rules:
+  rules:
+    - if: $ACTION == "test-sequential" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-sequential" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% for feature in features %}
 .deploy_{{ feature.job | replace(from="-", to="_") }}_rules:
   rules:
@@ -763,6 +768,40 @@ dashboard-deploy:
   timeout: {{ test.ci.timeout }}
   retry:
     max: 0
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+{{ test.job }}-seq-deploy:
+  <<: *base
+  rules:
+    - !reference [ .regression_test_rules, rules ]
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+  test-k8s-client-wrk2-test1-deploy
+  stage: test-{{ rte.name }}-{{ test.provider }}-{{ test.module }}-{{ test.name }}-deploy
+  script:
+      - |
+        export TF_VAR_data_branch=$data_branch
+        {%- for script in test.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ test.ci.timeout }}
+  retry:
+    max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
