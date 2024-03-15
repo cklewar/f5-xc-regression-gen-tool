@@ -773,15 +773,11 @@ dashboard-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
+# test - {{ test.job }} - seq - deploy
 {{ test.job }}-seq-deploy:
   <<: *base
   rules:
-    - !reference [ .regression_test_rules, rules ]
-    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
-    {%- for verification in test.verifications %}
-    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
-    {%- endfor %}
-  test-k8s-client-wrk2-test1-deploy
+    - !reference [ .regression_sequential_test_rules, rules ]
   stage: test-{{ rte.name }}-{{ test.provider }}-{{ test.module }}-{{ test.name }}-deploy
   script:
       - |
