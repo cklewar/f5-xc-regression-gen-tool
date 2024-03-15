@@ -241,7 +241,9 @@ variables:
       export TF_VAR_f5xc_tenant="$F5XC_TENANT"
       [ -z "$data_branch" ] && export data_branch="main"
       echo "data_branch: $data_branch"
-      git clone -b $data_branch https://gitlab-ci-token:$CI_JOB_TOKEN@$SENSE8_DATA_REPOSITORY /$CI_PROJECT_DIR/data
+      ls -la $CI_PROJECT_DIR
+      git clone -b $data_branch https://gitlab-ci-token:$CI_JOB_TOKEN@$SENSE8_DATA_REPOSITORY $CI_PROJECT_DIR/data
+      ls -la $CI_PROJECT_DIR/data
       cd $CI_PROJECT_DIR
     - echo $CI_PROJECT_DIR
     - terraform version
@@ -761,7 +763,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ test.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -793,7 +795,7 @@ dashboard-deploy:
         {%- endfor %}
   timeout: {{ verification.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
