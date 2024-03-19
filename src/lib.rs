@@ -695,10 +695,10 @@ impl ObjectRefs {
                 let items: &mut Vec<String> = refs.get_mut(r#type).unwrap();
                 items.push(module);
                 Self { refs: refs.clone() }
-            }
+            };
         }
 
-        Self { refs: refs.clone()}
+        Self { refs: refs.clone() }
     }
 }
 
@@ -1029,7 +1029,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                 ).replace('_', "-");
 
                 //Process test scripts
-                let t_p_base=  t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
+                let t_p_base = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
                 let t_p_module = t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
                 let t_name = t_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
                 let t_module = t_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
@@ -1302,10 +1302,13 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let v_p_module = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
                     let v_name = v_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
                     let v_module = v_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
-                    let v_job_name = format!("{}_{}_{}",
-                                             params.project.module,
+
+                    let v_job_name = format!("{}_{}_{}_{}_{}",
                                              KEY_VERIFICATION,
-                                             v_name).replace('_', "-");
+                                             params.rte_name,
+                                             &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                             v_module, v_name
+                    ).replace('_', "-");
                     let scripts_path = v_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in v_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1348,7 +1351,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     rte: params.rte_name.to_string(),
                     job: t_job_name,
                     name: t_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                    module:t_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                    module: t_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                     provider: conn_src_name.to_string(),
                     scripts,
                     verifications,
@@ -1923,10 +1926,10 @@ impl<'a> Regression<'a> {
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Test and Verification sequential job stages
-        let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
+        /*let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
         let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
-        let mut _test_stages: Vec<String> = Vec::new();
-        let mut _verification_stages: Vec<String> = Vec::new();
+        let mut _test_stages_seq: Vec<String> = Vec::new();
+        let mut _verification_stages_seq: Vec<String> = Vec::new();
 
         for rte in rtes.iter() {
             let _c = self.db.get_object_neighbour_out(&rte.vertex.id, EdgeTypes::HasConnections);
@@ -1943,26 +1946,28 @@ impl<'a> Regression<'a> {
                                                &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                KEY_DEPLOY
                     ).replace('_', "-");
-                    _test_stages.push(t_stage_name);
+                    _test_stages_seq.push(t_stage_name);
 
                     //Verification stages
                     let verifications = self.db.get_object_neighbours_with_properties_out(&t.vertex.id, EdgeTypes::Needs);
                     for v in verifications.iter() {
-                        let v_stage_name = format!("{}-{}-{}-{}-{}-{}",
+                        let v_stage_name = format!("{}-{}-{}-{}-{}-{}-{}",
                                                    KEY_VERIFICATION,
                                                    rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    c_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                   &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
                                                    &v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
                                                    KEY_DEPLOY
                         ).replace('_', "-");
-                        _verification_stages.push(v_stage_name);
+                        _verification_stages_seq.push(v_stage_name);
                     }
                 }
             }
-        }
+        }*/
 
-        self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages, &VertexTypes::StageDeploy);
+        //let test_stage_deploy_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages_seq, &VertexTypes::StageDeploy);
+        //self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
@@ -2368,7 +2373,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_DASHBOARD, &dashboard_rc);
         context.insert(KEY_APPLICATIONS, &applications_rc);
 
-        //error!("{:#?}", context.get(KEY_APPLICATIONS));
+        //error!("{:#?}", context.get(KEY_STAGES));
         info!("Build render context -> Done.");
         context
     }
