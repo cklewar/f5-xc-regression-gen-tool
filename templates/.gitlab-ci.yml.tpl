@@ -304,6 +304,9 @@ project-artifacts:
     {% for rte in rtes -%}
     {% for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
     {%- endfor %}
   script:
@@ -680,6 +683,9 @@ dashboard-deploy:
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
     {%- endfor %}
   script:

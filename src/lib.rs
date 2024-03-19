@@ -1926,7 +1926,7 @@ impl<'a> Regression<'a> {
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Test and Verification sequential job stages
-        /*let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
+        let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
         let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.id, EdgeTypes::ProvidesRte);
         let mut _test_stages_seq: Vec<String> = Vec::new();
         let mut _verification_stages_seq: Vec<String> = Vec::new();
@@ -1964,10 +1964,10 @@ impl<'a> Regression<'a> {
                     }
                 }
             }
-        }*/
+        }
 
-        //let test_stage_deploy_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages_seq, &VertexTypes::StageDeploy);
-        //self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+        let test_stage_deploy_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages_seq, &VertexTypes::StageDeploy);
+        self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
