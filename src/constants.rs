@@ -24,6 +24,7 @@ pub const KEY_COUNT: &str = "count";
 pub const KEY_CONFIG: &str = "config";
 pub const KEY_STAGES: &str = "stages";
 pub const KEY_MODULE: &str = "module";
+pub const KEY_DATA: &str = "data";
 pub const KEY_SCRIPT: &str = "script";
 pub const KEY_RELEASE: &str = "release";
 pub const KEY_ID_PATH: &str = "id_path";

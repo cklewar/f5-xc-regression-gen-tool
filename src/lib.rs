@@ -528,6 +528,7 @@ struct RteVerificationRenderContext {
     job: String,
     name: String,
     module: String,
+    data: String,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
@@ -608,6 +609,7 @@ struct ScriptApplicationRenderContext {
 struct ScriptVerificationRenderContext {
     rte: String,
     name: String,
+    data: String,
     module: String,
     provider: String,
     test_name: String,
@@ -1075,6 +1077,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                     //Process test scripts
                     let v_name = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                     let v_module = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let v_data = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_DATA).unwrap().as_str().unwrap();
                     let scripts_path = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1083,6 +1086,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         let ctx = ScriptVerificationRenderContext {
                             rte: params.rte_name.to_string(),
                             name: v_name.to_string(),
+                            data: v_data.to_string(),
                             module: v_module.to_string(),
                             provider: src_name.to_string(),
                             test_name: t_name.to_string(),
@@ -1107,6 +1111,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         job: v_job_name,
                         name: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         module: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                        data: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                         scripts,
                     };
                     verifications.push(rte_vrc);
@@ -1301,14 +1306,9 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let v_p_base = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap();
                     let v_p_module = v.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap();
                     let v_name = v_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                    let v_data = v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_DATA).unwrap().as_str().unwrap();
                     let v_module = v_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
-
-                    let v_job_name = format!("{}_{}_{}_{}_{}",
-                                             KEY_VERIFICATION,
-                                             params.rte_name,
-                                             &t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
-                                             v_module, v_name
-                    ).replace('_', "-");
+                    let v_job_name = format!("{}_{}_{}", params.project.module, KEY_VERIFICATION, v_name).replace('_', "-");
                     let scripts_path = v_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                     let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                     for script in v_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1317,6 +1317,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         let ctx = ScriptVerificationRenderContext {
                             rte: params.rte_name.to_string(),
                             name: v_name.to_string(),
+                            data: v_data.to_string(),
                             module: v_module.to_string(),
                             provider: component_provider.to_string(),
                             test_name: t_name.to_string(),
@@ -1341,6 +1342,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         job: v_job_name,
                         name: v_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         module: v_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                        data: v.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                         scripts,
                     };
                     verifications.push(rte_vrc);
