@@ -7,8 +7,7 @@ use uuid::Uuid;
 
 use crate::{FeatureRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
             Renderer, ScriptFeatureRenderContext};
-use crate::constants::{KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE,
-                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_DATA, KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -79,7 +78,8 @@ impl RenderContext for Feature<'_> {
 impl Renderer<'_> for Feature<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         Box::new(FeatureRenderContext {
-            job: format!("{}_{}_{}", config.project.module, KEY_FEATURE, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
+            job: format!("{}_{}_{}", config.project.module, KEY_FEATURE,
+                         self.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             eut: config.eut.module.to_string(),
             base: self.get_base_properties(),
             module: self.get_module_properties(),
@@ -91,16 +91,19 @@ impl Renderer<'_> for Feature<'_> {
     fn gen_script_render_ctx(&self, config: &RegressionConfig) -> Vec<HashMap<String, Vec<String>>> {
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
         let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
-        let m_props: Map<String, Value> = self.get_module_properties();
-        let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        let props_base: Map<String, Value> = self.get_base_properties();
+        let props_module: Map<String, Value> = self.get_module_properties();
+        let scripts_path = props_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
-        for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+        for script in props_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.features.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
             let ctx = ScriptFeatureRenderContext {
                 eut: config.eut.module.to_string(),
                 name: module.to_string(),
-                release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
+                data: props_base.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
+                module: module.to_string(),
+                release: props_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 project: config.project.clone(),
             };
 

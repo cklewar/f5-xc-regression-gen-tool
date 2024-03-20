@@ -563,19 +563,6 @@ struct RteRenderContext {
     components: Vec<RteComponentRenderContext>,
 }
 
-#[derive(Serialize, Debug)]
-struct EutFeatureCiRenderContext {
-    timeout: String,
-}
-
-#[derive(Serialize, Debug)]
-struct EutFeatureRenderContext {
-    ci: EutFeatureCiRenderContext,
-    name: String,
-    release: String,
-    scripts: HashMap<String, String>,
-}
-
 #[derive(Default, Serialize, Debug)]
 struct ScriptEutRenderContext {
     rte: String,
@@ -593,6 +580,8 @@ struct ScriptEutRenderContext {
 struct ScriptFeatureRenderContext {
     eut: String,
     name: String,
+    data: String,
+    module: String,
     release: String,
     project: RegressionConfigProject,
 }

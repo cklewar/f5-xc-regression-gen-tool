@@ -10,9 +10,6 @@ variables:
   {% for variable in config.ci.variables -%}
   {{ variable.name | upper }}: "{{ variable.value }}"
   {% endfor -%}
-  {% for feature in features -%}
-  FEATURE_{{ feature.module.name | upper }}_DATA_TF_VAR_FILE: "$FEATURE_DATA_ROOT_DIR/{{ feature.module.name }}/$FEATURE_TF_VAR_FILE"
-  {% endfor -%}
   {% for application in applications -%}
   APPLICATION_{{ application.module.name | upper }}_DATA_TF_VAR_FILE: "$APPLICATION_DATA_ROOT_DIR/{{ application.module.name }}/$APPLICATION_TF_VAR_FILE"
   {% endfor %}
