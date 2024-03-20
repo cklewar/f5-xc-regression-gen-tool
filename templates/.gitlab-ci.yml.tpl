@@ -289,6 +289,7 @@ project-artifacts:
     - !reference [ .deploy_rules, rules ]
     - !reference [ .deploy_eut_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .regression_sequential_test_rules, rules ]
     {% for site in eut.sites -%}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
@@ -475,6 +476,7 @@ dashboard-deploy:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
+    - !reference [ .regression_sequential_test_rules, rules ]
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
     {%- for verification in test.verifications %}
@@ -544,14 +546,6 @@ dashboard-deploy:
   stage: eut-artifacts
   rules:
     - !reference [ .destroy_rules, rules ]
-    {%- for rte in rtes %}
-    {%- for test in rte.tests %}
-    #- !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
-    {%- for verification in test.verifications %}
-    #- !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
-    {%- endfor %}
-    {%- endfor %}
-    {%- endfor %}
   script:
       - |
         {%- for script in site.scripts %}
@@ -615,11 +609,6 @@ dashboard-deploy:
     {%- for site in eut.sites %}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
-    {%- for rte in rtes %}
-    {%- for test in rte.tests %}
-    #- !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
-    {%- endfor %}
-    {%- endfor %}
   script:
       - |
         {%- for script in feature.scripts %}
@@ -680,6 +669,7 @@ dashboard-deploy:
   <<: *base
   stage: application-artifacts
   rules:
+    - !reference [ .regression_sequential_test_rules, rules ]
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
