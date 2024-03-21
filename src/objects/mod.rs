@@ -31,6 +31,7 @@ mod test;
 mod verification;
 mod dashboard;
 mod application;
+mod collector;
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");
@@ -59,6 +60,9 @@ fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> V
         }
         KEY_PROJECT => {
             file = format!("{}/{}/{}/{}", config.root_path, config.project.path, module, CONFIG_FILE_NAME);
+        }
+        KEY_SUMMARY => {
+            file = format!("{}/{}/{}/{}", config.root_path, config.verifications.path, module, CONFIG_FILE_NAME);
         }
         _ => {
             return Null;

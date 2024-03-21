@@ -45,6 +45,7 @@ pub enum VertexTypes {
     Script,
     Project,
     Scripts,
+    Summary,
     Feature,
     Features,
     Providers,
@@ -84,6 +85,7 @@ pub enum EdgeTypes {
     HasFeatures,
     ProvidesRte,
     UsesProvider,
+    HasSummaries,
     HasProviders,
     NeedsProvider,
     HasComponents,
@@ -131,6 +133,7 @@ impl VertexTypes {
             VertexTypes::EutProvider => VERTEX_TYPE_EUT_PROVIDER,
             VertexTypes::RteProvider => VERTEX_TYPE_RTE_PROVIDER,
             VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
+            VertexTypes::Summary => VERTEX_TYPE_STAGE_DEPLOY,
             VertexTypes::StageDestroy => VERTEX_TYPE_STAGE_DESTROY,
             VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
             VertexTypes::ComponentSrc => VERTEX_TYPE_COMPONENT_SRC,
@@ -156,6 +159,7 @@ impl VertexTypes {
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts.name(),
             VERTEX_TYPE_PROJECT => VertexTypes::Project.name(),
             VERTEX_TYPE_FEATURE => VertexTypes::Feature.name(),
+            VERTEX_TYPE_SUMMARY => VertexTypes::Summary.name(),
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers.name(),
             VERTEX_TYPE_DASHBOARD => VertexTypes::Dashboard.name(),
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector.name(),
@@ -191,6 +195,7 @@ impl VertexTypes {
             VERTEX_TYPE_SCRIPT => VertexTypes::Script,
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts,
             VERTEX_TYPE_PROJECT => VertexTypes::Project,
+            VERTEX_TYPE_SUMMARY => VertexTypes::Summary,
             VERTEX_TYPE_FEATURE => VertexTypes::Feature,
             VERTEX_TYPE_FEATURES => VertexTypes::Features,
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers,
@@ -230,6 +235,7 @@ impl EdgeTypes {
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::RefersSite => EDGE_TYPE_REFERS_SITE,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
+            EdgeTypes::HasSummaries => EDGE_TYPE_HAS_SUMMARIES,
             EdgeTypes::NeedsShare => EDGE_TYPE_NEEDS_SHARE,
             EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
             EdgeTypes::ProvidesRte => EDGE_TYPE_PROVIDES_RTE,
@@ -402,6 +408,11 @@ struct RegressionConfigTests {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigVerificationsSummaries {
+    path: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigVerifications {
     ci: RegressionConfigGenericCi,
     path: String,
@@ -473,6 +484,16 @@ struct DashboardRenderContext {
     module: Map<String, Value>,
     project: RegressionConfigProject,
     provider: Map<String, Value>,
+    scripts: Vec<HashMap<String, Vec<String>>>,
+}
+
+#[derive(Serialize, Debug)]
+struct CollectorRenderContext {
+    job: String,
+    eut: String,
+    base: Map<String, Value>,
+    module: Map<String, Value>,
+    project: RegressionConfigProject,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
@@ -574,6 +595,15 @@ struct ScriptEutRenderContext {
     release: String,
     project: RegressionConfigProject,
     provider: String,
+}
+
+#[derive(Serialize, Debug)]
+struct ScriptCollectorRenderContext {
+    eut: String,
+    name: String,
+    data: String,
+    module: String,
+    project: RegressionConfigProject,
 }
 
 #[derive(Serialize, Debug)]
@@ -714,6 +744,8 @@ impl ScriptRenderContext for ScriptTestRenderContext {}
 impl ScriptRenderContext for ScriptProjectRenderContext {}
 
 impl ScriptRenderContext for ScriptFeatureRenderContext {}
+
+impl ScriptRenderContext for ScriptCollectorRenderContext {}
 
 impl ScriptRenderContext for ScriptDashboardRenderContext {}
 
