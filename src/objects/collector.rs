@@ -97,7 +97,9 @@ impl Renderer<'_> for Collector<'_> {
         let scripts_path = props_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
         for script in props_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-            let path = format!("{}/{}/{}/{}/{}", config.root_path, config.features.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+            let path = format!("{}/{}/{}/{}/{}", config.root_path,
+                               config.features.path, module,
+                               scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening collector script file");
             let ctx = ScriptCollectorRenderContext {
                 eut: config.eut.module.to_string(),

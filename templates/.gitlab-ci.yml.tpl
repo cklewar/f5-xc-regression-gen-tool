@@ -271,7 +271,7 @@ project-deploy:
     expire_in: 3h
   timeout: {{ project.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -324,7 +324,7 @@ project-artifacts:
     expire_in: 3h
   timeout: {{ project.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -353,7 +353,7 @@ dashboard-deploy:
     expire_in: 3h
   timeout: {{ dashboard.provider.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -385,7 +385,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ rte.ci[share.provider].timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -424,7 +424,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ rte.ci[share.provider].timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -461,7 +461,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ rte.ci[component.provider].timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -498,7 +498,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: 5m
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -531,7 +531,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ eut.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -560,7 +560,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ eut.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -592,7 +592,7 @@ dashboard-deploy:
     expire_in: 3h
   timeout: {{ feature.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -623,7 +623,7 @@ dashboard-deploy:
     expire_in: 3h
   timeout: {{ feature.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -655,7 +655,7 @@ dashboard-deploy:
     expire_in: 3h
   timeout: {{ application.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -692,7 +692,7 @@ dashboard-deploy:
     expire_in: 3h
   timeout: {{ application.module.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -728,7 +728,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ test.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -790,7 +790,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ test.ci.timeout }}
   retry:
-    max: 1
+    max: 0
     when:
       - script_failure
       - stuck_or_timeout_failure
