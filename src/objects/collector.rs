@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::{CollectorRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
             Renderer, ScriptCollectorRenderContext};
 use crate::constants::{KEY_DATA, KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME,
-                       KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 

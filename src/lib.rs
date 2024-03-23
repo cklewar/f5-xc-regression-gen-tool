@@ -21,6 +21,7 @@ use objects::{Ci, Eut, Feature, Features, Project, Providers, EutProvider, Rtes,
 
 use crate::constants::*;
 use crate::db::Db;
+use crate::objects::Connections;
 
 pub mod constants;
 pub mod db;
@@ -559,6 +560,7 @@ struct RteTestRenderContext {
     rte: String,
     job: String,
     name: String,
+    data: String,
     module: String,
     provider: String,
     scripts: Vec<HashMap<String, Vec<String>>>,
@@ -640,6 +642,7 @@ struct ScriptTestRenderContext {
     rte: String,
     eut: String,
     name: String,
+    data: String,
     module: String,
     project: RegressionConfigProject,
     provider: String,
@@ -1065,6 +1068,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         rte: params.rte_name.to_string(),
                         eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         name: t_name.to_string(),
+                        data: t_p_base.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                         module: t_module.to_string(),
                         project: params.config.project.clone(),
                         provider: src_name.to_string(),
@@ -1142,8 +1146,9 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                     ci: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_CI).unwrap().as_object().unwrap().clone(),
                     rte: params.rte_name.to_string(),
                     job: t_job_name,
-                    name: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
-                    module: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                    name: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    data: t.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
+                    module: t.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                     provider: src_name.to_string(),
                     scripts,
                     verifications,
@@ -1300,6 +1305,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         rte: params.rte_name.to_string(),
                         eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         name: t_name.to_string(),
+                        data: t_p_base.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                         module: t_module.to_string(),
                         project: params.config.project.clone(),
                         provider: component_provider.to_string(),
@@ -1374,6 +1380,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     rte: params.rte_name.to_string(),
                     job: t_job_name,
                     name: t_p_base.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                    data: t_p_base.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                     module: t_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                     provider: conn_src_name.to_string(),
                     scripts,
@@ -1576,15 +1583,14 @@ impl<'a> Regression<'a> {
                     eut.add_module_properties(to_value(json!({k: obj})).unwrap());
                 }
                 k if k == KEY_RTES => {
-                    let o = Rtes::init(&self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 1);
-                    self.db.create_relationship(&eut.get_object(), &o.get_object());
+                    let o_rtes = Rtes::init(&self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 1);
+                    self.db.create_relationship(&eut.get_object(), &o_rtes.get_object());
 
                     for rte in obj.as_array().unwrap().iter() {
-                        //let r_o = Rte::init();
-                        let (r_o, _id_path) = self.db.create_object_and_init(VertexTypes::Rte, &mut o.get_id_path().get_vec(),
+                        let (r_o, _id_path) = self.db.create_object_and_init(VertexTypes::Rte, &mut o_rtes.get_id_path().get_vec(),
                                                                              &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
                                                                              0);
-                        self.db.create_relationship(&o.get_object(), &r_o);
+                        self.db.create_relationship(&o_rtes.get_object(), &r_o);
                         //RTE -> Providers
                         let (rte_p_o, _id_path) = self.db.create_object_and_init(VertexTypes::Providers, &mut _id_path.get_vec(), "", 0);
                         let rte_p_o_p = self.db.get_object_with_properties(&rte_p_o.id);
@@ -1612,14 +1618,14 @@ impl<'a> Regression<'a> {
                                 }
                                 //Connections
                                 k if k == KEY_CONNECTIONS => {
-                                    let (cs_o, _id_path) = self.db.create_object_and_init(VertexTypes::get_type_by_key(k), &mut _id_path.get_vec(), "", 1);
-                                    self.db.create_relationship(&r_o, &cs_o);
+                                    let cs_o = Connections::init(&self.db, &self.config, &mut o_rtes.get_id_path().get_vec(), "", 1);
+                                    self.db.create_relationship(&r_o, &cs_o.get_object());
 
                                     for item in v.as_array().unwrap().iter() {
                                         //Connection
                                         let c_name = item.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                                         let (c_o, _id_path) = self.db.create_object_and_init(VertexTypes::Connection, &mut _id_path.get_vec(), c_name, 0);
-                                        self.db.create_relationship(&cs_o, &c_o);
+                                        self.db.create_relationship(&cs_o.get_object(), &c_o);
                                         self.db.add_object_properties(&c_o, &json!({KEY_NAME: c_name}), PropertyType::Base);
 
                                         //Connection Source
@@ -1685,6 +1691,12 @@ impl<'a> Regression<'a> {
                                             for (k, v) in test.as_object().unwrap().iter() {
                                                 match k {
                                                     k if k == KEY_NAME => {
+                                                        let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
+                                                        let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
+                                                        p.insert(k.clone(), v.clone());
+                                                        self.db.add_object_properties(&t_o, &p, PropertyType::Base);
+                                                    }
+                                                    k if k == KEY_DATA => {
                                                         let t_o_p = self.db.get_object_properties(&t_o).unwrap().props;
                                                         let mut p = t_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                                         p.insert(k.clone(), v.clone());

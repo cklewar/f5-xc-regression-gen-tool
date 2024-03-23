@@ -3,7 +3,7 @@ use serde_json::Value;
 use serde_json::Value::Null;
 
 pub use ci::Ci;
-pub use collections::{Features, Providers, Rtes, Sites, Applications};
+pub use collections::{Connections, Features, Providers, Rtes, Sites, Applications};
 pub use dashboard::Dashboard;
 pub use eut::{Eut, EutExt};
 pub use feature::Feature;
