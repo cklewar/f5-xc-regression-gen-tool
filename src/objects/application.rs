@@ -51,7 +51,6 @@ impl<'a> Application<'a> {
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
         let module = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
-        //let features = db.get_object_neighbours_with_properties_out(&object.vertex.id, EdgeTypes::RefersFeature);
 
         Box::new(Application {
             object: Object {

@@ -9,7 +9,7 @@ use crate::db::Db;
 use crate::objects::application::ApplicationExt;
 use crate::objects::feature::FeatureExt;
 
-use super::{Application, Feature, implement_object_ext};
+use super::{Application, implement_object_ext, Feature};
 use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
