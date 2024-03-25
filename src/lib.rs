@@ -1295,7 +1295,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                                          params.project.module,
                                          KEY_TEST,
                                          t_name).replace('_', "-");
-
+                error!("{t_p_base:#?}");
                 let scripts_path = t_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 for script in t_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1957,8 +1957,6 @@ impl<'a> Regression<'a> {
         let application_stage_deploy = self.add_ci_stages(&mut ci_id_path, &eut_stage_deploy.unwrap(), &self.config.applications.ci.stages.deploy, &VertexTypes::StageDeploy);
         //Test Stages Deploy
         let test_stage_deploy = self.add_ci_stages(&mut ci_id_path, &application_stage_deploy.unwrap(), &self.config.tests.ci.stages.deploy, &VertexTypes::StageDeploy);
-        //Verification Stages Deploy
-        let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Test and Verification sequential job stages
         let _rtes = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::UsesRtes);
@@ -2000,9 +1998,11 @@ impl<'a> Regression<'a> {
                 }
             }
         }
+        let test_stage_deploy_seq = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &_test_stages_seq, &VertexTypes::StageDeploy);
 
-        let test_stage_deploy_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_test_stages_seq, &VertexTypes::StageDeploy);
-        self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+        //Verification Stages Deploy
+        let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+        self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;

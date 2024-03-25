@@ -112,6 +112,11 @@ variables:
   rules:
     - if: $ACTION == "test-sequential" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "test-sequential" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.regression_test_seq_and_verification_rules:
+  rules:
+    - if: $ACTION == "test-seq-and-verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "test-seq-and-verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% for feature in features %}
 .deploy_{{ feature.job | replace(from="-", to="_") }}_rules:
   rules:
@@ -287,6 +292,7 @@ project-artifacts:
     - !reference [ .deploy_eut_rules, rules ]
     - !reference [ .destroy_eut_rules, rules ]
     - !reference [ .regression_sequential_test_rules, rules ]
+    - !reference [ .regression_test_seq_and_verification_rules, rules ]
     {% for site in eut.sites -%}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
@@ -474,6 +480,7 @@ dashboard-deploy:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .destroy_rules, rules ]
     - !reference [ .regression_sequential_test_rules, rules ]
+    - !reference [ .regression_test_seq_and_verification_rules, rules ]
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
     {%- for verification in test.verifications %}
@@ -667,6 +674,7 @@ dashboard-deploy:
   stage: application-artifacts
   rules:
     - !reference [ .regression_sequential_test_rules, rules ]
+    - !reference [ .regression_test_seq_and_verification_rules, rules ]
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
@@ -713,6 +721,8 @@ dashboard-deploy:
   script:
       - |
         export TF_VAR_data_branch=$data_branch
+        [ -z "$test_tag" ] && export test_tag=""
+        export TF_VAR_tag=$test_tag
         {%- for script in test.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
@@ -771,6 +781,7 @@ dashboard-deploy:
   <<: *base
   rules:
     - !reference [ .regression_sequential_test_rules, rules ]
+    - !reference [ .regression_test_seq_and_verification_rules, rules ]
   stage: test-{{ rte.name }}-{{ test.provider }}-{{ test.module }}-{{ test.name }}-deploy
   script:
       - |
@@ -807,6 +818,7 @@ dashboard-deploy:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .regression_test_seq_and_verification_rules, rules ]
   stage: regression-test-verify
   script:
       - |
