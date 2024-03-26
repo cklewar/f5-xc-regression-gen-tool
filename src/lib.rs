@@ -16,9 +16,9 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, Rtes, Rte, Sites, Site,
-              Dashboard, Application, Applications, Connections, Connection, ConnectionSource,
-              ConnectionDestination, Test, Verification};
+use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, RteProvider, Rtes, Rte,
+              Sites, Site, Dashboard, Application, Applications, Connections, Connection,
+              ConnectionSource, ConnectionDestination, Test, Verification};
 
 use crate::constants::*;
 use crate::db::Db;
@@ -1176,7 +1176,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
 
         for p in rte_available_provider.iter() {
             let _p = self.db.get_object_with_properties(&p.vertex.id);
-            let p_name = _p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+            let p_name = _p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
             if rte_active_provider.contains(&to_value(p_name).unwrap()) {
                 for c in connections.iter() {
@@ -1235,7 +1235,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                 match item {
                     k if k.t.to_string() == KEY_COMPONENTS => {
                         let p = self.db.get_object_neighbours_with_properties_in(&k.id, EdgeTypes::HasComponents);
-                        component_provider = p.get(0).unwrap().props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+                        component_provider = p.get(0).unwrap().props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
                     }
                     &_ => {}
                 }
@@ -1245,7 +1245,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             let scripts_path = comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             for p in params.provider.iter() {
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
-                let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let p_name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
                 let rte_job_name = format!("{}_{}_{}_{}_{}", params.project.module, KEY_RTE, params.rte_name, &p_name, &conn_name).replace('_', "-");
 
                 for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -1725,9 +1725,6 @@ impl<'a> Regression<'a> {
                         }
 
                         //Rte module cfg
-                        //let r_p = self.db.get_object_properties(&r_o.get_object()).unwrap().props;
-                        //let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                        //let cfg = self.load_object_config(VertexTypes::get_name_by_object(&r_o.get_object()), module);
                         let rte_module_cfg = r_o.get_module_properties();
                         let _rte_providers_id_path = rte_p_o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
 
@@ -1736,11 +1733,8 @@ impl<'a> Regression<'a> {
                                 k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
                                         let mut rte_providers_id_path: Vec<String> = _rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
-                                        let (o, _id_path) = self.db.create_object_and_init(VertexTypes::RteProvider,
-                                                                                           &mut rte_providers_id_path,
-                                                                                           p, 0);
-                                        self.db.create_relationship(&rte_p_o, &o);
-                                        self.db.add_object_properties(&o, &json!({KEY_NAME: p}), PropertyType::Module);
+                                        let o = RteProvider::init(&self.db, &self.config, &mut r_o.get_id_path().get_vec(), p, 0);
+                                        self.db.create_relationship(&rte_p_o, &o.get_object());
 
                                         for (k, v) in v.as_object().unwrap().iter() {
                                             match k {
@@ -1748,17 +1742,17 @@ impl<'a> Regression<'a> {
                                                     let (p_ci_o, _id_path) = self.db.create_object_and_init(VertexTypes::Ci,
                                                                                                             &mut rte_providers_id_path,
                                                                                                             "", 0);
-                                                    self.db.create_relationship(&o, &p_ci_o);
+                                                    self.db.create_relationship(&o.get_object(), &p_ci_o);
                                                     self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_SHARE => {
                                                     let (s_o, _id_path) = self.db.create_object_and_init(VertexTypes::Share, &mut rte_providers_id_path, "", 0);
-                                                    self.db.create_relationship(&o, &s_o);
+                                                    self.db.create_relationship(&o.get_object(), &s_o);
                                                     self.db.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_COMPONENTS => {
                                                     let (c_o, _id_path) = self.db.create_object_and_init(VertexTypes::Components, &mut rte_providers_id_path, "", 1);
-                                                    self.db.create_relationship(&o, &c_o);
+                                                    self.db.create_relationship(&o.get_object(), &c_o);
 
                                                     for (k, v) in v.as_object().unwrap().iter() {
                                                         match k {
@@ -1868,7 +1862,6 @@ impl<'a> Regression<'a> {
                 let c_src = self.db.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc).unwrap();
                 let tests = self.db.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
                 for t in tests.iter() {
-
                     let t_stage_name = format!("{}-{}-{}-{}-{}-{}",
                                                KEY_TEST,
                                                rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
@@ -2097,7 +2090,7 @@ impl<'a> Regression<'a> {
             let mut active_provider: Vec<&VertexProperties> = Vec::new();
 
             for p in provider.iter() {
-                let p_name = p.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                let p_name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                 if _active_provider.contains(&to_value(p_name).unwrap()) {
                     active_provider.push(p);

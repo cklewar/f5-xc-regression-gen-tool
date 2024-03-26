@@ -8,7 +8,7 @@ pub use dashboard::Dashboard;
 pub use eut::{Eut, EutExt};
 pub(crate) use macros::implement_object_ext;
 pub use project::Project;
-pub use provider::EutProvider;
+pub use provider::{EutProvider, RteProvider};
 pub use rte::Rte;
 pub use site::Site;
 pub use application::Application;

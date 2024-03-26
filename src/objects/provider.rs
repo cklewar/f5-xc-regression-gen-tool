@@ -85,8 +85,8 @@ impl<'a> DashboardProvider<'a> {
     }
 }
 
-/*impl<'a> RteProvider<'a> {
-    pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+impl<'a> RteProvider<'a> {
+    pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new rte provider object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::RteProvider, &mut path, label, pop);
         db.add_object_properties(&o, &json!({KEY_NAME: label}), PropertyType::Base);
@@ -101,6 +101,6 @@ impl<'a> DashboardProvider<'a> {
             },
         })
     }
-}*/
+}
 
 implement_object_ext!(EutProvider, RteProvider, DashboardProvider);
