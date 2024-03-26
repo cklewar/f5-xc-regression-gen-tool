@@ -15,6 +15,7 @@ pub use application::Application;
 pub use test::Test;
 pub use connection::{Connection, ConnectionDestination, ConnectionSource};
 pub use feature::Feature;
+pub use verification::Verification;
 
 use crate::constants::*;
 use crate::RegressionConfig;
