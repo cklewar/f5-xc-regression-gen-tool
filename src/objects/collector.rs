@@ -7,8 +7,7 @@ use uuid::Uuid;
 
 use crate::{CollectorRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
             Renderer, ScriptCollectorRenderContext};
-use crate::constants::{KEY_DATA, KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME,
-                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_COLLECTOR, KEY_DATA, KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -80,7 +79,7 @@ impl RenderContext for Collector<'_> {
 impl Renderer<'_> for Collector<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         Box::new(CollectorRenderContext {
-            job: format!("{}_{}_{}", config.project.module, KEY_FEATURE,
+            job: format!("{}_{}_{}", config.project.module, KEY_COLLECTOR,
                          self.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             eut: config.eut.module.to_string(),
             base: self.get_base_properties(),
@@ -99,7 +98,7 @@ impl Renderer<'_> for Collector<'_> {
 
         for script in props_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path,
-                               config.features.path, module,
+                               config.collectors.path, module,
                                scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening collector script file");
             let ctx = ScriptCollectorRenderContext {

@@ -24,6 +24,7 @@ use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, RtePr
 use crate::constants::*;
 use crate::db::Db;
 use crate::objects::ComponentSource;
+use crate::VertexTypes::Collectors;
 
 pub mod constants;
 pub mod db;
@@ -2017,6 +2018,9 @@ impl<'a> Regression<'a> {
         //Process applications
         let applications_rc: Vec<Box<dyn RenderContext>> = Applications::gen_render_ctx(self.db, &eut.get_object(), &self.config);
 
+        //Process collectors
+        let collectors_rc: Vec<Box<dyn RenderContext>> = Collectors::gen_render_ctx(self.db, &eut.get_object(), &self.config);
+
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasSites);
         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.id, EdgeTypes::HasSite);
@@ -2126,14 +2130,15 @@ impl<'a> Regression<'a> {
             }
 
             //Process connections
-            let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
+            let rte_type = rte.props.get(PropertyType::Module.index())
+                .unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
             let _rte = RteType::new(rte_type, self.db);
             let mut feature_names: Vec<String> = Vec::new();
 
             for _feature in &features_rc {
                 let feature: &FeatureRenderContext = match _feature.as_any().downcast_ref::<FeatureRenderContext>() {
                     Some(f) => f,
-                    None => panic!("&f isn't a FeatureRenderContext!"),
+                    None => panic!("not a FeatureRenderContext!"),
                 };
                 feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
             }
@@ -2247,6 +2252,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_STAGES, &stages);
         context.insert(KEY_ACTIONS, &actions);
         context.insert(KEY_PROJECT, &project_rc);
+        context.insert(KEY_COLLECTORS, &collectors_rc);
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_DASHBOARD, &dashboard_rc);
         context.insert(KEY_APPLICATIONS, &applications_rc);

@@ -109,6 +109,18 @@ impl<'a> Collectors<'a> {
 
         None
     }
+
+    pub fn gen_render_ctx(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<dyn RenderContext>> {
+        let mut collectors_rc: Vec<Box<dyn RenderContext>> = Vec::new();
+        let collectors = Self::load(db, object, config);
+
+        for c in collectors {
+            let collector_rc = c.gen_render_ctx(config, c.gen_script_render_ctx(config));
+            collectors_rc.push(collector_rc);
+        }
+
+        collectors_rc
+    }
 }
 
 impl<'a> Components<'a> {
