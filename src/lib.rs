@@ -16,7 +16,7 @@ use serde_json::Value::Null;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, Rtes, Sites, Site,
+use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, Rtes, Rte, Sites, Site,
               Dashboard, Application, Applications, Connections, Connection, ConnectionSource,
               ConnectionDestination, Test, Verification};
 
@@ -1391,13 +1391,13 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
     }
 }
 
-struct Rte<T> {
+struct RteType<T> {
     rte: T,
     _type: String,
 }
 
-impl<'a> Rte<Box<dyn RteCharacteristics + 'a>> {
-    fn new(rte_type: &str, db: &'a Db) -> Option<Rte<Box<dyn RteCharacteristics + 'a>>> {
+impl<'a> RteType<Box<dyn RteCharacteristics + 'a>> {
+    fn new(rte_type: &str, db: &'a Db) -> Option<RteType<Box<dyn RteCharacteristics + 'a>>> {
         if rte_type == RTE_TYPE_A {
             Some(Self { rte: Box::new(RteTypeA { db }), _type: RTE_TYPE_A.to_string() })
         } else if rte_type == RTE_TYPE_B {
@@ -1457,21 +1457,12 @@ impl<'a> Regression<'a> {
         for k in EUT_KEY_ORDER.iter() {
             let obj = eut_module_cfg.get(*k).unwrap();
             match *k {
-                k if k == KEY_NAME => {
-                    eut.add_module_properties(json!({k: obj}));
-                }
-                k if k == KEY_RELEASE => {
-                    eut.add_module_properties(json!({k: obj}));
-                }
                 k if k == KEY_PROVIDER => {
                     for p in obj.as_array().unwrap().iter() {
                         let eut_provider = EutProvider::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), &p.as_str().unwrap(), 0);
                         self.db.create_relationship(&eut_providers.get_object(), &eut_provider.get_object());
-                        eut_provider.add_base_properties(json!({KEY_NAME: &p.as_str().unwrap()}));
+                        //eut_provider.add_base_properties(json!({KEY_NAME: &p.as_str().unwrap()}));
                     }
-                }
-                k if k == KEY_CI => {
-                    eut.insert_module_properties(k.to_string(), obj.clone());
                 }
                 k if k == KEY_SITES => {
                     let o = Sites::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
@@ -1574,51 +1565,45 @@ impl<'a> Regression<'a> {
                         }
                     }
                 }
-
-                k if k == KEY_SCRIPTS_PATH => {
-                    eut.add_module_properties(to_value(json!({k: obj})).unwrap());
-                }
-                k if k == KEY_SCRIPTS => {
-                    eut.add_module_properties(to_value(json!({k: obj})).unwrap());
-                }
                 k if k == KEY_RTES => {
                     let o_rtes = Rtes::init(&self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 1);
                     self.db.create_relationship(&eut.get_object(), &o_rtes.get_object());
 
                     for rte in obj.as_array().unwrap().iter() {
-                        let (r_o, _id_path) = self.db.create_object_and_init(VertexTypes::Rte, &mut o_rtes.get_id_path().get_vec(),
+                        /*let (r_o, _id_path) = self.db.create_object_and_init(VertexTypes::Rte, &mut o_rtes.get_id_path().get_vec(),
                                                                              &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
-                                                                             0);
-                        self.db.create_relationship(&o_rtes.get_object(), &r_o);
+                                                                             0);*/
+                        let r_o = Rte::init(&self.db, &self.config, rte, &mut o_rtes.get_id_path().get_vec(), &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), 0);
+                        self.db.create_relationship(&o_rtes.get_object(), &r_o.get_object());
                         //RTE -> Providers
-                        let (rte_p_o, _id_path) = self.db.create_object_and_init(VertexTypes::Providers, &mut _id_path.get_vec(), "", 0);
+                        let (rte_p_o, _id_path) = self.db.create_object_and_init(VertexTypes::Providers, &mut r_o.get_id_path().get_vec(), "", 0);
                         let rte_p_o_p = self.db.get_object_with_properties(&rte_p_o.id);
-                        self.db.create_relationship(&r_o, &rte_p_o);
+                        self.db.create_relationship(&r_o.get_object(), &rte_p_o);
 
                         //RTE -> Features
                         let eut_f_o = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasFeatures);
-                        self.db.create_relationship(&r_o, &eut_f_o);
+                        self.db.create_relationship(&r_o.get_object(), &eut_f_o);
 
                         //Rte
                         for (k, v) in rte.as_object().unwrap().iter() {
                             match k {
                                 k if k == KEY_MODULE => {
-                                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
+                                    let r_o_p = self.db.get_object_properties(&r_o.get_object()).unwrap().props;
                                     let mut p = r_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                     p.insert(k.clone(), v.clone());
-                                    self.db.add_object_properties(&r_o, &p, PropertyType::Base);
+                                    self.db.add_object_properties(&r_o.get_object(), &p, PropertyType::Base);
                                 }
                                 // Active Provider
                                 k if k == KEY_PROVIDER => {
-                                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
+                                    let r_o_p = self.db.get_object_properties(&r_o.get_object()).unwrap().props;
                                     let mut p = r_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
                                     p.insert(k.clone(), v.clone());
-                                    self.db.add_object_properties(&r_o, &p, PropertyType::Base);
+                                    self.db.add_object_properties(&r_o.get_object(), &p, PropertyType::Base);
                                 }
                                 //Connections
                                 k if k == KEY_CONNECTIONS => {
                                     let cs_o = Connections::init(&self.db, &self.config, &mut o_rtes.get_id_path().get_vec(), "", 1);
-                                    self.db.create_relationship(&r_o, &cs_o.get_object());
+                                    self.db.create_relationship(&r_o.get_object(), &cs_o.get_object());
 
                                     for item in v.as_array().unwrap().iter() {
                                         //Connection
@@ -1643,12 +1628,13 @@ impl<'a> Regression<'a> {
                                             if site_name == source {
                                                 self.db.create_relationship(&src_o.get_object(), &s.vertex);
                                                 //site --> rte
-                                                self.db.create_relationship(&s.vertex, &r_o);
+                                                self.db.create_relationship(&s.vertex, &r_o.get_object());
                                             }
                                         }
 
                                         //Connection Destinations
-                                        let destinations = item.as_object().unwrap().get(KEY_DESTINATIONS)
+                                        let destinations = item.as_object().unwrap().
+                                            get(KEY_DESTINATIONS)
                                             .unwrap().as_array().unwrap();
 
                                         for d in destinations.iter() {
@@ -1660,19 +1646,22 @@ impl<'a> Regression<'a> {
                                                     .unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                                                 if let Some(_t) = re.captures(site_name) {
-                                                    let (dst_o, _id_path) = self.db.create_object_and_init(VertexTypes::ConnectionDst,
-                                                                                                           &mut _id_path.get_vec(),
-                                                                                                           d.as_str().unwrap(),
-                                                                                                           1);
-                                                    self.db.create_relationship(&src_o.get_object(), &dst_o);
-                                                    self.db.add_object_properties(&dst_o, &json!({KEY_NAME: &d,
+                                                    let dst_o = ConnectionDestination::init(&self.db,
+                                                                                            &self.config,
+                                                                                            &json!({KEY_NAME: &d,
+                                                        KEY_RTE: &rte.as_object().unwrap().get(KEY_MODULE)
+                                                        .unwrap().as_str().unwrap()}), &mut c_o.get_id_path().get_vec(),
+                                                                                            "", 0);
+
+                                                    self.db.create_relationship(&src_o.get_object(), &dst_o.get_object());
+                                                    self.db.add_object_properties(&dst_o.get_object(), &json!({KEY_NAME: &d,
                                                         KEY_RTE: &rte.as_object().unwrap().get(KEY_MODULE)
                                                         .unwrap().as_str().unwrap()}),
                                                                                   PropertyType::Base);
                                                     //Connection Destination -> Site
-                                                    self.db.create_relationship(&dst_o, &site.vertex);
+                                                    self.db.create_relationship(&dst_o.get_object(), &site.vertex);
                                                     //site --> rte
-                                                    self.db.create_relationship(&site.vertex, &r_o);
+                                                    self.db.create_relationship(&site.vertex, &r_o.get_object());
                                                 }
                                             }
                                         }
@@ -1734,26 +1723,16 @@ impl<'a> Regression<'a> {
                                 _ => {}
                             }
                         }
+
                         //Rte module cfg
-                        let r_p = self.db.get_object_properties(&r_o).unwrap().props;
-                        let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                        let cfg = self.load_object_config(VertexTypes::get_name_by_object(&r_o), module);
+                        //let r_p = self.db.get_object_properties(&r_o.get_object()).unwrap().props;
+                        //let module = r_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                        //let cfg = self.load_object_config(VertexTypes::get_name_by_object(&r_o.get_object()), module);
+                        let rte_module_cfg = r_o.get_module_properties();
                         let _rte_providers_id_path = rte_p_o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
 
-                        for (k, v) in cfg.as_object().unwrap().iter() {
+                        for (k, v) in rte_module_cfg.iter() {
                             match k {
-                                k if k == KEY_NAME => {
-                                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
-                                    let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                    p.append(&mut json!({k: v}).as_object().unwrap().clone());
-                                    self.db.add_object_properties(&r_o, &p, PropertyType::Module);
-                                }
-                                k if k == KEY_TYPE => {
-                                    let r_o_p = self.db.get_object_properties(&r_o).unwrap().props;
-                                    let mut p = r_o_p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().clone();
-                                    p.append(&mut json!({k: v}).as_object().unwrap().clone());
-                                    self.db.add_object_properties(&r_o, &p, PropertyType::Module);
-                                }
                                 k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
                                         let mut rte_providers_id_path: Vec<String> = _rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
@@ -1847,9 +1826,9 @@ impl<'a> Regression<'a> {
                                 _ => {}
                             }
                         }
-                        let rte_type = cfg.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
-                        let rte = Rte::new(rte_type, self.db);
-                        if let Some(r) = rte { r.init(&r_o) }
+                        let rte_type = rte_module_cfg.get(KEY_TYPE).unwrap().as_str().unwrap();
+                        let rte = RteType::new(rte_type, self.db);
+                        if let Some(r) = rte { r.init(&r_o.get_object()) }
                     }
                 }
                 _ => {}
@@ -1889,6 +1868,7 @@ impl<'a> Regression<'a> {
                 let c_src = self.db.get_object_neighbour_with_properties_out(&conn.id, EdgeTypes::HasConnectionSrc).unwrap();
                 let tests = self.db.get_object_neighbours_with_properties_out(&c_src.vertex.id, EdgeTypes::Runs);
                 for t in tests.iter() {
+
                     let t_stage_name = format!("{}-{}-{}-{}-{}-{}",
                                                KEY_TEST,
                                                rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap(),
@@ -2000,36 +1980,6 @@ impl<'a> Regression<'a> {
         cfg
     }
 
-    fn load_object_config(&self, _type: &str, module: &str) -> Value {
-        info!("Loading module <{module}> configuration data...");
-        let file: String;
-        match _type {
-            KEY_EUT => {
-                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.eut.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_RTE => {
-                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.rte.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_FEATURE => {
-                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.features.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_TEST => {
-                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.tests.path, module, CONFIG_FILE_NAME);
-            }
-            KEY_VERIFICATION => {
-                file = format!("{}/{}/{}/{}", self.config.root_path, self.config.verifications.path, module, CONFIG_FILE_NAME);
-            }
-            _ => {
-                return Null;
-            }
-        }
-
-        let raw = std::fs::read_to_string(String::from(&file)).unwrap();
-        let cfg: Value = serde_json::from_str(&raw).unwrap();
-        info!("Loading module <{module}> configuration data -> Done.");
-        cfg
-    }
-
     fn add_ci_stages(&self, id_path: &mut Vec<String>, ancestor: &Vertex, stages: &[String], object_type: &VertexTypes) -> Option<Vertex> {
         let mut curr = Vertex { id: Default::default(), t: Default::default() };
 
@@ -2107,7 +2057,7 @@ impl<'a> Regression<'a> {
 
         for rte in rtes.iter() {
             let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
-            let _rte = Rte::new(rte_type, self.db);
+            let _rte = RteType::new(rte_type, self.db);
             if let Some(r) = _rte { r.build_ctx(rte, site_count, &mut srsd) }
         }
 
@@ -2203,7 +2153,7 @@ impl<'a> Regression<'a> {
 
             //Process connections
             let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
-            let _rte = Rte::new(rte_type, self.db);
+            let _rte = RteType::new(rte_type, self.db);
             let mut feature_names: Vec<String> = Vec::new();
 
             for _feature in &features_rc {
