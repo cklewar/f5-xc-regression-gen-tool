@@ -19,7 +19,7 @@ use uuid::Uuid;
 use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, RteProvider, Rtes, Rte,
               Sites, Site, Dashboard, Application, Applications, Connections, Connection,
               ConnectionSource, ConnectionDestination, Test, Verification, Components,
-              ComponentDestination};
+              ComponentDestination, Collectors, Collector};
 
 use crate::constants::*;
 use crate::db::Db;
@@ -48,12 +48,12 @@ pub enum VertexTypes {
     Script,
     Project,
     Scripts,
-    Summary,
     Feature,
     Features,
     Providers,
     Collector,
     Dashboard,
+    Collectors,
     Components,
     Connection,
     Connections,
@@ -88,9 +88,9 @@ pub enum EdgeTypes {
     HasFeatures,
     ProvidesRte,
     UsesProvider,
-    HasSummaries,
     HasProviders,
     NeedsProvider,
+    HasCollectors,
     HasComponents,
     HasConnection,
     SiteRefersRte,
@@ -105,7 +105,9 @@ pub enum EdgeTypes {
     HasConnectionDst,
     HasDestroyStages,
     FeatureRefersSite,
+    ProvidesCollector,
     ProvidesApplication,
+    TestRefersCollector,
     TestRefersApplication,
 }
 
@@ -130,13 +132,13 @@ impl VertexTypes {
             VertexTypes::Providers => VERTEX_TYPE_PROVIDERS,
             VertexTypes::Connection => VERTEX_TYPE_CONNECTION,
             VertexTypes::Components => VERTEX_TYPE_COMPONENTS,
+            VertexTypes::Collectors => VERTEX_TYPE_COLLECTORS,
             VertexTypes::Connections => VERTEX_TYPE_CONNECTIONS,
             VertexTypes::Application => VERTEX_TYPE_APPLICATION,
             VertexTypes::Applications => VERTEX_TYPE_APPLICATIONS,
             VertexTypes::EutProvider => VERTEX_TYPE_EUT_PROVIDER,
             VertexTypes::RteProvider => VERTEX_TYPE_RTE_PROVIDER,
             VertexTypes::StageDeploy => VERTEX_TYPE_STAGE_DEPLOY,
-            VertexTypes::Summary => VERTEX_TYPE_STAGE_DEPLOY,
             VertexTypes::StageDestroy => VERTEX_TYPE_STAGE_DESTROY,
             VertexTypes::Verification => VERTEX_TYPE_VERIFICATION,
             VertexTypes::ComponentSrc => VERTEX_TYPE_COMPONENT_SRC,
@@ -162,12 +164,12 @@ impl VertexTypes {
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts.name(),
             VERTEX_TYPE_PROJECT => VertexTypes::Project.name(),
             VERTEX_TYPE_FEATURE => VertexTypes::Feature.name(),
-            VERTEX_TYPE_SUMMARY => VertexTypes::Summary.name(),
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers.name(),
             VERTEX_TYPE_DASHBOARD => VertexTypes::Dashboard.name(),
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector.name(),
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection.name(),
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components.name(),
+            VERTEX_TYPE_COLLECTORS => VertexTypes::Collectors.name(),
             VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections.name(),
             VERTEX_TYPE_APPLICATION => VertexTypes::Application.name(),
             VERTEX_TYPE_APPLICATIONS => VertexTypes::Applications.name(),
@@ -198,12 +200,12 @@ impl VertexTypes {
             VERTEX_TYPE_SCRIPT => VertexTypes::Script,
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts,
             VERTEX_TYPE_PROJECT => VertexTypes::Project,
-            VERTEX_TYPE_SUMMARY => VertexTypes::Summary,
             VERTEX_TYPE_FEATURE => VertexTypes::Feature,
             VERTEX_TYPE_FEATURES => VertexTypes::Features,
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers,
             VERTEX_TYPE_DASHBOARD => VertexTypes::Dashboard,
             VERTEX_TYPE_COLLECTOR => VertexTypes::Collector,
+            VERTEX_TYPE_COLLECTORS => VertexTypes::Collectors,
             VERTEX_TYPE_CONNECTION => VertexTypes::Connection,
             VERTEX_TYPE_COMPONENTS => VertexTypes::Components,
             VERTEX_TYPE_CONNECTIONS => VertexTypes::Connections,
@@ -238,7 +240,6 @@ impl EdgeTypes {
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::RefersSite => EDGE_TYPE_REFERS_SITE,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
-            EdgeTypes::HasSummaries => EDGE_TYPE_HAS_SUMMARIES,
             EdgeTypes::NeedsShare => EDGE_TYPE_NEEDS_SHARE,
             EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
             EdgeTypes::ProvidesRte => EDGE_TYPE_PROVIDES_RTE,
@@ -249,6 +250,7 @@ impl EdgeTypes {
             EdgeTypes::RefersFeature => EDGE_TYPE_SITE_REFERS_RTE,
             EdgeTypes::SiteRefersRte => EDGE_TYPE_APPLICATION_REFERS_FEATURE,
             EdgeTypes::HasConnection => EDGE_TYPE_HAS_CONNECTION,
+            EdgeTypes::HasCollectors => EDGE_TYPE_HAS_COLLECTORS,
             EdgeTypes::HasConnections => EDGE_TYPE_HAS_CONNECTIONS,
             EdgeTypes::HasComponentSrc => EDGE_TYPE_HAS_COMPONENT_SRC,
             EdgeTypes::HasComponentDst => EDGE_TYPE_HAS_COMPONENT_DST,
@@ -259,7 +261,9 @@ impl EdgeTypes {
             EdgeTypes::HasConnectionSrc => EDGE_TYPE_HAS_CONNECTION_SRC,
             EdgeTypes::HasConnectionDst => EDGE_TYPE_HAS_CONNECTION_DST,
             EdgeTypes::FeatureRefersSite => EDGE_TYPE_FEATURE_REFERS_SITE,
+            EdgeTypes::ProvidesCollector => EDGE_TYPE_PROVIDES_COLLECTOR,
             EdgeTypes::ProvidesApplication => EDGE_TYPE_PROVIDES_APPLICATION,
+            EdgeTypes::TestRefersCollector => EDGE_TYPE_TEST_REFERS_COLLECTION,
             EdgeTypes::TestRefersApplication => EDGE_TYPE_TEST_REFERS_APPLICATION,
         }
     }
@@ -288,6 +292,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::HasProviders.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Collectors.name().to_string()), EdgeTypes::HasCollectors.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Sites.name().to_string()), EdgeTypes::HasSites.name());
         map.insert(VertexTuple(VertexTypes::Rtes.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::ProvidesRte.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::NeedsProvider.name());
@@ -316,6 +321,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::TestRefersApplication.name());
+        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::TestRefersCollector.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasDeployStages.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::HasDestroyStages.name());
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
@@ -325,6 +331,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Collectors.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ProvidesCollector.name());
         map
     };
     static ref EDGES_COUNT: usize = EDGE_TYPES.len();
@@ -385,7 +392,7 @@ struct RegressionConfigEut {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct RegressionConfigCollector {
+struct RegressionConfigCollectors {
     path: String,
 }
 
@@ -449,7 +456,7 @@ pub struct RegressionConfig {
     features: RegressionConfigFeatures,
     root_path: String,
     dashboard: RegressionConfigDashboard,
-    collector: RegressionConfigCollector,
+    collectors: RegressionConfigCollectors,
     applications: RegressionConfigApplications,
     verifications: RegressionConfigVerifications,
 }
@@ -1534,6 +1541,14 @@ impl<'a> Regression<'a> {
                         }
                     }
                 }
+                k if k == KEY_COLLECTORS => {
+                    let o = Collectors::init(&self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
+                    self.db.create_relationship(&eut.get_object(), &o.get_object());
+                    for c in obj.as_array().unwrap().iter() {
+                        let c_o = Collector::init(&self.db, &self.config, c, &mut o.get_id_path().get_vec(), "", 0);
+                        self.db.create_relationship(&o.get_object(), &c_o.get_object());
+                    }
+                }
                 k if k == KEY_APPLICATIONS => {
                     let o = Applications::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
@@ -1685,18 +1700,31 @@ impl<'a> Regression<'a> {
                                                 match k {
                                                     k if k == KEY_REFS => {
                                                         let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
+                                                        let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
 
-                                                        // Ref Test -> Application
                                                         if v.as_array().unwrap().len() > 0 {
                                                             for r#ref in v.as_array().unwrap().iter() {
                                                                 match VertexTypes::get_type_by_key(r#ref.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap()) {
+                                                                    // Ref Test -> Application
                                                                     VertexTypes::Application => {
-                                                                        let application = Applications::load_application(&self.db, &applications.get_object(), &r#ref.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &self.config);
+                                                                        let application = Applications::load_application(&self.db, &applications.get_object(), &r#ref.as_object()
+                                                                            .unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &self.config);
                                                                         match application {
                                                                             Some(a) => {
                                                                                 self.db.create_relationship(&t_o.get_object(), &a.get_object());
                                                                             }
                                                                             None => error!("no application object found")
+                                                                        }
+                                                                    }
+                                                                    // Ref Test -> Collector
+                                                                    VertexTypes::Collector => {
+                                                                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), &r#ref.as_object()
+                                                                            .unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &self.config);
+                                                                        match collector {
+                                                                            Some(a) => {
+                                                                                self.db.create_relationship(&t_o.get_object(), &a.get_object());
+                                                                            }
+                                                                            None => error!("no collector object found")
                                                                         }
                                                                     }
                                                                     _ => {}

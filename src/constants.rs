@@ -32,7 +32,6 @@ pub const KEY_SCRIPTS: &str = "scripts";
 pub const KEY_ACTIONS: &str = "actions";
 pub const KEY_SOURCE: &str = "source";
 pub const KEY_PROJECT: &str = "project";
-pub const KEY_SUMMARY: &str = "summary";
 pub const KEY_FEATURE: &str = "feature";
 pub const KEY_GV_LABEL: &str = "label";
 pub const KEY_FEATURES: &str = "features";
@@ -40,7 +39,9 @@ pub const KEY_PROVIDER: &str = "provider";
 pub const KEY_PROVIDERS: &str = "providers";
 pub const KEY_DASHBOARD: &str = "dashboard";
 pub const KEY_COMPONENT: &str = "component";
+pub const KEY_COLLECTOR: &str = "collector";
 pub const KEY_COMPONENTS: &str = "components";
+pub const KEY_COLLECTORS: &str = "collectors";
 pub const KEY_CONNECTION: &str = "connection";
 pub const KEY_CONNECTIONS: &str = "connections";
 pub const KEY_APPLICATION: &str = "application";
@@ -63,7 +64,8 @@ pub const PROPERTY_TYPE_BASE: &str = "base";
 pub const PROPERTY_TYPE_MODULE: &str = "module";
 
 // Key order
-pub const EUT_KEY_ORDER: &[&str] = &["ci", "provider", "sites", "features", "applications", "name", "release", "rtes", "scripts", "scripts_path"];
+pub const EUT_KEY_ORDER: &[&str] = &["ci", "provider", "sites", "features", "applications",
+    "collectors", "name", "release", "rtes", "scripts", "scripts_path"];
 
 //Objects types
 pub const VERTEX_TYPE_CI: &str = "ci";
@@ -79,9 +81,9 @@ pub const VERTEX_TYPE_SCRIPT: &str = "script";
 pub const VERTEX_TYPE_SCRIPTS: &str = "scripts";
 pub const VERTEX_TYPE_PROJECT: &str = "project";
 pub const VERTEX_TYPE_FEATURE: &str = "feature";
-pub const VERTEX_TYPE_SUMMARY: &str = "summary";
 pub const VERTEX_TYPE_FEATURES: &str = "features";
 pub const VERTEX_TYPE_COLLECTOR: &str = "collector";
+pub const VERTEX_TYPE_COLLECTORS: &str = "collectors";
 pub const VERTEX_TYPE_PROVIDERS: &str = "providers";
 pub const VERTEX_TYPE_DASHBOARD: &str = "dashboard";
 pub const VERTEX_TYPE_COMPONENTS: &str = "components";
@@ -113,13 +115,13 @@ pub const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
 pub const EDGE_TYPE_REFERS_SITE: &str = "refers_site";
 pub const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
 pub const EDGE_TYPE_HAS_FEATURES: &str = "has_features";
-pub const EDGE_TYPE_HAS_SUMMARIES: &str = "has_summaries";
 pub const EDGE_TYPE_PROVIDES_RTE: &str = "provides_rte";
 pub const EDGE_TYPE_HAS_PROVIDERS: &str = "has_providers";
 pub const EDGE_TYPE_USES_PROVIDER: &str = "uses_provider";
 pub const EDGE_TYPE_NEEDS_PROVIDER: &str = "needs_provider";
 pub const EDGE_TYPE_HAS_COMPONENTS: &str = "has_components";
 pub const EDGE_TYPE_HAS_CONNECTION: &str = "has_connection";
+pub const EDGE_TYPE_HAS_COLLECTORS: &str = "has_collectors";
 pub const EDGE_TYPE_HAS_CONNECTIONS: &str = "has_connections";
 pub const EDGE_TYPE_HAS_APPLICATIONS: &str = "has_applications";
 pub const EDGE_TYPE_SITE_REFERS_RTE: &str = "site_refers_rte";
@@ -131,7 +133,9 @@ pub const EDGE_TYPE_HAS_CONNECTION_DST: &str = "has_connection_dst";
 pub const EDGE_TYPE_HAS_DEPLOY_STAGES: &str = "has_deploy_stages";
 pub const EDGE_TYPE_HAS_DESTROY_STAGES: &str = "has_destroy_stages";
 pub const EDGE_TYPE_FEATURE_REFERS_SITE: &str = "feature_refers_site";
+pub const EDGE_TYPE_PROVIDES_COLLECTOR: &str = "provides_collector";
 pub const EDGE_TYPE_PROVIDES_APPLICATION: &str = "provides_application";
+pub const EDGE_TYPE_TEST_REFERS_COLLECTION: &str = "test_refers_collection";
 pub const EDGE_TYPE_TEST_REFERS_APPLICATION: &str = "test_refers_application";
 pub const EDGE_TYPE_APPLICATION_REFERS_FEATURE: &str = "application_refers_feature";
 
