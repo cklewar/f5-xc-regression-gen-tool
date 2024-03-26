@@ -3,7 +3,7 @@ use serde_json::Value;
 use serde_json::Value::Null;
 
 pub use ci::Ci;
-pub use collections::{Connections, Features, Providers, Rtes, Sites, Applications};
+pub use collections::{Components, Connections, Features, Providers, Rtes, Sites, Applications};
 pub use dashboard::Dashboard;
 pub use eut::{Eut, EutExt};
 pub(crate) use macros::implement_object_ext;
@@ -16,6 +16,7 @@ pub use test::Test;
 pub use connection::{Connection, ConnectionDestination, ConnectionSource};
 pub use feature::Feature;
 pub use verification::Verification;
+pub use component::{ComponentSource, ComponentDestination};
 
 use crate::constants::*;
 use crate::RegressionConfig;
@@ -36,6 +37,7 @@ mod dashboard;
 mod application;
 mod collector;
 mod connection;
+mod component;
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");

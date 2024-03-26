@@ -17,10 +17,10 @@ pub struct Ci<'a> {
 }
 
 impl<'a> Ci<'a> {
-    pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+    pub fn init(db: &'a Db, _config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new ci object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Ci, &mut path, label, pop);
-        db.add_object_properties(&o, &config.ci, PropertyType::Base);
+        db.add_object_properties(&o, &base_cfg, PropertyType::Base);
 
         Box::new(Ci {
             object: Object {

@@ -18,10 +18,12 @@ use uuid::Uuid;
 
 use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, RteProvider, Rtes, Rte,
               Sites, Site, Dashboard, Application, Applications, Connections, Connection,
-              ConnectionSource, ConnectionDestination, Test, Verification};
+              ConnectionSource, ConnectionDestination, Test, Verification, Components,
+              ComponentDestination};
 
 use crate::constants::*;
 use crate::db::Db;
+use crate::objects::ComponentSource;
 
 pub mod constants;
 pub mod db;
@@ -1444,7 +1446,7 @@ impl<'a> Regression<'a> {
         self.db.create_relationship(&project.get_object(), &dashboard.get_object());
 
         // Ci
-        let ci = Ci::init(self.db, &self.config, &mut project.get_id_path().get_vec(), "", 0);
+        let ci = Ci::init(self.db, &self.config, &json!(&self.config.ci), &mut project.get_id_path().get_vec(), "", 0);
         self.db.create_relationship(&project.get_object(), &ci.get_object());
 
         // Eut
@@ -1461,7 +1463,6 @@ impl<'a> Regression<'a> {
                     for p in obj.as_array().unwrap().iter() {
                         let eut_provider = EutProvider::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), &p.as_str().unwrap(), 0);
                         self.db.create_relationship(&eut_providers.get_object(), &eut_provider.get_object());
-                        //eut_provider.add_base_properties(json!({KEY_NAME: &p.as_str().unwrap()}));
                     }
                 }
                 k if k == KEY_SITES => {
@@ -1654,10 +1655,6 @@ impl<'a> Regression<'a> {
                                                                                             "", 0);
 
                                                     self.db.create_relationship(&src_o.get_object(), &dst_o.get_object());
-                                                    self.db.add_object_properties(&dst_o.get_object(), &json!({KEY_NAME: &d,
-                                                        KEY_RTE: &rte.as_object().unwrap().get(KEY_MODULE)
-                                                        .unwrap().as_str().unwrap()}),
-                                                                                  PropertyType::Base);
                                                     //Connection Destination -> Site
                                                     self.db.create_relationship(&dst_o.get_object(), &site.vertex);
                                                     //site --> rte
@@ -1726,24 +1723,24 @@ impl<'a> Regression<'a> {
 
                         //Rte module cfg
                         let rte_module_cfg = r_o.get_module_properties();
-                        let _rte_providers_id_path = rte_p_o_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+                        let _rte_providers_id_path = rte_p_o_p.props.get(PropertyType::Base.index())
+                            .unwrap().value.as_object().unwrap().get(KEY_ID_PATH)
+                            .unwrap().as_array().unwrap();
 
                         for (k, v) in rte_module_cfg.iter() {
                             match k {
                                 k if k == KEY_PROVIDER => {
                                     for (p, v) in v.as_object().unwrap().iter() {
                                         let mut rte_providers_id_path: Vec<String> = _rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
-                                        let o = RteProvider::init(&self.db, &self.config, &mut r_o.get_id_path().get_vec(), p, 0);
+                                        let o = RteProvider::init(&self.db, &self.config, &mut rte_providers_id_path, p, 0);
                                         self.db.create_relationship(&rte_p_o, &o.get_object());
 
                                         for (k, v) in v.as_object().unwrap().iter() {
                                             match k {
                                                 k if k == KEY_CI => {
-                                                    let (p_ci_o, _id_path) = self.db.create_object_and_init(VertexTypes::Ci,
-                                                                                                            &mut rte_providers_id_path,
-                                                                                                            "", 0);
-                                                    self.db.create_relationship(&o.get_object(), &p_ci_o);
-                                                    self.db.add_object_properties(&p_ci_o, &v.as_object().unwrap(), PropertyType::Base);
+                                                    let p_ci_o = Ci::init(self.db, &self.config, v, &mut rte_providers_id_path, "", 0);
+                                                    self.db.create_relationship(&o.get_object(), &p_ci_o.get_object());
+                                                    self.db.add_object_properties(&p_ci_o.get_object(), &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_SHARE => {
                                                     let (s_o, _id_path) = self.db.create_object_and_init(VertexTypes::Share, &mut rte_providers_id_path, "", 0);
@@ -1751,62 +1748,18 @@ impl<'a> Regression<'a> {
                                                     self.db.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_COMPONENTS => {
-                                                    let (c_o, _id_path) = self.db.create_object_and_init(VertexTypes::Components, &mut rte_providers_id_path, "", 1);
-                                                    self.db.create_relationship(&o.get_object(), &c_o);
+                                                    let c_o = Components::init(&self.db, &self.config, &mut r_o.get_id_path().get_vec(), "", 1);
+                                                    self.db.create_relationship(&o.get_object(), &c_o.get_object());
 
                                                     for (k, v) in v.as_object().unwrap().iter() {
                                                         match k {
                                                             k if k == KEY_SRC => {
-                                                                let (c_src_o, _id_path) = self.db.create_object_and_init(VertexTypes::ComponentSrc, &mut rte_providers_id_path, "", 0);
-                                                                self.db.create_relationship(&c_o, &c_src_o);
-
-                                                                for (k, v) in v.as_object().unwrap().iter() {
-                                                                    let c_src_o_p = self.db.get_object_properties(&c_src_o).unwrap().props;
-                                                                    match k {
-                                                                        k if k == KEY_NAME => {
-                                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
-                                                                        }
-                                                                        k if k == KEY_SCRIPTS => {
-                                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
-                                                                        }
-                                                                        k if k == KEY_SCRIPTS_PATH => {
-                                                                            let mut p = c_src_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                                            self.db.add_object_properties(&c_src_o, &p, PropertyType::Base);
-                                                                        }
-                                                                        _ => {}
-                                                                    }
-                                                                }
+                                                                let c_src_o = ComponentSource::init(&self.db, &self.config, v, &mut rte_providers_id_path, "", 0);
+                                                                self.db.create_relationship(&c_o.get_object(), &c_src_o.get_object());
                                                             }
                                                             k if k == KEY_DST => {
-                                                                let (c_dst_o, _id_path) = self.db.create_object_and_init(VertexTypes::ComponentDst, &mut rte_providers_id_path, "", 0);
-                                                                self.db.create_relationship(&c_o, &c_dst_o);
-
-                                                                for (k, v) in v.as_object().unwrap().iter() {
-                                                                    let c_dst_o_p = self.db.get_object_properties(&c_dst_o).unwrap().props;
-                                                                    match k {
-                                                                        k if k == KEY_NAME => {
-                                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
-                                                                        }
-                                                                        k if k == KEY_SCRIPTS => {
-                                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
-                                                                        }
-                                                                        k if k == KEY_SCRIPTS_PATH => {
-                                                                            let mut p = c_dst_o_p.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().clone();
-                                                                            p.append(&mut json!({k: v.clone()}).as_object().unwrap().clone());
-                                                                            self.db.add_object_properties(&c_dst_o, &p, PropertyType::Base);
-                                                                        }
-                                                                        _ => {}
-                                                                    }
-                                                                }
+                                                                let c_dst_o = ComponentDestination::init(&self.db, &self.config, v, &mut rte_providers_id_path, "", 0);
+                                                                self.db.create_relationship(&c_o.get_object(), &c_dst_o.get_object());
                                                             }
                                                             _ => {}
                                                         }

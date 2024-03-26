@@ -14,6 +14,10 @@ use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
+pub struct Components<'a> {
+    object: Object<'a>,
+}
+
 pub struct Connections<'a> {
     object: Object<'a>,
 }
@@ -36,6 +40,24 @@ pub struct Rtes<'a> {
 
 pub struct Applications<'a> {
     object: Object<'a>,
+}
+
+impl<'a> Components<'a> {
+    pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Initialize new components collection object");
+        let (o, id_path) = db.create_object_and_init(VertexTypes::Components, &mut path, label, pop);
+        db.add_object_properties(&o, &json!({"": ""}), PropertyType::Base);
+
+        Box::new(Components {
+            object: Object {
+                db,
+                id: o.id,
+                id_path,
+                vertex: o,
+                module_cfg: json!(null),
+            },
+        })
+    }
 }
 
 impl<'a> Connections<'a> {
@@ -278,4 +300,4 @@ impl<'a> Applications<'a> {
     }
 }
 
-implement_object_ext!(Connections, Features, Providers, Rtes, Sites, Applications);
+implement_object_ext!(Components, Connections, Features, Providers, Rtes, Sites, Applications);
