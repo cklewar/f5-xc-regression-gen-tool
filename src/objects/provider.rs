@@ -101,6 +101,23 @@ impl<'a> RteProvider<'a> {
             },
         })
     }
+
+    pub fn load(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+        let obj = db.get_object_with_properties(&object.id);
+        let as_arr = obj.props.get(PropertyType::Base.index())
+            .unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let id_path = IdPath::load_from_array(as_arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
+
+        Box::new(RteProvider {
+            object: Object {
+                db,
+                id: obj.vertex.id,
+                id_path,
+                vertex: obj.vertex,
+                module_cfg: json!(null),
+            },
+        })
+    }
 }
 
 implement_object_ext!(EutProvider, RteProvider, DashboardProvider);

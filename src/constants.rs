@@ -50,6 +50,7 @@ pub const KEY_DESTINATIONS: &str = "destinations";
 pub const KEY_VERIFICATION: &str = "verification";
 pub const KEY_SCRIPTS_PATH: &str = "scripts_path";
 pub const KEY_VERIFICATIONS: &str = "verifications";
+pub const KEY_REFERS_COLLECTION: &str = "refers_collection";
 
 
 // miscellaneous

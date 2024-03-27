@@ -277,12 +277,37 @@ impl Db {
         objs
     }
 
-    pub fn get_object_neighbour_in(&self, id: &Uuid, identifier: EdgeTypes) -> Vertex {
-        let i = Identifier::new(identifier.name().to_string()).unwrap();
-        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(i));
-        let id = indradb::util::extract_edges(o.unwrap()).unwrap().get(1).unwrap().outbound_id;
+    pub fn get_object_neighbour_in(&self, id: &Uuid, edge_identifier: EdgeTypes, vertex_identifier: VertexTypes) -> Option<Vertex> {
+        let e = Identifier::new(edge_identifier.name().to_string()).unwrap();
+        let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e));
 
-        self.get_object(&id)
+        for item in indradb::util::extract_edges(o.unwrap()).unwrap() {
+            if self.get_object(&item.inbound_id).t.as_str() == v.as_str() {
+                return Some(self.get_object(&item.inbound_id));
+            }
+        }
+
+        None
+    }
+
+    pub fn get_object_edges(&self, id: &Uuid) -> Vec<Edge> {
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap());
+        indradb::util::extract_edges(o.unwrap()).unwrap()
+    }
+
+    pub fn get_object_neighbour_out_by_v_type(&self, id: &Uuid, edge_identifier: EdgeTypes, vertex_identifier: VertexTypes) -> Option<Vertex> {
+        let e = Identifier::new(edge_identifier.name().to_string()).unwrap();
+        let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e));
+
+        for item in indradb::util::extract_edges(o.unwrap()).unwrap() {
+            if self.get_object(&item.outbound_id).t.as_str() == v.as_str() {
+                return Some(self.get_object(&item.outbound_id));
+            }
+        }
+
+        None
     }
 
     pub fn get_object_neighbours_in(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<Vertex> {

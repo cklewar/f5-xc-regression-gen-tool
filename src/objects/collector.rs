@@ -5,13 +5,13 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{CollectorRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
-            Renderer, ScriptCollectorRenderContext};
-use crate::constants::{KEY_COLLECTOR, KEY_DATA, KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{CollectorRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script,
+            RenderContext, Renderer, ScriptCollectorRenderContext};
+use crate::constants::{EDGE_TYPE_TEST_REFERS_COLLECTION, KEY_COLLECTOR, KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REFERS_COLLECTION, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{implement_object_ext, load_object_config};
+use super::{implement_object_ext, load_object_config, Rte, RteProvider, Test};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -95,6 +95,43 @@ impl Renderer<'_> for Collector<'_> {
         let props_base: Map<String, Value> = self.get_base_properties();
         let props_module: Map<String, Value> = self.get_module_properties();
         let scripts_path = props_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        let mut collectibles: Vec<HashMap<String, String>> = vec![];
+
+        for e in self.object.db.get_object_edges(&self.get_id()) {
+            if KEY_REFERS_COLLECTION == e.t.as_str().split_once("_").unwrap().1 {
+                match e.t.as_str() {
+                    EDGE_TYPE_TEST_REFERS_COLLECTION => {
+                        let tests = self.object.db.get_object_neighbours_in(&self.object.id, EdgeTypes::TestRefersCollector);
+                        for t in tests {
+                            let t_o = Test::load(&self.object.db, &t.id, &config);
+                            let t_o_p_base = t_o.get_base_properties();
+                            let test_name = t_o_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                            let test_module = t_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
+                            let conn_src = self.object.db.get_object_neighbour_out_by_v_type(&t.id, EdgeTypes::Runs, VertexTypes::ConnectionSrc);
+                            let component_src = self.object.db.get_object_neighbour_out(&conn_src.unwrap().id, EdgeTypes::HasComponentSrc);
+                            let components = self.object.db.get_object_neighbour_out_by_v_type(&component_src.id, EdgeTypes::HasComponentSrc, VertexTypes::Components);
+                            let provider = self.object.db.get_object_neighbour_out_by_v_type(&components.unwrap().id, EdgeTypes::HasComponents, VertexTypes::RteProvider);
+                            let rte_p_o = RteProvider::load(&self.object.db, &provider.unwrap(), &config);
+                            let rte_p_o_p_base = rte_p_o.get_base_properties();
+                            let rte_provider = rte_p_o_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                            let providers = self.object.db.get_object_neighbour_out_by_v_type(&rte_p_o.get_id(), EdgeTypes::ProvidesProvider, VertexTypes::Providers);
+                            let rte = self.object.db.get_object_neighbour_out_by_v_type(&providers.unwrap().id, EdgeTypes::NeedsProvider, VertexTypes::Rte);
+                            let rte_o = Rte::load(&self.object.db, &rte.unwrap().id, &config);
+                            let rte_o_p_base = rte_o.get_base_properties();
+                            let rte_module = rte_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
+                            let collectible: HashMap<String, String> = HashMap::from([
+                                ("rte".to_string(), rte_module.to_string()),
+                                ("provider".to_string(), rte_provider.to_string()),
+                                ("name".to_string(), test_name.to_string()),
+                                ("module".to_string(), test_module.to_string())
+                            ]);
+                            collectibles.push(collectible);
+                        }
+                    }
+                    _ => {}
+                };
+            }
+        }
 
         for script in props_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path,
@@ -105,6 +142,7 @@ impl Renderer<'_> for Collector<'_> {
                 eut: config.eut.module.to_string(),
                 name: module.to_string(),
                 data: props_base.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
+                collectibles: collectibles.clone(),
                 module: module.to_string(),
                 project: config.project.clone(),
             };

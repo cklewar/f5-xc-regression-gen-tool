@@ -24,7 +24,6 @@ use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, RtePr
 use crate::constants::*;
 use crate::db::Db;
 use crate::objects::ComponentSource;
-use crate::VertexTypes::Collectors;
 
 pub mod constants;
 pub mod db;
@@ -287,42 +286,42 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::Project.name().to_string(), VertexTypes::Dashboard.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Dashboard.name().to_string(), VertexTypes::DashboardProvider.name().to_string()), EdgeTypes::UsesProvider.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Applications.name().to_string()), EdgeTypes::HasApplications.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::HasFeatures.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rtes.name().to_string()), EdgeTypes::UsesRtes.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::HasProviders.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
-        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Collectors.name().to_string()), EdgeTypes::HasCollectors.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Rtes.name().to_string()), EdgeTypes::UsesRtes.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Sites.name().to_string()), EdgeTypes::HasSites.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::HasFeatures.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::HasProviders.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Collectors.name().to_string()), EdgeTypes::HasCollectors.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Applications.name().to_string()), EdgeTypes::HasApplications.name());
         map.insert(VertexTuple(VertexTypes::Rtes.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::ProvidesRte.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::NeedsProvider.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Connections.name().to_string()), EdgeTypes::HasConnections.name());
-        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::Needs.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::NeedsProvider.name());
+        map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Connections.name().to_string()), EdgeTypes::HasConnections.name());
         map.insert(VertexTuple(VertexTypes::Sites.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::HasSite.name());
-        map.insert(VertexTuple(VertexTypes::Site.name().to_string(), VertexTypes::EutProvider.name().to_string()), EdgeTypes::UsesProvider.name());
         map.insert(VertexTuple(VertexTypes::Site.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::SiteRefersRte.name());
+        map.insert(VertexTuple(VertexTypes::Site.name().to_string(), VertexTypes::EutProvider.name().to_string()), EdgeTypes::UsesProvider.name());
         map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::EutProvider.name().to_string()), EdgeTypes::ProvidesProvider.name());
         map.insert(VertexTuple(VertexTypes::Providers.name().to_string(), VertexTypes::RteProvider.name().to_string()), EdgeTypes::ProvidesProvider.name());
-        map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
         map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
         map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Share.name().to_string()), EdgeTypes::NeedsShare.name());
+        map.insert(VertexTuple(VertexTypes::RteProvider.name().to_string(), VertexTypes::Components.name().to_string()), EdgeTypes::HasComponents.name());
+        map.insert(VertexTuple(VertexTypes::Connections.name().to_string(), VertexTypes::Connection.name().to_string()), EdgeTypes::HasConnection.name());
         map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::HasComponentSrc.name());
         map.insert(VertexTuple(VertexTypes::Components.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::HasComponentDst.name());
-        map.insert(VertexTuple(VertexTypes::Connections.name().to_string(), VertexTypes::Connection.name().to_string()), EdgeTypes::HasConnection.name());
         map.insert(VertexTuple(VertexTypes::Connection.name().to_string(), VertexTypes::ConnectionSrc.name().to_string()), EdgeTypes::HasConnectionSrc.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ConnectionDst.name().to_string()), EdgeTypes::HasConnectionDst.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::Runs.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ConnectionDst.name().to_string()), EdgeTypes::HasConnectionDst.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::ComponentSrc.name().to_string()), EdgeTypes::HasComponentSrc.name());
         map.insert(VertexTuple(VertexTypes::ConnectionSrc.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::RefersSite.name());
-        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::HasComponentDst.name());
         map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::RefersSite.name());
-        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
+        map.insert(VertexTuple(VertexTypes::ConnectionDst.name().to_string(), VertexTypes::ComponentDst.name().to_string()), EdgeTypes::HasComponentDst.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Ci.name().to_string()), EdgeTypes::HasCi.name());
-        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::TestRefersApplication.name());
         map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::TestRefersCollector.name());
+        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::TestRefersApplication.name());
+        map.insert(VertexTuple(VertexTypes::Test.name().to_string(), VertexTypes::Verification.name().to_string()), EdgeTypes::Needs.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::HasDeployStages.name());
         map.insert(VertexTuple(VertexTypes::Ci.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::HasDestroyStages.name());
         map.insert(VertexTuple(VertexTypes::StageDeploy.name().to_string(), VertexTypes::StageDeploy.name().to_string()), EdgeTypes::NextStage.name());
@@ -394,6 +393,7 @@ struct RegressionConfigEut {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigCollectors {
+    ci: RegressionConfigGenericCi,
     path: String,
 }
 
@@ -614,6 +614,7 @@ struct ScriptCollectorRenderContext {
     eut: String,
     name: String,
     data: String,
+    collectibles: Vec<HashMap<String, String>>,
     module: String,
     project: RegressionConfigProject,
 }
@@ -713,6 +714,10 @@ struct ScriptProjectRenderContext {
 struct ObjectRefs {
     refs: HashMap<String, Vec<String>>,
 }
+
+/*fn get_type_of<T>(_: T) {
+    println!("TYPE: {}", std::any::type_name::<T>())
+}*/
 
 impl ObjectRefs {
     pub fn new(object: &Map<String, Value>) -> Self {
@@ -1587,9 +1592,6 @@ impl<'a> Regression<'a> {
                     self.db.create_relationship(&eut.get_object(), &o_rtes.get_object());
 
                     for rte in obj.as_array().unwrap().iter() {
-                        /*let (r_o, _id_path) = self.db.create_object_and_init(VertexTypes::Rte, &mut o_rtes.get_id_path().get_vec(),
-                                                                             &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
-                                                                             0);*/
                         let r_o = Rte::init(&self.db, &self.config, rte, &mut o_rtes.get_id_path().get_vec(), &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), 0);
                         self.db.create_relationship(&o_rtes.get_object(), &r_o.get_object());
                         //RTE -> Providers
@@ -1763,6 +1765,8 @@ impl<'a> Regression<'a> {
                                         let mut rte_providers_id_path: Vec<String> = _rte_providers_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
                                         let o = RteProvider::init(&self.db, &self.config, &mut rte_providers_id_path, p, 0);
                                         self.db.create_relationship(&rte_p_o, &o.get_object());
+                                        let c_o = Components::init(&self.db, &self.config, &mut o.get_id_path().get_vec(), "", 0);
+                                        self.db.create_relationship(&o.get_object(), &c_o.get_object());
 
                                         for (k, v) in v.as_object().unwrap().iter() {
                                             match k {
@@ -1777,9 +1781,6 @@ impl<'a> Regression<'a> {
                                                     self.db.add_object_properties(&s_o, &v.as_object().unwrap(), PropertyType::Base);
                                                 }
                                                 k if k == KEY_COMPONENTS => {
-                                                    let c_o = Components::init(&self.db, &self.config, &mut r_o.get_id_path().get_vec(), "", 1);
-                                                    self.db.create_relationship(&o.get_object(), &c_o.get_object());
-
                                                     for (k, v) in v.as_object().unwrap().iter() {
                                                         match k {
                                                             k if k == KEY_SRC => {
@@ -1876,7 +1877,10 @@ impl<'a> Regression<'a> {
 
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
-        self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+        let verification_stages_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+
+        //Collector Stages Deploy
+        self.add_ci_stages(&mut ci_id_path, &verification_stages_seq.unwrap(), &self.config.collectors.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
@@ -1938,7 +1942,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_PROJECT, &cfg.project);
         context.insert(KEY_FEATURES, &cfg.features);
         context.insert(KEY_DASHBOARD, &cfg.dashboard);
-        //context.insert("collector", &cfg.collector);
+        context.insert(KEY_COLLECTORS, &cfg.collectors);
         context.insert(KEY_APPLICATIONS, &cfg.applications);
         context.insert(KEY_VERIFICATIONS, &cfg.verifications);
 
@@ -2020,6 +2024,13 @@ impl<'a> Regression<'a> {
 
         //Process collectors
         let collectors_rc: Vec<Box<dyn RenderContext>> = Collectors::gen_render_ctx(self.db, &eut.get_object(), &self.config);
+        for _collector in &collectors_rc {
+            let collector: &CollectorRenderContext = match _collector.as_any().downcast_ref::<CollectorRenderContext>() {
+                Some(f) => f,
+                None => panic!("not a CollectorRenderContext!"),
+            };
+            //feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
+        }
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasSites);
@@ -2252,9 +2263,9 @@ impl<'a> Regression<'a> {
         context.insert(KEY_STAGES, &stages);
         context.insert(KEY_ACTIONS, &actions);
         context.insert(KEY_PROJECT, &project_rc);
-        context.insert(KEY_COLLECTORS, &collectors_rc);
         context.insert(KEY_FEATURES, &features_rc);
         context.insert(KEY_DASHBOARD, &dashboard_rc);
+        context.insert(KEY_COLLECTORS, &collectors_rc);
         context.insert(KEY_APPLICATIONS, &applications_rc);
 
         //error!("{:#?}", context.get(KEY_STAGES));

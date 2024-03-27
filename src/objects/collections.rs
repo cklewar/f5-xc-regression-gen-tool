@@ -65,7 +65,7 @@ impl<'a> Collectors<'a> {
     }
 
     pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn CollectorExt<'a> + 'a)>> {
-        error!("Loading eut collector objects");
+        error!("Loading collector objects");
         let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasCollectors).unwrap();
         let mut collectors: Vec<Box<(dyn CollectorExt + 'a)>> = Vec::new();
         let _collectors = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::ProvidesCollector);
@@ -78,7 +78,7 @@ impl<'a> Collectors<'a> {
     }
 
     pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
-        error!("Loading eut collector collection object");
+        error!("Loading collector collection object");
         let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasCollectors).unwrap();
         let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object()
             .unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
@@ -97,7 +97,7 @@ impl<'a> Collectors<'a> {
     }
 
     pub fn load_collector(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn CollectorExt<'a> + 'a)>> {
-        error!("Loading specific eut collector object");
+        error!("Loading specific collector object");
         let collectors = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesCollector);
         for collector in collectors {
             let a = collector.props.get(PropertyType::Module.index()).unwrap().value.as_object()
