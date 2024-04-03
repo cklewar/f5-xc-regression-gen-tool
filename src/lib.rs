@@ -1894,7 +1894,22 @@ impl<'a> Regression<'a> {
         let test_stage_deploy_seq = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy.unwrap(), &_test_stages_seq, &VertexTypes::StageDeploy);
 
         //Test Collector Stages Deploy
-        let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &self.config.collectors.ci.stages.deploy, &VertexTypes::StageDeploy);
+        let mut _test_collector_stages: Vec<String> = Vec::new();
+        let collectors = Collectors::load(&self.db, &eut.get_object(), &self.config);
+        for c in collectors {
+            let edges = self.db.get_object_edges(&c.get_id());
+            for e in edges {
+                match e.t.as_str() {
+                    EDGE_TYPE_TEST_REFERS_COLLECTION => {
+                        for item in c.get_module_properties().get(KEY_STAGES).unwrap().as_object().unwrap().get(KEY_DEPLOY).unwrap().as_array().unwrap() {
+                            _test_collector_stages.push(item.as_str().unwrap().to_string());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
 
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_collector_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
@@ -2042,13 +2057,13 @@ impl<'a> Regression<'a> {
 
         //Process collectors
         let collectors_rc: Vec<Box<dyn RenderContext>> = Collectors::gen_render_ctx(self.db, &eut.get_object(), &self.config);
-        for _collector in &collectors_rc {
+        /*for _collector in &collectors_rc {
             let collector: &CollectorRenderContext = match _collector.as_any().downcast_ref::<CollectorRenderContext>() {
                 Some(f) => f,
                 None => panic!("not a CollectorRenderContext!"),
             };
             //feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
-        }
+        }*/
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasSites);

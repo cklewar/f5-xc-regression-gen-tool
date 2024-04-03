@@ -273,7 +273,7 @@ project-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ project.module.ci.timeout }}
   retry:
     max: 0
@@ -327,7 +327,7 @@ project-artifacts:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ project.module.ci.timeout }}
   retry:
     max: 0
@@ -356,7 +356,7 @@ dashboard-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ dashboard.provider.ci.timeout }}
   retry:
     max: 0
@@ -596,7 +596,7 @@ dashboard-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ feature.module.ci.timeout }}
   retry:
     max: 0
@@ -627,7 +627,7 @@ dashboard-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ feature.module.ci.timeout }}
   retry:
     max: 0
@@ -659,7 +659,7 @@ dashboard-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ application.module.ci.timeout }}
   retry:
     max: 0
@@ -697,7 +697,7 @@ dashboard-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ application.module.ci.timeout }}
   retry:
     max: 0
@@ -983,7 +983,7 @@ sb-verification-wrk2-summary-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-    expire_in: 3h
+    expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ application.module.ci.timeout }}
   retry:
     max: 1
