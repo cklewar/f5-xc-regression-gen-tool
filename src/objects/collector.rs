@@ -109,7 +109,7 @@ impl Renderer<'_> for Collector<'_> {
                             let test_module = t_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
                             let conn_src = self.object.db.get_object_neighbour_out_by_v_type(&t.id, EdgeTypes::Runs, VertexTypes::ConnectionSrc);
                             let component_src = self.object.db.get_object_neighbour_out(&conn_src.unwrap().id, EdgeTypes::HasComponentSrc);
-                            let components = self.object.db.get_object_neighbour_out_by_v_type(&component_src.id, EdgeTypes::HasComponentSrc, VertexTypes::Components);
+                            let components = self.object.db.get_object_neighbour_out_by_v_type(&component_src.unwrap().id, EdgeTypes::HasComponentSrc, VertexTypes::Components);
                             let provider = self.object.db.get_object_neighbour_out_by_v_type(&components.unwrap().id, EdgeTypes::HasComponents, VertexTypes::RteProvider);
                             let rte_p_o = RteProvider::load(&self.object.db, &provider.unwrap(), &config);
                             let rte_p_o_p_base = rte_p_o.get_base_properties();

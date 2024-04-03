@@ -843,6 +843,63 @@ dashboard-deploy:
 {% endfor -%}
 {% endfor -%}
 
+{% for collector in collectors %}
+# collector - {{ collector.job }} - deploy
+{{ collector.job }}-deploy:
+  <<: *base
+  rules:
+    - !reference [ .regression_sb_test_test24_rules, rules ]
+  stage: collector-deploy
+  script:
+      - |
+        {%- for script in collector.scripts %}
+        {%- for k, v in script %}
+        {%- if k == "apply" %}
+        {%- for command in v %}
+        {{ command }}
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ collector.module.ci.timeout }}
+  retry:
+    max: 0
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
+# verification - sb-verification-wrk2-summary - deploy
+sb-verification-wrk2-summary-deploy:
+  <<: *base
+  rules:
+    - !reference [ .regression_sb_test_test24_rules, rules ]
+  stage: regression-test-verify
+  script:
+      - |
+        export TF_VAR_data_branch=$data_branch
+        #!/usr/bin/env bash
+        cd "$VERIFICATIONS_ROOT_DIR/wrk2_summary" || exit
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/wrk2/summary"
+        terraform apply -compact-warnings -var-file="$VERIFICATION_DATA_ROOT_DIR/wrk2/softbank/$VERIFICATION_TF_VAR_FILE" \
+        -var-file="$ARTIFACTS_ROOT_DIR/collectors/wrk2/collected.json" \
+        -var="token=${sense8_data_access_token}" \
+        -var="ci_project_id=$CI_PROJECT_ID" \
+        -var="introspect_crt_file=$KEYS_DIR/$INTROSPECT_CRT_FILE" \
+        -var="introspect_key_file=$KEYS_DIR/$INTROSPECT_KEY_FILE" -auto-approve
+  timeout: 30m
+  retry:
+    max: 0
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+{% endfor -%}
+
 {% for feature in features %}
 # feature - {{ feature.job }} - destroy
 {{ feature.job }}-destroy:

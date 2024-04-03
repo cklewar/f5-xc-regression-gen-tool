@@ -224,6 +224,7 @@ impl Db {
         let _objs = indradb::util::extract_vertices(q.unwrap());
         let objs = _objs.unwrap();
         let o = objs.get(0).unwrap();
+
         o.clone()
     }
 
@@ -233,11 +234,16 @@ impl Db {
         a.get(0).unwrap().clone()
     }
 
-    pub fn get_object_neighbour_out(&self, id: &Uuid, identifier: EdgeTypes) -> Vertex {
+    pub fn get_object_neighbour_out(&self, id: &Uuid, identifier: EdgeTypes) -> Option<Vertex> {
         let i = Identifier::new(identifier.name().to_string()).unwrap();
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap().t(i));
-        let id = indradb::util::extract_edges(o.unwrap()).unwrap().get(0).unwrap().inbound_id;
-        self.get_object(&id)
+
+        match indradb::util::extract_edges(o.unwrap()).unwrap().get(0) {
+            Some(e) => {
+                Option::from(self.get_object(&e.inbound_id))
+            }
+            _ => None
+        }
     }
 
     pub fn get_object_neighbours_out(&self, id: &Uuid, identifier: EdgeTypes) -> Vec<Vertex> {
