@@ -229,7 +229,7 @@ variables:
       export {{ variable.name | upper }}="{{ variable.value }}"
       {% endfor -%}
       {% endif -%}
-      {% endfor -%}      
+      {% endfor -%}
       export TF_VAR_f5xc_environment="$ENVIRONMENT"
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
@@ -849,7 +849,7 @@ dashboard-deploy:
   <<: *base
   rules:
     - !reference [ .regression_sb_test_test24_rules, rules ]
-  stage: collector-deploy
+  stage: {{ collector.module.stages.deploy[0] }}
   script:
       - |
         {%- for script in collector.scripts %}
