@@ -4,7 +4,7 @@ use serde_json::Value::Null;
 
 pub use ci::Ci;
 pub use collections::{Components, Connections, Features, Providers, Rtes, Sites, Applications,
-                      Collectors};
+                      Collectors, Reports};
 pub use dashboard::Dashboard;
 pub use eut::{Eut, EutExt};
 pub(crate) use macros::implement_object_ext;
@@ -19,6 +19,7 @@ pub use feature::Feature;
 pub use verification::Verification;
 pub use component::{ComponentSource, ComponentDestination};
 pub use collector::Collector;
+pub use report::Report;
 
 use crate::constants::*;
 use crate::RegressionConfig;
@@ -40,6 +41,7 @@ mod application;
 mod collector;
 mod connection;
 mod component;
+mod report;
 
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");
@@ -59,6 +61,9 @@ fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> V
         }
         KEY_PROJECT => {
             file = format!("{}/{}/{}/{}", config.root_path, config.project.path, module, CONFIG_FILE_NAME);
+        }
+        KEY_REPORT => {
+            file = format!("{}/{}/{}/{}", config.root_path, config.reports.path, module, CONFIG_FILE_NAME);
         }
         KEY_COLLECTOR => {
             file = format!("{}/{}/{}/{}", config.root_path, config.collectors.path, module, CONFIG_FILE_NAME);

@@ -4,11 +4,12 @@ use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
 use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_DEPLOY, KEY_DESTROY, KEY_ID_PATH, KEY_NAME};
+use crate::constants::{KEY_APPLICATION, KEY_DEPLOY, KEY_DESTROY, KEY_ID_PATH, KEY_NAME, KEY_REPORT};
 use crate::db::Db;
 use crate::objects::application::ApplicationExt;
 use crate::objects::feature::FeatureExt;
 use crate::objects::collector::CollectorExt;
+use crate::objects::report::{Report, ReportExt};
 
 use super::{Application, Collector, Feature, implement_object_ext};
 use super::object::{Object, ObjectExt};
@@ -44,6 +45,10 @@ pub struct Rtes<'a> {
 }
 
 pub struct Applications<'a> {
+    object: Object<'a>,
+}
+
+pub struct Reports<'a> {
     object: Object<'a>,
 }
 
@@ -386,5 +391,116 @@ impl<'a> Applications<'a> {
     }
 }
 
+impl<'a> Reports<'a> {
+    pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Initialize new reports collection object");
+        let (o, id_path) = db.create_object_and_init(VertexTypes::Reports, &mut path, label, pop);
+        db.add_object_properties(&o, &config.reports, PropertyType::Base);
+
+        Box::new(Applications {
+            object: Object {
+                db,
+                id: o.id,
+                id_path,
+                vertex: o,
+                module_cfg: json!(null),
+            },
+        })
+    }
+
+    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn ReportExt<'a> + 'a)>> {
+        error!("Loading report objects");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasReports).unwrap();
+        let mut reports: Vec<Box<(dyn ReportExt + 'a)>> = Vec::new();
+        let _reports = db.get_object_neighbours_with_properties_out(&o.vertex.id, EdgeTypes::ProvidesReport);
+
+        for report in _reports {
+            reports.push(Report::load(db, &report, config));
+        }
+
+        reports
+    }
+
+    pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Loading report collection object");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasReports).unwrap();
+        let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object()
+            .unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str()
+            .unwrap().to_string()).collect());
+
+        Box::new(Reports {
+            object: Object {
+                db,
+                id: o.vertex.id,
+                id_path,
+                vertex: o.vertex,
+                module_cfg: json!(null),
+            },
+        })
+    }
+
+    pub fn load_report(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn ReportExt<'a> + 'a)>> {
+        error!("Loading specific report object");
+        let applications = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesReport);
+        for app in applications {
+            let a = app.props.get(PropertyType::Module.index()).unwrap().value.as_object()
+                .unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+            if name == a {
+                return Some(Report::load(db, &app, config));
+            }
+        }
+
+        None
+    }
+
+    pub fn gen_deploy_stage(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<String> {
+        error!("Generating report deploy stages");
+        let mut stages: Vec<String> = Vec::new();
+        let reports = Self::load(db, object, config);
+
+        for r in reports {
+            let name = format!("{}-{}-{}",
+                               KEY_REPORT,
+                               r.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                               KEY_DEPLOY
+            ).replace('_', "-");
+            stages.push(name);
+        }
+
+        stages
+    }
+
+    pub fn gen_destroy_stage(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<String> {
+        error!("Generating report destroy stages");
+        let mut stages: Vec<String> = Vec::new();
+        let reports = Self::load(db, object, config);
+
+        for r in reports {
+            let name = format!("{}-{}-{}",
+                               KEY_REPORT,
+                               r.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                               KEY_DESTROY
+            ).replace('_', "-");
+            stages.push(name);
+        }
+
+        stages
+    }
+
+    pub fn gen_render_ctx(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<dyn RenderContext>> {
+        let mut applications_rc: Vec<Box<dyn RenderContext>> = Vec::new();
+        let applications = Self::load(db, object, config);
+
+        for a in applications {
+            let scripts = a.gen_script_render_ctx(config);
+            let application_rc = a.gen_render_ctx(config, scripts.clone());
+            applications_rc.push(application_rc);
+        }
+
+        applications_rc
+    }
+}
+
 implement_object_ext!(Collectors, Components, Connections, Features, Providers, Rtes, Sites,
-    Applications);
+    Applications, Reports);

@@ -30,6 +30,8 @@ pub const KEY_RELEASE: &str = "release";
 pub const KEY_ID_PATH: &str = "id_path";
 pub const KEY_SCRIPTS: &str = "scripts";
 pub const KEY_ACTIONS: &str = "actions";
+pub const KEY_REPORT: &str = "report";
+pub const KEY_REPORTS: &str = "reports";
 pub const KEY_SOURCE: &str = "source";
 pub const KEY_PROJECT: &str = "project";
 pub const KEY_FEATURE: &str = "feature";
@@ -66,7 +68,7 @@ pub const PROPERTY_TYPE_MODULE: &str = "module";
 
 // Key order
 pub const EUT_KEY_ORDER: &[&str] = &["ci", "provider", "sites", "features", "applications",
-    "collectors", "name", "release", "rtes", "scripts", "scripts_path"];
+    "collectors", "reports", "name", "release", "rtes", "scripts", "scripts_path"];
 
 //Objects types
 pub const VERTEX_TYPE_CI: &str = "ci";
@@ -80,6 +82,8 @@ pub const VERTEX_TYPE_SITES: &str = "sites";
 pub const VERTEX_TYPE_SHARE: &str = "share";
 pub const VERTEX_TYPE_SCRIPT: &str = "script";
 pub const VERTEX_TYPE_SCRIPTS: &str = "scripts";
+pub const VERTEX_TYPE_REPORT: &str = "report";
+pub const VERTEX_TYPE_REPORTS: &str = "reports";
 pub const VERTEX_TYPE_PROJECT: &str = "project";
 pub const VERTEX_TYPE_FEATURE: &str = "feature";
 pub const VERTEX_TYPE_FEATURES: &str = "features";
@@ -112,6 +116,7 @@ pub const EDGE_TYPE_HAS_SITE: &str = "has_site";
 pub const EDGE_TYPE_HAS_SITES: &str = "has_sites";
 pub const EDGE_TYPE_NEEDS_SHARE: &str = "needs_share";
 pub const EDGE_TYPE_USES_RTES: &str = "uses_rtes";
+pub const EDGE_TYPE_HAS_REPORTS: &str = "has_reports";
 pub const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
 pub const EDGE_TYPE_REFERS_SITE: &str = "refers_site";
 pub const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
@@ -124,6 +129,7 @@ pub const EDGE_TYPE_HAS_COMPONENTS: &str = "has_components";
 pub const EDGE_TYPE_HAS_CONNECTION: &str = "has_connection";
 pub const EDGE_TYPE_HAS_COLLECTORS: &str = "has_collectors";
 pub const EDGE_TYPE_HAS_CONNECTIONS: &str = "has_connections";
+pub const EDGE_TYPE_PROVIDES_REPORTS: &str = "provides_reports";
 pub const EDGE_TYPE_HAS_APPLICATIONS: &str = "has_applications";
 pub const EDGE_TYPE_SITE_REFERS_RTE: &str = "site_refers_rte";
 pub const EDGE_TYPE_PROVIDES_PROVIDER: &str = "provides_provider";

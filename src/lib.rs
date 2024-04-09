@@ -19,11 +19,10 @@ use uuid::Uuid;
 use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, RteProvider, Rtes, Rte,
               Sites, Site, Dashboard, Application, Applications, Connections, Connection,
               ConnectionSource, ConnectionDestination, Test, Verification, Components,
-              ComponentDestination, Collectors, Collector};
+              ComponentSource, ComponentDestination, Collectors, Collector, Reports, Report};
 
 use crate::constants::*;
 use crate::db::Db;
-use crate::objects::ComponentSource;
 
 pub mod constants;
 pub mod db;
@@ -48,6 +47,8 @@ pub enum VertexTypes {
     Script,
     Project,
     Scripts,
+    Report,
+    Reports,
     Feature,
     Features,
     Providers,
@@ -84,6 +85,7 @@ pub enum EdgeTypes {
     NextStage,
     RefersSite,
     NeedsShare,
+    HasReports,
     HasFeature,
     HasFeatures,
     ProvidesRte,
@@ -96,6 +98,7 @@ pub enum EdgeTypes {
     SiteRefersRte,
     RefersFeature,
     HasConnections,
+    ProvidesReport,
     HasDeployStages,
     HasApplications,
     HasComponentSrc,
@@ -124,6 +127,8 @@ impl VertexTypes {
             VertexTypes::Share => VERTEX_TYPE_SHARE,
             VertexTypes::Script => VERTEX_TYPE_SCRIPT,
             VertexTypes::Scripts => VERTEX_TYPE_SCRIPTS,
+            VertexTypes::Report => VERTEX_TYPE_REPORT,
+            VertexTypes::Reports => VERTEX_TYPE_REPORTS,
             VertexTypes::Project => VERTEX_TYPE_PROJECT,
             VertexTypes::Feature => VERTEX_TYPE_FEATURE,
             VertexTypes::Features => VERTEX_TYPE_FEATURES,
@@ -162,6 +167,8 @@ impl VertexTypes {
             VERTEX_TYPE_SHARE => VertexTypes::Share.name(),
             VERTEX_TYPE_SCRIPT => VertexTypes::Script.name(),
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts.name(),
+            VERTEX_TYPE_REPORT => VertexTypes::Report.name(),
+            VERTEX_TYPE_REPORTS => VertexTypes::Reports.name(),
             VERTEX_TYPE_PROJECT => VertexTypes::Project.name(),
             VERTEX_TYPE_FEATURE => VertexTypes::Feature.name(),
             VERTEX_TYPE_PROVIDERS => VertexTypes::Providers.name(),
@@ -199,6 +206,8 @@ impl VertexTypes {
             VERTEX_TYPE_SHARE => VertexTypes::Share,
             VERTEX_TYPE_SCRIPT => VertexTypes::Script,
             VERTEX_TYPE_SCRIPTS => VertexTypes::Scripts,
+            VERTEX_TYPE_REPORT => VertexTypes::Report,
+            VERTEX_TYPE_REPORTS => VertexTypes::Reports,
             VERTEX_TYPE_PROJECT => VertexTypes::Project,
             VERTEX_TYPE_FEATURE => VertexTypes::Feature,
             VERTEX_TYPE_FEATURES => VertexTypes::Features,
@@ -237,6 +246,7 @@ impl EdgeTypes {
             EdgeTypes::HasSite => EDGE_TYPE_HAS_SITE,
             EdgeTypes::HasSites => EDGE_TYPE_HAS_SITES,
             EdgeTypes::UsesRtes => EDGE_TYPE_USES_RTES,
+            EdgeTypes::HasReports => EDGE_TYPE_HAS_REPORTS,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::RefersSite => EDGE_TYPE_REFERS_SITE,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
@@ -252,6 +262,7 @@ impl EdgeTypes {
             EdgeTypes::HasConnection => EDGE_TYPE_HAS_CONNECTION,
             EdgeTypes::HasCollectors => EDGE_TYPE_HAS_COLLECTORS,
             EdgeTypes::HasConnections => EDGE_TYPE_HAS_CONNECTIONS,
+            EdgeTypes::ProvidesReport => EDGE_TYPE_PROVIDES_REPORTS,
             EdgeTypes::HasComponentSrc => EDGE_TYPE_HAS_COMPONENT_SRC,
             EdgeTypes::HasComponentDst => EDGE_TYPE_HAS_COMPONENT_DST,
             EdgeTypes::HasApplications => EDGE_TYPE_HAS_APPLICATIONS,
@@ -294,6 +305,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::HasProviders.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Collectors.name().to_string()), EdgeTypes::HasCollectors.name());
         map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Applications.name().to_string()), EdgeTypes::HasApplications.name());
+        map.insert(VertexTuple(VertexTypes::Eut.name().to_string(), VertexTypes::Reports.name().to_string()), EdgeTypes::HasReports.name());
         map.insert(VertexTuple(VertexTypes::Rtes.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::ProvidesRte.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Scripts.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Rte.name().to_string(), VertexTypes::Features.name().to_string()), EdgeTypes::Needs.name());
@@ -331,6 +343,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
+        map.insert(VertexTuple(VertexTypes::Reports.name().to_string(), VertexTypes::Report.name().to_string()), EdgeTypes::ProvidesReport.name());
         map.insert(VertexTuple(VertexTypes::Collectors.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ProvidesCollector.name());
         map
     };
@@ -397,6 +410,12 @@ struct RegressionConfigCollectors {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+struct RegressionConfigReports {
+    ci: RegressionConfigGenericCi,
+    path: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 struct RegressionConfigFeatures {
     ci: RegressionConfigGenericCi,
     path: String,
@@ -453,6 +472,7 @@ pub struct RegressionConfig {
     rte: RegressionConfigRte,
     tests: RegressionConfigTests,
     project: RegressionConfigProject,
+    reports: RegressionConfigReports,
     features: RegressionConfigFeatures,
     root_path: String,
     dashboard: RegressionConfigDashboard,
@@ -466,6 +486,7 @@ struct ActionsRenderContext {
     rtes: Vec<String>,
     sites: Vec<String>,
     tests: Vec<String>,
+    reports: Vec<String>,
     features: Vec<String>,
     applications: Vec<String>,
     verifications: Vec<String>,
@@ -476,6 +497,15 @@ struct ProjectRenderContext {
     job: String,
     base: Map<String, Value>,
     module: Map<String, Value>,
+    scripts: Vec<HashMap<String, Vec<String>>>,
+}
+
+#[derive(Serialize, Debug)]
+struct ReportRenderContext {
+    job: String,
+    base: Map<String, Value>,
+    module: Map<String, Value>,
+    project: RegressionConfigProject,
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
@@ -710,6 +740,16 @@ struct ScriptProjectRenderContext {
     release: String,
 }
 
+
+#[derive(Serialize, Debug)]
+struct ScriptReportRenderContext {
+    eut: String,
+    name: String,
+    module: String,
+    project: RegressionConfigProject,
+}
+
+
 #[derive(Serialize, Debug)]
 struct ObjectRefs {
     refs: HashMap<String, Vec<String>>,
@@ -758,6 +798,8 @@ impl ScriptRenderContext for ScriptEutRenderContext {}
 impl ScriptRenderContext for ScriptRteRenderContext {}
 
 impl ScriptRenderContext for ScriptTestRenderContext {}
+
+impl ScriptRenderContext for ScriptReportRenderContext {}
 
 impl ScriptRenderContext for ScriptProjectRenderContext {}
 
@@ -1573,6 +1615,14 @@ impl<'a> Regression<'a> {
                         self.db.create_relationship(&o.get_object(), &c_o.get_object());
                     }
                 }
+                k if k == KEY_REPORTS => {
+                    let o = Reports::init(&self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
+                    self.db.create_relationship(&eut.get_object(), &o.get_object());
+                    for c in obj.as_array().unwrap().iter() {
+                        let c_o = Report::init(&self.db, &self.config, c, &mut o.get_id_path().get_vec(), "", 0);
+                        self.db.create_relationship(&o.get_object(), &c_o.get_object());
+                    }
+                }
                 k if k == KEY_APPLICATIONS => {
                     let o = Applications::init(self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
@@ -1913,7 +1963,10 @@ impl<'a> Regression<'a> {
 
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_collector_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
-        self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+        let verification_stages_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+
+        //Reports Stages Deploy
+        self.add_ci_stages(&mut ci_id_path, &verification_stages_seq.unwrap(), &self.config.reports.ci.stages.deploy, &VertexTypes::StageDeploy);
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
@@ -2016,6 +2069,7 @@ impl<'a> Regression<'a> {
             rtes: vec![],
             sites: vec![],
             tests: vec![],
+            reports: vec![],
             features: vec![],
             applications: vec![],
             verifications: vec![],
@@ -2057,13 +2111,6 @@ impl<'a> Regression<'a> {
 
         //Process collectors
         let collectors_rc: Vec<Box<dyn RenderContext>> = Collectors::gen_render_ctx(self.db, &eut.get_object(), &self.config);
-        /*for _collector in &collectors_rc {
-            let collector: &CollectorRenderContext = match _collector.as_any().downcast_ref::<CollectorRenderContext>() {
-                Some(f) => f,
-                None => panic!("not a CollectorRenderContext!"),
-            };
-            //feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
-        }*/
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasSites);
