@@ -872,6 +872,7 @@ dashboard-deploy:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
+{%- endfor %}
 
 # verification - sb-verification-wrk2-summary - deploy
 sb-verification-wrk2-summary-deploy:
@@ -884,13 +885,12 @@ sb-verification-wrk2-summary-deploy:
         export TF_VAR_data_branch=$data_branch
         #!/usr/bin/env bash
         cd "$VERIFICATIONS_ROOT_DIR/wrk2_summary" || exit
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/wrk2/summary"
-        terraform apply -compact-warnings -var-file="$VERIFICATION_DATA_ROOT_DIR/wrk2/softbank/$VERIFICATION_TF_VAR_FILE" \
+        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/wrk2_summary"
+        terraform apply -compact-warnings -var-file="$VERIFICATION_DATA_ROOT_DIR/wrk2/summary/$VERIFICATION_TF_VAR_FILE" \
         -var-file="$ARTIFACTS_ROOT_DIR/collectors/wrk2/collected.json" \
         -var="token=${sense8_data_access_token}" \
         -var="ci_project_id=$CI_PROJECT_ID" \
-        -var="introspect_crt_file=$KEYS_DIR/$INTROSPECT_CRT_FILE" \
-        -var="introspect_key_file=$KEYS_DIR/$INTROSPECT_KEY_FILE" -auto-approve
+        -auto-approve
   timeout: 30m
   retry:
     max: 0
@@ -898,7 +898,6 @@ sb-verification-wrk2-summary-deploy:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-{% endfor -%}
 
 {% for feature in features %}
 # feature - {{ feature.job }} - destroy
