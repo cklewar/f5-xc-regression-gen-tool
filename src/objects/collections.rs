@@ -397,7 +397,7 @@ impl<'a> Reports<'a> {
         let (o, id_path) = db.create_object_and_init(VertexTypes::Reports, &mut path, label, pop);
         db.add_object_properties(&o, &config.reports, PropertyType::Base);
 
-        Box::new(Applications {
+        Box::new(Reports {
             object: Object {
                 db,
                 id: o.id,
@@ -442,12 +442,12 @@ impl<'a> Reports<'a> {
 
     pub fn load_report(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn ReportExt<'a> + 'a)>> {
         error!("Loading specific report object");
-        let applications = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesReport);
-        for app in applications {
-            let a = app.props.get(PropertyType::Module.index()).unwrap().value.as_object()
+        let reports = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesReport);
+        for report in reports {
+            let a = report.props.get(PropertyType::Module.index()).unwrap().value.as_object()
                 .unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
             if name == a {
-                return Some(Report::load(db, &app, config));
+                return Some(Report::load(db, &report, config));
             }
         }
 
@@ -489,16 +489,16 @@ impl<'a> Reports<'a> {
     }
 
     pub fn gen_render_ctx(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<dyn RenderContext>> {
-        let mut applications_rc: Vec<Box<dyn RenderContext>> = Vec::new();
-        let applications = Self::load(db, object, config);
+        let mut reports_rc: Vec<Box<dyn RenderContext>> = Vec::new();
+        let reports = Self::load(db, object, config);
 
-        for a in applications {
-            let scripts = a.gen_script_render_ctx(config);
-            let application_rc = a.gen_render_ctx(config, scripts.clone());
-            applications_rc.push(application_rc);
+        for r in reports {
+            let scripts = r.gen_script_render_ctx(config);
+            let report_rc = r.gen_render_ctx(config, scripts.clone());
+            reports_rc.push(report_rc);
         }
 
-        applications_rc
+        reports_rc
     }
 }
 

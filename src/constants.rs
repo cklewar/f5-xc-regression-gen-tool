@@ -144,6 +144,7 @@ pub const EDGE_TYPE_PROVIDES_COLLECTOR: &str = "provides_collector";
 pub const EDGE_TYPE_PROVIDES_APPLICATION: &str = "provides_application";
 pub const EDGE_TYPE_TEST_REFERS_COLLECTION: &str = "test_refers_collection";
 pub const EDGE_TYPE_TEST_REFERS_APPLICATION: &str = "test_refers_application";
+pub const EDGE_TYPE_REPORT_REFERS_COLLECTION: &str = "report_refers_collection";
 pub const EDGE_TYPE_APPLICATION_REFERS_FEATURE: &str = "application_refers_feature";
 
 //RTE TYPES

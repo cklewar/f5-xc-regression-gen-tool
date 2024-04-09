@@ -112,6 +112,7 @@ pub enum EdgeTypes {
     ProvidesApplication,
     TestRefersCollector,
     TestRefersApplication,
+    ReportRefersCollection,
 }
 
 impl VertexTypes {
@@ -276,6 +277,7 @@ impl EdgeTypes {
             EdgeTypes::ProvidesApplication => EDGE_TYPE_PROVIDES_APPLICATION,
             EdgeTypes::TestRefersCollector => EDGE_TYPE_TEST_REFERS_COLLECTION,
             EdgeTypes::TestRefersApplication => EDGE_TYPE_TEST_REFERS_APPLICATION,
+            EdgeTypes::ReportRefersCollection => EDGE_TYPE_REPORT_REFERS_COLLECTION,
         }
     }
 }
@@ -344,6 +346,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Reports.name().to_string(), VertexTypes::Report.name().to_string()), EdgeTypes::ProvidesReport.name());
+        map.insert(VertexTuple(VertexTypes::Report.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ReportRefersCollection.name());
         map.insert(VertexTuple(VertexTypes::Collectors.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ProvidesCollector.name());
         map
     };
@@ -413,6 +416,7 @@ struct RegressionConfigCollectors {
 struct RegressionConfigReports {
     ci: RegressionConfigGenericCi,
     path: String,
+    data_vars_path: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -745,7 +749,9 @@ struct ScriptProjectRenderContext {
 struct ScriptReportRenderContext {
     eut: String,
     name: String,
+    data: String,
     module: String,
+    collector: String,
     project: RegressionConfigProject,
 }
 
@@ -1619,8 +1625,30 @@ impl<'a> Regression<'a> {
                     let o = Reports::init(&self.db, &self.config, &mut eut.get_id_path().get_vec(), "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
                     for c in obj.as_array().unwrap().iter() {
-                        let c_o = Report::init(&self.db, &self.config, c, &mut o.get_id_path().get_vec(), "", 0);
+                        let label = c.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                        let c_o = Report::init(&self.db, &self.config, c,
+                                               &mut o.get_id_path().get_vec(), label, 0);
                         self.db.create_relationship(&o.get_object(), &c_o.get_object());
+
+                        for r in c_o.get_base_properties().get(KEY_REFS).unwrap().as_array().unwrap() {
+                            let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
+                            let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+
+                            match v_type {
+                                VertexTypes::Collector => {
+                                    let collectors = Collectors::load(&self.db, &eut.get_object(), &self.config);
+
+                                    for c in collectors {
+                                        if c.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap() == ref_module {
+                                            error!("{:?} == {:?}", c.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap(), ref_module);
+                                            self.db.create_relationship(&c_o.get_object(), &c.get_object());
+                                        }
+                                    }
+
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                 }
                 k if k == KEY_APPLICATIONS => {
@@ -2027,6 +2055,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_TESTS, &cfg.tests);
         context.insert(KEY_PROJECT, &cfg.project);
         context.insert(KEY_FEATURES, &cfg.features);
+        context.insert(KEY_REPORTS, &cfg.reports);
         context.insert(KEY_DASHBOARD, &cfg.dashboard);
         context.insert(KEY_COLLECTORS, &cfg.collectors);
         context.insert(KEY_APPLICATIONS, &cfg.applications);
@@ -2111,6 +2140,9 @@ impl<'a> Regression<'a> {
 
         //Process collectors
         let collectors_rc: Vec<Box<dyn RenderContext>> = Collectors::gen_render_ctx(self.db, &eut.get_object(), &self.config);
+
+        //Process reports
+        let reports_rc: Vec<Box<dyn RenderContext>> = Reports::gen_render_ctx(self.db, &eut.get_object(), &self.config);
 
         //Get EUT sites
         let _sites = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::HasSites);
@@ -2315,10 +2347,10 @@ impl<'a> Regression<'a> {
 
         let eut_rc = EutRenderContext {
             base: eut_p_base.clone(),
+            sites: eut_sites,
             module: eut_p_module.clone(),
             provider: eut_provider_p_base.clone(),
             project: self.config.project.clone(),
-            sites: eut_sites,
         };
 
         let mut stages: Vec<String> = Vec::new();
@@ -2341,6 +2373,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_RTES, &rtes_rc);
         context.insert(KEY_CONFIG, &self.config);
         context.insert(KEY_STAGES, &stages);
+        context.insert(KEY_REPORTS, &reports_rc);
         context.insert(KEY_ACTIONS, &actions);
         context.insert(KEY_PROJECT, &project_rc);
         context.insert(KEY_FEATURES, &features_rc);

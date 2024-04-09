@@ -12,6 +12,8 @@ curl --request POST \
      --form token="TOKEN" \
      --form ref=main \
      --form "variables[URL]=URL" \
+     --form "variables[f5xc_k8s_infra_cluster_api_token]=TOKEN" \
+     --form "variables[f5xc_k8s_infra_cluster_api_url]=https://playground.console.ves.volterra.io/api" \
      --form "variables[ACTION]=deploy-{{ site }}" \
      "https://gitlab.com/api/v4/projects/46168301/trigger/pipeline"
 ```
@@ -21,6 +23,8 @@ curl --request POST \
      --form token="TOKEN" \
      --form ref=main \
      --form "variables[URL]=URL" \
+     --form "variables[f5xc_k8s_infra_cluster_api_token]=TOKEN" \
+     --form "variables[f5xc_k8s_infra_cluster_api_url]=https://playground.console.ves.volterra.io/api" \
      --form "variables[ACTION]=destroy-{{ site }}" \
      "https://gitlab.com/api/v4/projects/46168301/trigger/pipeline"
 ```

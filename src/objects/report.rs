@@ -5,14 +5,14 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
+use crate::{EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
             ReportRenderContext, ScriptReportRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_SCRIPT,
-                       KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REPORT,
+                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{implement_object_ext, load_object_config};
+use super::{Collector, implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -78,7 +78,9 @@ impl RenderContext for Report<'_> {
 impl Renderer<'_> for Report<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
         Box::new(ReportRenderContext {
-            job: format!("{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
+            job: format!("{}_{}_{}_{}", config.project.module, KEY_REPORT,
+                         self.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap().replace('_', "-"),
+                         self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             base: self.get_base_properties(),
             module: self.get_module_properties(),
             project: config.project.clone(),
@@ -90,8 +92,12 @@ impl Renderer<'_> for Report<'_> {
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
         let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
         let name = self.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+        let data = self.get_base_properties().get(KEY_DATA).unwrap().as_str().unwrap().to_string();
         let m_props: Map<String, Value> = self.get_module_properties();
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        let _collector = self.object.db.get_object_neighbour_with_properties_out(&self.get_id(), EdgeTypes::ReportRefersCollection).unwrap();
+        let collector = Collector::load(&self.object.db, &_collector, &config);
+        let collector_module = collector.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.reports.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
@@ -99,8 +105,10 @@ impl Renderer<'_> for Report<'_> {
             let ctx = ScriptReportRenderContext {
                 eut: config.eut.module.to_string(),
                 name: name.to_string(),
+                data: data.to_string(),
                 module: module.to_string(),
                 project: config.project.clone(),
+                collector: collector_module.to_string(),
             };
 
             let mut commands: Vec<String> = Vec::new();

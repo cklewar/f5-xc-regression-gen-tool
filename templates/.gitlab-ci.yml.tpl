@@ -196,6 +196,12 @@ variables:
   rules:
     - if: $ACTION == "destroy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% for report in reports %}
+.regression_{{ report.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "deploy-{{ report.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ report.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor %}
 .base: &base
   tags:
@@ -312,6 +318,9 @@ project-artifacts:
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- endfor %}
+    {%- endfor -%}
+    {%- for report in reports %}
+    - !reference [ .regression_{{ report.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
   script:
       - |
@@ -752,6 +761,9 @@ dashboard-deploy:
     {%- for verification in test.verifications %}
     - !reference [ .regression_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
+    {%- for report in reports %}
+    - !reference [ .regression_{{ report.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
   stage: regression-test-artifacts
   script:
       - |
@@ -848,7 +860,9 @@ dashboard-deploy:
 {{ collector.job }}-deploy:
   <<: *base
   rules:
-    - !reference [ .regression_sb_test_test24_rules, rules ]
+    {%- for report in reports %}
+    - !reference [ .regression_{{ report.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
   stage: {{ collector.module.stages.deploy[0] }}
   script:
       - |
@@ -872,32 +886,40 @@ dashboard-deploy:
       - script_failure
       - stuck_or_timeout_failure
       - runner_system_failure
-{%- endfor %}
+{% endfor -%}
 
-# verification - sb-verification-wrk2-summary - deploy
-sb-verification-wrk2-summary-deploy:
+{% for report in reports %}
+# report - {{ report.job }} - deploy
+{{ report.job }}-deploy:
   <<: *base
   rules:
-    - !reference [ .regression_sb_test_test24_rules, rules ]
-  stage: regression-test-verify
+    {%- for report in reports %}
+    - !reference [ .regression_{{ report.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+  stage: report-deploy
   script:
-      - |
-        export TF_VAR_data_branch=$data_branch
-        #!/usr/bin/env bash
-        cd "$VERIFICATIONS_ROOT_DIR/wrk2_summary" || exit
-        terraform init --backend-config="key=$S3_VERIFICATIONS_ROOT/wrk2_summary"
-        terraform apply -compact-warnings -var-file="$VERIFICATION_DATA_ROOT_DIR/wrk2/summary/$VERIFICATION_TF_VAR_FILE" \
-        -var-file="$ARTIFACTS_ROOT_DIR/collectors/wrk2/collected.json" \
-        -var="token=${sense8_data_access_token}" \
-        -var="ci_project_id=$CI_PROJECT_ID" \
-        -auto-approve
-  timeout: 30m
+        - |
+          {%- for script in report.scripts %}
+          {%- for k, v in script %}
+          {%- if k == "apply" %}
+          {%- for command in v %}
+          {{ command }}
+          {%- endfor %}
+          {%- endif %}
+          {%- endfor %}
+          {%- endfor %}
+  artifacts:
+    paths:
+      - $ARTIFACTS_ROOT_DIR/
+    expire_in: {{ config.ci.artifacts.expire_in }}
+  timeout: {{ report.module.ci.timeout }}
   retry:
-    max: 0
-    when:
-      - script_failure
-      - stuck_or_timeout_failure
-      - runner_system_failure
+      max: 0
+      when:
+        - script_failure
+        - stuck_or_timeout_failure
+        - runner_system_failure
+{% endfor -%}
 
 {% for feature in features %}
 # feature - {{ feature.job }} - destroy
