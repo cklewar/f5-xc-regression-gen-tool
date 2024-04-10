@@ -29,7 +29,8 @@ impl<'a> Test<'a> {
         error!("Initialize new test object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Test, &mut path, label, pop);
         db.add_object_properties(&o, base_cfg, PropertyType::Base);
-        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), label, &config);
+        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o),
+                                            base_cfg.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &config);
         db.add_object_properties(&o, &module_cfg, PropertyType::Module);
 
         Box::new(Test {

@@ -98,39 +98,35 @@ impl Renderer<'_> for Collector<'_> {
         let mut collectibles: Vec<HashMap<String, String>> = vec![];
 
         for e in self.object.db.get_object_edges(&self.get_id()) {
-            if KEY_REFERS_COLLECTION == e.t.as_str().split_once("_").unwrap().1 {
-                match e.t.as_str() {
-                    EDGE_TYPE_TEST_REFERS_COLLECTION => {
-                        let tests = self.object.db.get_object_neighbours_in(&self.object.id, EdgeTypes::TestRefersCollector);
-                        for t in tests {
-                            let t_o = Test::load(&self.object.db, &t.id, &config);
-                            let t_o_p_base = t_o.get_base_properties();
-                            let test_name = t_o_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
-                            let test_module = t_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
-                            let conn_src = self.object.db.get_object_neighbour_out_by_v_type(&t.id, EdgeTypes::Runs, VertexTypes::ConnectionSrc);
-                            let component_src = self.object.db.get_object_neighbour_out(&conn_src.unwrap().id, EdgeTypes::HasComponentSrc);
-                            let components = self.object.db.get_object_neighbour_out_by_v_type(&component_src.unwrap().id, EdgeTypes::HasComponentSrc, VertexTypes::Components);
-                            let provider = self.object.db.get_object_neighbour_out_by_v_type(&components.unwrap().id, EdgeTypes::HasComponents, VertexTypes::RteProvider);
-                            let rte_p_o = RteProvider::load(&self.object.db, &provider.unwrap(), &config);
-                            let rte_p_o_p_base = rte_p_o.get_base_properties();
-                            let rte_provider = rte_p_o_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
-                            let providers = self.object.db.get_object_neighbour_out_by_v_type(&rte_p_o.get_id(), EdgeTypes::ProvidesProvider, VertexTypes::Providers);
-                            let rte = self.object.db.get_object_neighbour_out_by_v_type(&providers.unwrap().id, EdgeTypes::NeedsProvider, VertexTypes::Rte);
-                            let rte_o = Rte::load(&self.object.db, &rte.unwrap().id, &config);
-                            let rte_o_p_base = rte_o.get_base_properties();
-                            let rte_module = rte_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
-                            let collectible: HashMap<String, String> = HashMap::from([
-                                ("rte".to_string(), rte_module.to_string()),
-                                ("provider".to_string(), rte_provider.to_string()),
-                                ("name".to_string(), test_name.to_string()),
-                                ("module".to_string(), test_module.to_string())
-                            ]);
-                            collectibles.push(collectible);
-                        }
-                    }
-                    _ => {}
-                };
-            }
+            match e.t.as_str() {
+                EDGE_TYPE_TEST_REFERS_COLLECTION => {
+                    let t_o = Test::load(&self.object.db, &self.object.db.get_object(&e.outbound_id).id, &config);
+                    let t_o_p_base = t_o.get_base_properties();
+                    let test_name = t_o_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                    let test_module = t_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let conn_src = self.object.db.get_object_neighbour_out_by_v_type(&t_o.get_id(), EdgeTypes::Runs, VertexTypes::ConnectionSrc);
+                    let component_src = self.object.db.get_object_neighbour_out(&conn_src.unwrap().id, EdgeTypes::HasComponentSrc);
+                    let components = self.object.db.get_object_neighbour_out_by_v_type(&component_src.unwrap().id, EdgeTypes::HasComponentSrc, VertexTypes::Components);
+                    let provider = self.object.db.get_object_neighbour_out_by_v_type(&components.unwrap().id, EdgeTypes::HasComponents, VertexTypes::RteProvider);
+                    let rte_p_o = RteProvider::load(&self.object.db, &provider.unwrap(), &config);
+                    let rte_p_o_p_base = rte_p_o.get_base_properties();
+                    let rte_provider = rte_p_o_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
+                    let providers = self.object.db.get_object_neighbour_out_by_v_type(&rte_p_o.get_id(), EdgeTypes::ProvidesProvider, VertexTypes::Providers);
+                    let rte = self.object.db.get_object_neighbour_out_by_v_type(&providers.unwrap().id, EdgeTypes::NeedsProvider, VertexTypes::Rte);
+                    let rte_o = Rte::load(&self.object.db, &rte.unwrap().id, &config);
+                    let rte_o_p_base = rte_o.get_base_properties();
+                    let rte_module = rte_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
+                    let collectible: HashMap<String, String> = HashMap::from([
+                        ("rte".to_string(), rte_module.to_string()),
+                        ("provider".to_string(), rte_provider.to_string()),
+                        ("name".to_string(), test_name.to_string()),
+                        ("module".to_string(), test_module.to_string())
+                    ]);
+                    collectibles.push(collectible);
+                }
+                _ => {}
+            };
+            //}
         }
 
         for script in props_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {

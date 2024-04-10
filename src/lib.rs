@@ -1788,10 +1788,9 @@ impl<'a> Regression<'a> {
                                                 1 => _index = index + 1,
                                                 _ => _index = index
                                             }
-
                                             let t_o = Test::init(&self.db, &self.config,
                                                                  &test, &mut c_o.get_id_path().get_vec(),
-                                                                 test[KEY_MODULE].as_str().unwrap(),
+                                                                 test[KEY_NAME].as_str().unwrap(),
                                                                  _index);
                                             self.db.create_relationship(&src_o.get_object(), &t_o.get_object());
 
@@ -2381,7 +2380,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_COLLECTORS, &collectors_rc);
         context.insert(KEY_APPLICATIONS, &applications_rc);
 
-        //error!("{:#?}", context.get(KEY_STAGES));
+        //error!("{:#?}", context.get(KEY_FEATURES));
         info!("Build render context -> Done.");
         context
     }
