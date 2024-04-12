@@ -1640,7 +1640,6 @@ impl<'a> Regression<'a> {
 
                                     for c in collectors {
                                         if c.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap() == ref_module {
-                                            error!("{:?} == {:?}", c.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap(), ref_module);
                                             self.db.create_relationship(&c_o.get_object(), &c.get_object());
                                         }
                                     }

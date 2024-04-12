@@ -7,7 +7,9 @@ use uuid::Uuid;
 
 use crate::{CollectorRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script,
             RenderContext, Renderer, ScriptCollectorRenderContext};
-use crate::constants::{EDGE_TYPE_TEST_REFERS_COLLECTION, KEY_COLLECTOR, KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REFERS_COLLECTION, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{EDGE_TYPE_TEST_REFERS_COLLECTION, KEY_COLLECTOR, KEY_DATA, KEY_FILE,
+                       KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH,
+};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
