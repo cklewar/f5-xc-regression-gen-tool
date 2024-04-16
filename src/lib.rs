@@ -466,7 +466,6 @@ struct RegressionConfigProject {
     ci: RegressionConfigGenericCi,
     path: String,
     module: String,
-    templates: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -1505,14 +1504,16 @@ pub struct Regression<'a> {
     db: &'a Db,
     pub config: RegressionConfig,
     pub root_path: String,
+    pub template: String,
 }
 
 impl<'a> Regression<'a> {
-    pub fn new(db: &'a Db, path: &str, file: &str) -> Self {
+    pub fn new(db: &'a Db, path: &str, file: &str, template: &str) -> Self {
         Regression {
             db,
             config: Regression::load_regression_config(path, file),
             root_path: path.to_string(),
+            template: String::from(template),
         }
     }
 
@@ -1643,7 +1644,6 @@ impl<'a> Regression<'a> {
                                             self.db.create_relationship(&c_o.get_object(), &c.get_object());
                                         }
                                     }
-
                                 }
                                 _ => {}
                             }
@@ -2393,7 +2393,8 @@ impl<'a> Regression<'a> {
 
     pub fn render(&self, context: &Context) -> String {
         info!("Render regression pipeline file first step...");
-        let mut _tera = Tera::new(&self.config.project.templates).unwrap();
+        info!("Render first step template file {}", self.template);
+        let mut _tera = Tera::new(&self.template).unwrap();
         let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, context).unwrap();
         info!("Render regression pipeline file first step -> Done.");
         rendered
@@ -2510,19 +2511,19 @@ impl<'a> Regression<'a> {
             None => {}
         }
 
-        let mut _tera = Tera::new(&self.config.project.templates).unwrap();
+        let mut _tera = Tera::new(&self.template).unwrap();
         _tera.render("graph.tpl", &context).unwrap()
     }
 
     pub fn render_entry_page(&self, context: &Context) -> Result<String, Box<dyn Error>> {
         error!("Render entry page..");
-        let mut _tera = Tera::new(&self.config.project.templates).unwrap();
+        let mut _tera = Tera::new(&self.template).unwrap();
         Ok(_tera.render("entry.tpl", context).unwrap())
     }
 
     pub fn render_actions_json_file(&self, context: &Context) -> Result<String, Box<dyn Error>> {
         error!("Render actions json file..");
-        let mut _tera = Tera::new(&self.config.project.templates).unwrap();
+        let mut _tera = Tera::new(&self.template).unwrap();
         Ok(_tera.render("actions.tpl", context).unwrap())
     }
 }

@@ -21,6 +21,9 @@ struct Cli {
     root_path: String,
     #[arg(long)]
     config_file: String,
+    /// Regression CI template file
+    #[arg(long)]
+    template: String,
     /// Write CI pipeline file
     #[arg(long)]
     write_ci: bool,
@@ -47,7 +50,7 @@ fn main() {
     env_logger::init();
     let cli = Cli::parse();
     let db = sense8_ci_generator::db::Db::new();
-    let r = sense8_ci_generator::Regression::new(&db, &cli.root_path, &cli.config_file);
+    let r = sense8_ci_generator::Regression::new(&db, &cli.root_path, &cli.config_file, &cli.template);
     let p = r.init();
 
     let ctx = r.build_context(p);
