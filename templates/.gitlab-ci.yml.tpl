@@ -299,7 +299,7 @@ project-artifacts:
     - !reference [ .destroy_eut_rules, rules ]
     - !reference [ .regression_sequential_test_rules, rules ]
     - !reference [ .regression_test_seq_and_verification_rules, rules ]
-    {% for site in eut.sites -%}
+    {%- for site in eut.sites %}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}

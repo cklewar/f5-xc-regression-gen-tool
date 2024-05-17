@@ -2216,7 +2216,8 @@ impl<'a> Regression<'a> {
 
                         for script in share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                             let path = format!("{}/{}/{}/{}/{}/{}/{}", self.config.root_path, self.config.rte.path, rte_name, scripts_path, p_name, KEY_SHARE, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                            let contents = std::fs::read_to_string(path).expect("panic while opening feature script file");
+                            error!("PATH: {:?}", &path);
+                            let contents = std::fs::read_to_string(path).expect("panic while opening shared script file");
                             let ctx = ScriptRteProviderShareRenderContext {
                                 rte: rte_name.to_string(),
                                 eut: eut_name.to_string(),
@@ -2309,6 +2310,7 @@ impl<'a> Regression<'a> {
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
             for script in eut_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
                 let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                error!("EUT SITE SCRIPTS: {:?}", &path);
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let ctx = ScriptEutRenderContext {
                     project: self.config.project.clone(),
