@@ -7,8 +7,7 @@ use uuid::Uuid;
 
 use crate::{ApplicationRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
             Renderer, ScriptApplicationRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE,
-                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -79,6 +78,9 @@ impl RenderContext for Application<'_> {
 
 impl Renderer<'_> for Application<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
+
+        error!("BASE: {:?}", self.get_base_properties());
+
         Box::new(ApplicationRenderContext {
             job: format!("{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             base: self.get_base_properties(),
@@ -92,6 +94,7 @@ impl Renderer<'_> for Application<'_> {
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
         let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
         let m_props: Map<String, Value> = self.get_module_properties();
+        let base_props: Map<String, Value> = self.get_base_properties();
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -101,6 +104,7 @@ impl Renderer<'_> for Application<'_> {
                 eut: config.eut.module.to_string(),
                 name: module.to_string(),
                 release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
+                provider: base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),
                 project: config.project.clone(),
             };
 

@@ -519,6 +519,7 @@ struct ApplicationRenderContext {
     module: Map<String, Value>,
     project: RegressionConfigProject,
     scripts: Vec<HashMap<String, Vec<String>>>,
+    //provider: String,
 }
 
 #[derive(Default, Serialize, Debug)]
@@ -666,6 +667,7 @@ struct ScriptApplicationRenderContext {
     eut: String,
     name: String,
     release: String,
+    provider: String,
     project: RegressionConfigProject,
 }
 
@@ -719,7 +721,7 @@ struct ScriptRteSitesShareDataRenderContext {
     sites: HashMap<String, ScriptRteSiteShareDataRenderContext>,
 }
 
-#[derive(Serialize, Debug)]
+/*#[derive(Serialize, Debug)]
 struct ScriptRteProviderShareRenderContext {
     eut: String,
     rte: String,
@@ -728,7 +730,7 @@ struct ScriptRteProviderShareRenderContext {
     counter: usize,
     project: RegressionConfigProject,
     provider: String,
-}
+}*/
 
 #[derive(Serialize, Debug)]
 struct ScriptDashboardRenderContext {
@@ -818,7 +820,7 @@ impl ScriptRenderContext for ScriptApplicationRenderContext {}
 
 impl ScriptRenderContext for ScriptVerificationRenderContext {}
 
-impl ScriptRenderContext for ScriptRteProviderShareRenderContext {}
+//impl ScriptRenderContext for ScriptRteProviderShareRenderContext {}
 
 pub fn render_script(context: &(impl ScriptRenderContext + serde::Serialize), input: &str) -> String {
     info!("Render script context...");
@@ -1316,6 +1318,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             for p in params.provider.iter() {
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
                 let p_name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                // ce_performance_rte_client_lb_aws_aws
                 let rte_job_name = format!("{}_{}_{}_{}_{}", params.project.module, KEY_RTE, params.rte_name, &p_name, &conn_name).replace('_', "-");
 
                 for script in comp_src.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
@@ -2210,7 +2213,7 @@ impl<'a> Regression<'a> {
                     );
 
                     //Process provider share scripts render context
-                    if let Some(share_p) = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare) {
+                    /*if let Some(share_p) = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::NeedsShare) {
                         let scripts_path = share_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
@@ -2247,7 +2250,7 @@ impl<'a> Regression<'a> {
                             provider: p_name.to_string(),
                             scripts,
                         });
-                    }
+                    }*/
                 }
             }
 
