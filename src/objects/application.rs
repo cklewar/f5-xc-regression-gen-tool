@@ -5,13 +5,12 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ApplicationRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
-            Renderer, ScriptApplicationRenderContext};
+use crate::{ApplicationRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptApplicationRenderContext};
 use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{implement_object_ext, load_object_config};
+use super::{implement_object_ext, load_object_config, Rte};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -103,12 +102,22 @@ impl Renderer<'_> for Application<'_> {
         let m_props: Map<String, Value> = self.get_module_properties();
         let base_props: Map<String, Value> = self.get_base_properties();
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        let rte_p = self.object.db.get_object_neighbour_with_properties_out(&self.get_id(), EdgeTypes::RefersRte).unwrap();
+        let rte = Rte::load(&self.object.db, &rte_p, &config);
+        let rte_p_base = &rte.get_base_properties();
+
+        error!("#########################################################");
+        error!("IN_QUERY: {:?}", self.object.db.get_object_neighbour_in(&self.get_id(), EdgeTypes::RefersRte, VertexTypes::Rte));
+        error!("OUT_QUERY: {:?}", self.object.db.get_object_neighbour_out(&self.get_id(), EdgeTypes::RefersRte));
+        error!("RTE: {:?}", &rte.get_base_properties());
+        error!("#########################################################");
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.applications.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening application script file");
             let ctx = ScriptApplicationRenderContext {
                 eut: config.eut.module.to_string(),
+                rte: rte_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                 name: module.to_string(),
                 release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 provider: base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),

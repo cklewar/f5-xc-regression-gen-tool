@@ -260,7 +260,7 @@ impl EdgeTypes {
             EdgeTypes::UsesProvider => EDGE_TYPE_USES_PROVIDER,
             EdgeTypes::NeedsProvider => EDGE_TYPE_NEEDS_PROVIDER,
             EdgeTypes::HasComponents => EDGE_TYPE_HAS_COMPONENTS,
-            EdgeTypes::RefersFeature => EDGE_TYPE_REFERS_RTE,
+            EdgeTypes::RefersFeature => EDGE_TYPE_REFERS_FEATURE,
             EdgeTypes::SiteRefersRte => EDGE_TYPE_APPLICATION_REFERS_FEATURE,
             EdgeTypes::HasConnection => EDGE_TYPE_HAS_CONNECTION,
             EdgeTypes::HasCollectors => EDGE_TYPE_HAS_COLLECTORS,
@@ -667,6 +667,7 @@ struct ScriptFeatureRenderContext {
 #[derive(Serialize, Debug)]
 struct ScriptApplicationRenderContext {
     eut: String,
+    rte: String,
     name: String,
     release: String,
     provider: String,
@@ -763,6 +764,7 @@ struct ScriptReportRenderContext {
 }*/
 
 //Struct used to return Vec of Values and obj id. To be used later to create object references
+#[derive(Debug)]
 pub struct ObjRefs {
     refs: Vec<Value>, // vec of refs for specific type
     id: Uuid, // obj to build rel with
@@ -1909,8 +1911,8 @@ impl<'a> Regression<'a> {
                         let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_module, &self.config);
 
                         match rte {
-                            Some(a) => {
-                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            Some(r) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &r.get_object());
                             }
                             None => error!("no rte object found")
                         }
@@ -2354,7 +2356,6 @@ impl<'a> Regression<'a> {
             let scripts_path = eut_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
             for script in eut_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-
                 let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let ctx = ScriptEutRenderContext {

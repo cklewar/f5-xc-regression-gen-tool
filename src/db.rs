@@ -201,7 +201,7 @@ impl Db {
 
     fn get_relationship_type(&self, a: &Vertex, b: &Vertex) -> &str {
         info!("Get relationship type for <{}> and <{}>...", a.t.as_str(), b.t.as_str());
-        //error!("RELA -----> {:?}, {:?}", a.t, b.t);
+        // error!("RELA -----> {:?}, {:?}", a.t, b.t);
         let e = EDGE_TYPES.get(&VertexTuple(a.t.to_string(), b.t.to_string())).unwrap();
         info!("Get relationship type for <{}> and <{}> -> Done.", a.t.as_str(), b.t.as_str());
         e
@@ -288,6 +288,10 @@ impl Db {
         let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e));
 
+        /*error!("E: {:?}", self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap()));
+        error!("V: {:?}", v);
+        error!("O: {:?}", o);*/
+
         for item in indradb::util::extract_edges(o.unwrap()).unwrap() {
             if self.get_object(&item.inbound_id).t.as_str() == v.as_str() {
                 return Some(self.get_object(&item.inbound_id));
@@ -307,7 +311,12 @@ impl Db {
         let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e));
 
+        /*error!("E: {:?}", self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap()));
+        error!("V: {:?}", v);
+        error!("O: {:?}", o);*/
+
         for item in indradb::util::extract_edges(o.unwrap()).unwrap() {
+            //error!("item: {:?}", item);
             if self.get_object(&item.outbound_id).t.as_str() == v.as_str() {
                 return Some(self.get_object(&item.outbound_id));
             }

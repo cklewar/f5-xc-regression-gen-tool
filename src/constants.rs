@@ -125,6 +125,7 @@ pub const EDGE_TYPE_HAS_FEATURES: &str = "has_features";
 pub const EDGE_TYPE_PROVIDES_RTE: &str = "provides_rte";
 pub const EDGE_TYPE_HAS_PROVIDERS: &str = "has_providers";
 pub const EDGE_TYPE_USES_PROVIDER: &str = "uses_provider";
+pub const EDGE_TYPE_REFERS_FEATURE: &str = "refers_feature";
 pub const EDGE_TYPE_NEEDS_PROVIDER: &str = "needs_provider";
 pub const EDGE_TYPE_HAS_COMPONENTS: &str = "has_components";
 pub const EDGE_TYPE_HAS_CONNECTION: &str = "has_connection";
