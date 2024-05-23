@@ -288,10 +288,6 @@ impl Db {
         let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e));
 
-        /*error!("E: {:?}", self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap()));
-        error!("V: {:?}", v);
-        error!("O: {:?}", o);*/
-
         for item in indradb::util::extract_edges(o.unwrap()).unwrap() {
             if self.get_object(&item.inbound_id).t.as_str() == v.as_str() {
                 return Some(self.get_object(&item.inbound_id));
@@ -311,12 +307,7 @@ impl Db {
         let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e));
 
-        /*error!("E: {:?}", self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap()));
-        error!("V: {:?}", v);
-        error!("O: {:?}", o);*/
-
         for item in indradb::util::extract_edges(o.unwrap()).unwrap() {
-            //error!("item: {:?}", item);
             if self.get_object(&item.outbound_id).t.as_str() == v.as_str() {
                 return Some(self.get_object(&item.outbound_id));
             }
