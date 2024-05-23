@@ -106,12 +106,6 @@ impl Renderer<'_> for Application<'_> {
         let rte = Rte::load(&self.object.db, &rte_p, &config);
         let rte_p_base = &rte.get_base_properties();
 
-        error!("#########################################################");
-        error!("IN_QUERY: {:?}", self.object.db.get_object_neighbour_in(&self.get_id(), EdgeTypes::RefersRte, VertexTypes::Rte));
-        error!("OUT_QUERY: {:?}", self.object.db.get_object_neighbour_out(&self.get_id(), EdgeTypes::RefersRte));
-        error!("RTE: {:?}", &rte.get_base_properties());
-        error!("#########################################################");
-
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.applications.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening application script file");
