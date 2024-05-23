@@ -78,11 +78,18 @@ impl RenderContext for Application<'_> {
 
 impl Renderer<'_> for Application<'_> {
     fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
+        let job: String;
+        let base_p = self.get_base_properties();
+        let p = base_p.get(KEY_PROVIDER).unwrap().as_str().unwrap();
 
-        error!("BASE: {:?}", self.get_base_properties());
+        if p.len() > 0 {
+            job = format!("{}_{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap(), p).replace('_', "-")
+        } else {
+            job = format!("{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-")
+        }
 
         Box::new(ApplicationRenderContext {
-            job: format!("{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
+            job,
             base: self.get_base_properties(),
             module: self.get_module_properties(),
             project: config.project.clone(),

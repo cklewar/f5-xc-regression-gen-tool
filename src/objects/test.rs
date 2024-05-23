@@ -5,7 +5,7 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ObjectRefs, PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
+use crate::{ObjectRefsMap, PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
             RteTestRenderContext, ScriptTestRenderContext};
 use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_SCRIPT, KEY_SCRIPTS,
                        KEY_SCRIPTS_PATH, KEY_TEST};
@@ -112,7 +112,7 @@ impl Renderer<'_> for Test<'_> {
                 provider: "".to_string(),
                 features: vec![],
                 module: module.clone(),
-                refs: ObjectRefs { refs: Default::default() },
+                refs: ObjectRefsMap { refs: Default::default() },
             };
 
             let mut commands: Vec<String> = Vec::new();

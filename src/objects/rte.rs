@@ -5,10 +5,10 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ApplicationRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
-            Renderer, RteRenderContext, ScriptRteRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE,
-                       KEY_RTE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
+            RteRenderContext, ScriptRteRenderContext};
+use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_RELEASE, KEY_SCRIPT,
+                       KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -43,23 +43,28 @@ impl<'a> Rte<'a> {
         })
     }
 
-    pub fn load(db: &'a Db, id: &Uuid, config: &RegressionConfig) -> Box<(dyn RteExt<'a> + 'a)> {
+    pub fn load(db: &'a Db, object: &VertexProperties, config: &RegressionConfig) -> Box<(dyn RteExt<'a> + 'a)> {
         error!("Loading rte object");
-        let o = db.get_object_with_properties(&id);
+        let arr = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
+        let module = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
+
+        /*let o = db.get_object_with_properties(&id);
         let p_base = o.props.get(PropertyType::Base.index()).unwrap();
         let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
         let module = p_base.value.get(KEY_MODULE).unwrap().as_str().unwrap();
-        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o.vertex), module, &config);
+        let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o.vertex), module, &config);*/
 
         Box::new(Rte {
             object: Object {
                 db,
-                id: o.vertex.id,
+                id: object.vertex.id,
                 id_path,
-                vertex: o.vertex.clone(),
+                vertex: object.vertex.clone(),
                 module_cfg,
-            },
+            }
         })
     }
 }
@@ -77,14 +82,19 @@ impl RenderContext for Rte<'_> {
 }
 
 impl Renderer<'_> for Rte<'_> {
-    fn gen_render_ctx(&self, config: &RegressionConfig, scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
-        Box::new(ApplicationRenderContext {
-            job: format!("{}_{}_{}", config.project.module, KEY_RTE, self.get_module_properties()
+    fn gen_render_ctx(&self, _config: &RegressionConfig, _scripts: Vec<HashMap<String, Vec<String>>>) -> Box<dyn RenderContext> {
+        Box::new(RteRenderContext {
+            ci: Default::default(),
+            name: "".to_string(),
+            tests: vec![],
+            shares: vec![],
+            /*job: format!("{}_{}_{}", config.project.module, KEY_RTE, self.get_module_properties()
                 .get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             base: self.get_base_properties(),
             module: self.get_module_properties(),
             project: config.project.clone(),
-            scripts: scripts.clone(),
+            scripts: scripts.clone(),*/
+            components: vec![],
         })
     }
 
@@ -101,10 +111,10 @@ impl Renderer<'_> for Rte<'_> {
             let ctx = ScriptRteRenderContext {
                 eut: config.eut.module.to_string(),
                 rte: "".to_string(),
+                site: "".to_string(),
                 release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 project: config.project.clone(),
                 provider: "".to_string(),
-                site: "".to_string(),
                 destinations: "".to_string(),
             };
 

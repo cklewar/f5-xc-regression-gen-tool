@@ -115,7 +115,8 @@ impl Renderer<'_> for Collector<'_> {
                     let rte_provider = rte_p_o_p_base.get(KEY_NAME).unwrap().as_str().unwrap();
                     let providers = self.object.db.get_object_neighbour_out_by_v_type(&rte_p_o.get_id(), EdgeTypes::ProvidesProvider, VertexTypes::Providers);
                     let rte = self.object.db.get_object_neighbour_out_by_v_type(&providers.unwrap().id, EdgeTypes::NeedsProvider, VertexTypes::Rte);
-                    let rte_o = Rte::load(&self.object.db, &rte.unwrap().id, &config);
+                    let rte_p = self.object.db.get_object_properties(&rte.unwrap());
+                    let rte_o = Rte::load(&self.object.db, &rte_p.unwrap(), &config);
                     let rte_o_p_base = rte_o.get_base_properties();
                     let rte_module = rte_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
                     let collectible: HashMap<String, String> = HashMap::from([

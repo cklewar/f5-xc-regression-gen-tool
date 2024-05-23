@@ -51,8 +51,8 @@ fn main() {
     let cli = Cli::parse();
     let db = sense8_ci_generator::db::Db::new();
     let r = sense8_ci_generator::Regression::new(&db, &cli.root_path, &cli.config_file, &cli.template);
-    let p = r.init();
-
+    let (p, refs) = r.init();
+    r.init_refs(p, refs);
     let ctx = r.build_context(p);
 
     if cli.write_ci {

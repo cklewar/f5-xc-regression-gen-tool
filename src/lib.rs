@@ -83,6 +83,7 @@ pub enum EdgeTypes {
     HasSites,
     UsesRtes,
     NextStage,
+    RefersRte,
     RefersSite,
     NeedsShare,
     HasReports,
@@ -247,9 +248,10 @@ impl EdgeTypes {
             EdgeTypes::HasSite => EDGE_TYPE_HAS_SITE,
             EdgeTypes::HasSites => EDGE_TYPE_HAS_SITES,
             EdgeTypes::UsesRtes => EDGE_TYPE_USES_RTES,
-            EdgeTypes::HasReports => EDGE_TYPE_HAS_REPORTS,
+            EdgeTypes::RefersRte => EDGE_TYPE_REFERS_RTE,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::RefersSite => EDGE_TYPE_REFERS_SITE,
+            EdgeTypes::HasReports => EDGE_TYPE_HAS_REPORTS,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
             EdgeTypes::NeedsShare => EDGE_TYPE_NEEDS_SHARE,
             EdgeTypes::HasFeatures => EDGE_TYPE_HAS_FEATURES,
@@ -258,7 +260,7 @@ impl EdgeTypes {
             EdgeTypes::UsesProvider => EDGE_TYPE_USES_PROVIDER,
             EdgeTypes::NeedsProvider => EDGE_TYPE_NEEDS_PROVIDER,
             EdgeTypes::HasComponents => EDGE_TYPE_HAS_COMPONENTS,
-            EdgeTypes::RefersFeature => EDGE_TYPE_SITE_REFERS_RTE,
+            EdgeTypes::RefersFeature => EDGE_TYPE_REFERS_RTE,
             EdgeTypes::SiteRefersRte => EDGE_TYPE_APPLICATION_REFERS_FEATURE,
             EdgeTypes::HasConnection => EDGE_TYPE_HAS_CONNECTION,
             EdgeTypes::HasCollectors => EDGE_TYPE_HAS_COLLECTORS,
@@ -342,6 +344,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::StageDestroy.name().to_string(), VertexTypes::StageDestroy.name().to_string()), EdgeTypes::NextStage.name());
         map.insert(VertexTuple(VertexTypes::Applications.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::ProvidesApplication.name());
         map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::RefersFeature.name());
+        map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::RefersRte.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
@@ -519,7 +522,6 @@ struct ApplicationRenderContext {
     module: Map<String, Value>,
     project: RegressionConfigProject,
     scripts: Vec<HashMap<String, Vec<String>>>,
-    //provider: String,
 }
 
 #[derive(Default, Serialize, Debug)]
@@ -693,7 +695,7 @@ struct ScriptTestRenderContext {
     project: RegressionConfigProject,
     provider: String,
     features: Vec<String>,
-    refs: ObjectRefs,
+    refs: ObjectRefsMap,
 }
 
 #[derive(Serialize, Debug)]
@@ -756,17 +758,23 @@ struct ScriptReportRenderContext {
     project: RegressionConfigProject,
 }
 
-
-#[derive(Serialize, Debug)]
-struct ObjectRefs {
-    refs: HashMap<String, Vec<String>>,
-}
-
 /*fn get_type_of<T>(_: T) {
     println!("TYPE: {}", std::any::type_name::<T>())
 }*/
 
-impl ObjectRefs {
+//Struct used to return Vec of Values and obj id. To be used later to create object references
+pub struct ObjRefs {
+    refs: Vec<Value>, // vec of refs for specific type
+    id: Uuid, // obj to build rel with
+}
+
+// Build map: type: [module_a, module_b,module_b, module_c]. Example: <feature: [http_lb, http_lp_a]>
+#[derive(Serialize, Debug)]
+struct ObjectRefsMap {
+    refs: HashMap<String, Vec<String>>,
+}
+
+impl ObjectRefsMap {
     pub fn new(object: &Map<String, Value>) -> Self {
         let mut refs: HashMap<String, Vec<String>> = Default::default();
 
@@ -1144,7 +1152,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         project: params.config.project.clone(),
                         provider: src_name.to_string(),
                         features: params.features.to_vec(),
-                        refs: ObjectRefs::new(t_p_base),
+                        refs: ObjectRefsMap::new(t_p_base),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1391,7 +1399,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         project: params.config.project.clone(),
                         provider: component_provider.to_string(),
                         features: params.features.to_vec(),
-                        refs: ObjectRefs::new(t_p_base),
+                        refs: ObjectRefsMap::new(t_p_base),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -1520,7 +1528,10 @@ impl<'a> Regression<'a> {
         }
     }
 
-    pub fn init(&self) -> Uuid {
+    pub fn init(&self) -> (Uuid, Vec<ObjRefs>) {
+        //Stores object refs statements for later refs creation
+        let mut object_refs: Vec<ObjRefs> = Vec::new();
+
         // Project
         let project = Project::init(self.db, &self.config, &mut vec![], &self.config.project.module, 0);
 
@@ -1661,28 +1672,12 @@ impl<'a> Regression<'a> {
                         let a_module = a.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
                         let a_o = Application::init(self.db, &self.config, a, &mut o.get_id_path().get_vec(), a_module, 0);
                         self.db.create_relationship(&o.get_object(), &a_o.get_object());
-
-                        //Build rel Application --> Feature
                         let props = a_o.get_base_properties();
-                        let refs = props.get("refs").unwrap().as_array().unwrap();
 
-                        for r in refs {
-                            let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
-                            let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-
-                            match v_type {
-                                VertexTypes::Feature => {
-                                    let features = Features::load(&self.db, &eut.get_object(), &self.config);
-
-                                    for f in features {
-                                        if f.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap() == ref_module {
-                                            self.db.create_relationship(&a_o.get_object(), &f.get_object());
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+                        object_refs.push(ObjRefs {
+                            refs: props.get("refs").unwrap().as_array().unwrap().clone(),
+                            id: a_o.get_id(),
+                        })
                     }
                 }
                 k if k == KEY_RTES => {
@@ -1795,10 +1790,16 @@ impl<'a> Regression<'a> {
                                                                  test[KEY_NAME].as_str().unwrap(),
                                                                  _index);
                                             self.db.create_relationship(&src_o.get_object(), &t_o.get_object());
+                                            let props = t_o.get_base_properties();
+
+                                            object_refs.push(ObjRefs {
+                                                refs: props.get("refs").unwrap().as_array().unwrap().clone(),
+                                                id: t_o.get_id(),
+                                            });
 
                                             for (k, v) in test.as_object().unwrap().iter() {
                                                 match k {
-                                                    k if k == KEY_REFS => {
+                                                    /*k if k == KEY_REFS => {
                                                         let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
                                                         let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
 
@@ -1831,7 +1832,7 @@ impl<'a> Regression<'a> {
                                                                 }
                                                             }
                                                         }
-                                                    }
+                                                    }*/
                                                     k if k == KEY_VERIFICATIONS => {
                                                         for v in v.as_array().unwrap().iter() {
                                                             let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
@@ -1977,6 +1978,7 @@ impl<'a> Regression<'a> {
         let collectors = Collectors::load(&self.db, &eut.get_object(), &self.config);
         for c in collectors {
             let edges = self.db.get_object_edges(&c.get_id());
+            error!("EDGES: {:#?}", edges);
             for e in edges {
                 match e.t.as_str() {
                     EDGE_TYPE_TEST_REFERS_COLLECTION => {
@@ -1988,8 +1990,12 @@ impl<'a> Regression<'a> {
                 }
             }
         }
-        let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
 
+        error!("test_stage_deploy_seq: {:?}", test_stage_deploy_seq);
+        error!("_test_collector_stages: {:?}", _test_collector_stages);
+
+        /*let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
+        error!("STAGE: {:?}", test_collector_stage_deploy);
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_collector_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
         let verification_stages_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
@@ -2032,9 +2038,79 @@ impl<'a> Regression<'a> {
         stage_destroy = self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.dashboard.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         //Project Stages Destroy
-        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.project.ci.stages.destroy, &VertexTypes::StageDestroy);
+        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.project.ci.stages.destroy, &VertexTypes::StageDestroy);*/
 
-        project.get_id().clone()
+        (project.get_id(), object_refs)
+    }
+
+    pub fn init_refs(&self, id: Uuid, obj_refs: Vec<ObjRefs>) {
+        let project = Project::load(&self.db, &id, &self.config);
+        let eut = Eut::load(&self.db, &project, &self.config);
+
+        for obj in obj_refs {
+            for r in obj.refs {
+                let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
+                let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+
+                match v_type {
+                    //Build rel obj --> Feature
+                    VertexTypes::Feature => {
+                        error!("Building rel between obj and feature");
+                        let features = Features::load_collection(&self.db, &eut.get_object(), &self.config);
+                        error!("FEATURES: {:?}", features.get_object());
+                        let feature = Features::load_feature(&self.db, &features.get_object(), ref_module, &self.config);
+
+                        match feature {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no feature object found")
+                        }
+                    }
+                    //Build rel obj --> Rte
+                    VertexTypes::Rte => {
+                        error!("Building rel between obj and rte");
+                        let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_module, &self.config);
+
+                        match rte {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no rte object found")
+                        }
+                    }
+
+                    //Build rel obj --> Collector
+                    VertexTypes::Collector => {
+                        error!("Building rel between obj and collector");
+                        let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), ref_module, &self.config);
+
+                        match collector {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no collector object found")
+                        }
+                    }
+                    //Build rel obj --> Application
+                    VertexTypes::Application => {
+                        error!("Building rel between obj and application");
+                        let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let application = Applications::load_application(&self.db, &applications.get_object(), ref_module, &self.config);
+
+                        match application {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no application object found")
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 
     fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
