@@ -53,6 +53,7 @@ fn main() {
     let r = sense8_ci_generator::Regression::new(&db, &cli.root_path, &cli.config_file, &cli.template);
     let (p, refs) = r.init();
     r.init_refs(p, refs);
+    r.init_stages(p);
     let ctx = r.build_context(p);
 
     if cli.write_ci {

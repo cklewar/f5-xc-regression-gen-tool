@@ -1,6 +1,6 @@
 [package]
 name = "sense8-ci-generator"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["cklewar <c.klewar@f5.com>"]
 description = "F5 XC Regression CI pipeline file generator"
 edition = "2021"

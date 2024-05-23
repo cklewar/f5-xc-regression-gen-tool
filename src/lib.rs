@@ -1799,40 +1799,6 @@ impl<'a> Regression<'a> {
 
                                             for (k, v) in test.as_object().unwrap().iter() {
                                                 match k {
-                                                    /*k if k == KEY_REFS => {
-                                                        let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
-                                                        let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
-
-                                                        if v.as_array().unwrap().len() > 0 {
-                                                            for r#ref in v.as_array().unwrap().iter() {
-                                                                match VertexTypes::get_type_by_key(r#ref.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap()) {
-                                                                    // Ref Test -> Application
-                                                                    VertexTypes::Application => {
-                                                                        let application = Applications::load_application(&self.db, &applications.get_object(), &r#ref.as_object()
-                                                                            .unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &self.config);
-                                                                        match application {
-                                                                            Some(a) => {
-                                                                                self.db.create_relationship(&t_o.get_object(), &a.get_object());
-                                                                            }
-                                                                            None => error!("no application object found")
-                                                                        }
-                                                                    }
-                                                                    // Ref Test -> Collector
-                                                                    VertexTypes::Collector => {
-                                                                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), &r#ref.as_object()
-                                                                            .unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &self.config);
-                                                                        match collector {
-                                                                            Some(a) => {
-                                                                                self.db.create_relationship(&t_o.get_object(), &a.get_object());
-                                                                            }
-                                                                            None => error!("no collector object found")
-                                                                        }
-                                                                    }
-                                                                    _ => {}
-                                                                }
-                                                            }
-                                                        }
-                                                    }*/
                                                     k if k == KEY_VERIFICATIONS => {
                                                         for v in v.as_array().unwrap().iter() {
                                                             let v_module = v.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
@@ -1910,9 +1876,84 @@ impl<'a> Regression<'a> {
             }
         }
 
-        let ci_o_p = self.db.get_object_properties(&ci.get_object()).unwrap();
-        let ci_o_p_base = ci_o_p.props.get(PropertyType::Base.index()).unwrap();
-        let _ci_id_path = ci_o_p_base.value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        (project.get_id(), object_refs)
+    }
+
+    pub fn init_refs(&self, id: Uuid, obj_refs: Vec<ObjRefs>) {
+        let project = Project::load(&self.db, &id, &self.config);
+        let eut = Eut::load(&self.db, &project, &self.config);
+
+        for obj in obj_refs {
+            for r in obj.refs {
+                let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
+                let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+
+                match v_type {
+                    //Build rel obj --> Feature
+                    VertexTypes::Feature => {
+                        error!("Building rel between obj and feature");
+                        let features = Features::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let feature = Features::load_feature(&self.db, &features.get_object(), ref_module, &self.config);
+
+                        match feature {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no feature object found")
+                        }
+                    }
+                    //Build rel obj --> Rte
+                    VertexTypes::Rte => {
+                        error!("Building rel between obj and rte");
+                        let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_module, &self.config);
+
+                        match rte {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no rte object found")
+                        }
+                    }
+
+                    //Build rel obj --> Collector
+                    VertexTypes::Collector => {
+                        error!("Building rel between obj and collector");
+                        let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), ref_module, &self.config);
+
+                        match collector {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no collector object found")
+                        }
+                    }
+                    //Build rel obj --> Application
+                    VertexTypes::Application => {
+                        error!("Building rel between obj and application");
+                        let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let application = Applications::load_application(&self.db, &applications.get_object(), ref_module, &self.config);
+
+                        match application {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("no application object found")
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    pub fn init_stages(&self, id: Uuid) {
+        let project = Project::load(&self.db, &id, &self.config);
+        let eut = Eut::load(&self.db, &project, &self.config);
+        let ci = Ci::load(&self.db, &project, &self.config);
+        let ci_o_p_base = ci.get_base_properties();
+        let _ci_id_path = ci_o_p_base.get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let mut ci_id_path: Vec<String> = _ci_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
 
         //Project Stages Deploy
@@ -1978,7 +2019,7 @@ impl<'a> Regression<'a> {
         let collectors = Collectors::load(&self.db, &eut.get_object(), &self.config);
         for c in collectors {
             let edges = self.db.get_object_edges(&c.get_id());
-            error!("EDGES: {:#?}", edges);
+
             for e in edges {
                 match e.t.as_str() {
                     EDGE_TYPE_TEST_REFERS_COLLECTION => {
@@ -1991,11 +2032,8 @@ impl<'a> Regression<'a> {
             }
         }
 
-        error!("test_stage_deploy_seq: {:?}", test_stage_deploy_seq);
-        error!("_test_collector_stages: {:?}", _test_collector_stages);
+        let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
 
-        /*let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
-        error!("STAGE: {:?}", test_collector_stage_deploy);
         //Verification Stages Deploy
         let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_collector_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
         let verification_stages_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
@@ -2038,79 +2076,7 @@ impl<'a> Regression<'a> {
         stage_destroy = self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.dashboard.ci.stages.destroy, &VertexTypes::StageDestroy);
 
         //Project Stages Destroy
-        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.project.ci.stages.destroy, &VertexTypes::StageDestroy);*/
-
-        (project.get_id(), object_refs)
-    }
-
-    pub fn init_refs(&self, id: Uuid, obj_refs: Vec<ObjRefs>) {
-        let project = Project::load(&self.db, &id, &self.config);
-        let eut = Eut::load(&self.db, &project, &self.config);
-
-        for obj in obj_refs {
-            for r in obj.refs {
-                let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
-                let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-
-                match v_type {
-                    //Build rel obj --> Feature
-                    VertexTypes::Feature => {
-                        error!("Building rel between obj and feature");
-                        let features = Features::load_collection(&self.db, &eut.get_object(), &self.config);
-                        error!("FEATURES: {:?}", features.get_object());
-                        let feature = Features::load_feature(&self.db, &features.get_object(), ref_module, &self.config);
-
-                        match feature {
-                            Some(a) => {
-                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
-                            }
-                            None => error!("no feature object found")
-                        }
-                    }
-                    //Build rel obj --> Rte
-                    VertexTypes::Rte => {
-                        error!("Building rel between obj and rte");
-                        let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_module, &self.config);
-
-                        match rte {
-                            Some(a) => {
-                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
-                            }
-                            None => error!("no rte object found")
-                        }
-                    }
-
-                    //Build rel obj --> Collector
-                    VertexTypes::Collector => {
-                        error!("Building rel between obj and collector");
-                        let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), ref_module, &self.config);
-
-                        match collector {
-                            Some(a) => {
-                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
-                            }
-                            None => error!("no collector object found")
-                        }
-                    }
-                    //Build rel obj --> Application
-                    VertexTypes::Application => {
-                        error!("Building rel between obj and application");
-                        let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let application = Applications::load_application(&self.db, &applications.get_object(), ref_module, &self.config);
-
-                        match application {
-                            Some(a) => {
-                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
-                            }
-                            None => error!("no application object found")
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
+        self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.project.ci.stages.destroy, &VertexTypes::StageDestroy);
     }
 
     fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
@@ -2388,8 +2354,8 @@ impl<'a> Regression<'a> {
             let scripts_path = eut_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
             for script in eut_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
+
                 let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
-                error!("EUT SITE SCRIPTS: {:?}", &path);
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let ctx = ScriptEutRenderContext {
                     project: self.config.project.clone(),
