@@ -27,9 +27,9 @@ impl<'a> Eut<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Eut, &mut path, label, pop);
-        db.add_object_properties(&o, &config.eut, PropertyType::Base);
+        db.add_object_property(&o, &config.eut, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
-        db.add_object_properties(&o, &module_cfg, PropertyType::Module);
+        db.add_object_property(&o, &module_cfg, PropertyType::Module);
 
         Box::new(Eut {
             object: Object {

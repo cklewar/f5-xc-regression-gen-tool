@@ -28,7 +28,7 @@ impl<'a> EutProvider<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut provider object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::EutProvider, &mut path, label, pop);
-        db.add_object_properties(&o, &json!({KEY_NAME: label}), PropertyType::Base);
+        db.add_object_property(&o, &json!({KEY_NAME: label}), PropertyType::Base);
 
         Box::new(EutProvider {
             object: Object {
@@ -46,7 +46,7 @@ impl<'a> DashboardProvider<'a> {
     pub fn init(db: &'a Db, config: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new dashboard provider object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::DashboardProvider, &mut path, label, pop);
-        db.add_object_properties(&o, &json!({KEY_NAME: label}), PropertyType::Base);
+        db.add_object_property(&o, &json!({KEY_NAME: label}), PropertyType::Base);
 
         let provider = Box::new(DashboardProvider {
             object: Object {
@@ -89,7 +89,7 @@ impl<'a> RteProvider<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new rte provider object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::RteProvider, &mut path, label, pop);
-        db.add_object_properties(&o, &json!({KEY_NAME: label}), PropertyType::Base);
+        db.add_object_property(&o, &json!({KEY_NAME: label}), PropertyType::Base);
 
         Box::new(RteProvider {
             object: Object {

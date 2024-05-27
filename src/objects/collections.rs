@@ -10,9 +10,10 @@ use crate::objects::application::ApplicationExt;
 use crate::objects::feature::FeatureExt;
 use crate::objects::rte::RteExt;
 use crate::objects::collector::CollectorExt;
+use crate::objects::component::{ComponentDestinationExt, ComponentSourceExt};
 use crate::objects::report::{Report, ReportExt};
 
-use super::{Rte, Application, Collector, Feature, implement_object_ext};
+use super::{Rte, Application, Collector, Feature, implement_object_ext, ComponentDestination, ComponentSource};
 use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
@@ -57,7 +58,7 @@ impl<'a> Collectors<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new collectors collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Collectors, &mut path, label, pop);
-        db.add_object_properties(&o, &json!({"": ""}), PropertyType::Base);
+        db.add_object_property(&o, &json!({"": ""}), PropertyType::Base);
 
         Box::new(Collectors {
             object: Object {
@@ -133,7 +134,7 @@ impl<'a> Components<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new components collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Components, &mut path, label, pop);
-        db.add_object_properties(&o, &json!({"": ""}), PropertyType::Base);
+        db.add_object_property(&o, &json!({"": ""}), PropertyType::Base);
 
         Box::new(Components {
             object: Object {
@@ -145,13 +146,58 @@ impl<'a> Components<'a> {
             },
         })
     }
+
+    pub fn load_source_component(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Option<Box<(dyn ComponentSourceExt<'a> + 'a)>> {
+        error!("Loading specific source component object");
+        let src_component = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasComponentSrc);
+
+        match src_component {
+            None => None,
+            Some(c) => {
+                Some(ComponentSource::load(db, &c, config))
+            }
+        }
+    }
+
+    pub fn load_destination_component(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Option<Box<(dyn ComponentDestinationExt<'a> + 'a)>> {
+        error!("Loading specific destination component object");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasComponents).unwrap();
+        let dst_component = db.get_object_neighbour_with_properties_out(&o.vertex.id, EdgeTypes::HasComponentDst);
+
+        match dst_component {
+            None => None,
+            Some(c) => {
+                Some(ComponentDestination::load(db, &c, config))
+            }
+        }
+    }
+
+
+    pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Loading component collection object");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasComponents).unwrap();
+        let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object()
+            .unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str()
+            .unwrap().to_string()).collect());
+
+        Box::new(Components {
+            object: Object {
+                db,
+                id: o.vertex.id,
+                id_path,
+                vertex: o.vertex,
+                module_cfg: json!(null),
+            },
+        })
+    }
 }
 
 impl<'a> Connections<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new connections collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Connections, &mut path, label, pop);
-        db.add_object_properties(&o, &json!({"": ""}), PropertyType::Base);
+        db.add_object_property(&o, &json!({"": ""}), PropertyType::Base);
 
         Box::new(Connections {
             object: Object {
@@ -169,7 +215,7 @@ impl<'a> Features<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut features collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Features, &mut path, label, pop);
-        db.add_object_properties(&o, &config.features, PropertyType::Base);
+        db.add_object_property(&o, &config.features, PropertyType::Base);
 
         Box::new(Features {
             object: Object {
@@ -246,7 +292,7 @@ impl<'a> Providers<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new providers collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Providers, &mut path, label, pop);
-        db.add_object_properties(&o, &json!({"": ""}), PropertyType::Base);
+        db.add_object_property(&o, &json!({"": ""}), PropertyType::Base);
 
         Box::new(Providers {
             object: Object {
@@ -264,7 +310,7 @@ impl<'a> Rtes<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new rtes collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Rtes, &mut path, label, pop);
-        db.add_object_properties(&o, &config.rte, PropertyType::Base);
+        db.add_object_property(&o, &config.rte, PropertyType::Base);
 
         Box::new(Rtes {
             object: Object {
@@ -341,7 +387,7 @@ impl<'a> Sites<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut sites collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Sites, &mut path, label, pop);
-        db.add_object_properties(&o, &config, PropertyType::Base);
+        db.add_object_property(&o, &config, PropertyType::Base);
 
         Box::new(Sites {
             object: Object {
@@ -359,7 +405,7 @@ impl<'a> Applications<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut applications collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Applications, &mut path, label, pop);
-        db.add_object_properties(&o, &config.applications, PropertyType::Base);
+        db.add_object_property(&o, &config.applications, PropertyType::Base);
 
         Box::new(Applications {
             object: Object {
@@ -470,7 +516,7 @@ impl<'a> Reports<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new reports collection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Reports, &mut path, label, pop);
-        db.add_object_properties(&o, &config.reports, PropertyType::Base);
+        db.add_object_property(&o, &config.reports, PropertyType::Base);
 
         Box::new(Reports {
             object: Object {

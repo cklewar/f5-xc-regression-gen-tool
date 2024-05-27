@@ -28,9 +28,9 @@ impl<'a> Project<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new project object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Project, &mut path, label, pop);
-        db.add_object_properties(&o, &config.project, PropertyType::Base);
+        db.add_object_property(&o, &config.project, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.project.module, &config);
-        db.add_object_properties(&o, &module_cfg, PropertyType::Module);
+        db.add_object_property(&o, &module_cfg, PropertyType::Module);
 
         Box::new(Project {
             object: Object {

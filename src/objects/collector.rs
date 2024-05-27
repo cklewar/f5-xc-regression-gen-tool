@@ -7,9 +7,7 @@ use uuid::Uuid;
 
 use crate::{CollectorRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script,
             RenderContext, Renderer, ScriptCollectorRenderContext};
-use crate::constants::{EDGE_TYPE_TEST_REFERS_COLLECTION, KEY_COLLECTOR, KEY_DATA, KEY_FILE,
-                       KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH,
-};
+use crate::constants::{EDGE_TYPE_TEST_REFERS_COLLECTION, KEY_COLLECTOR, KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_RTE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -29,10 +27,10 @@ impl<'a> Collector<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new collector object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Collector, &mut path, label, pop);
-        db.add_object_properties(&o, base_cfg, PropertyType::Base);
+        db.add_object_property(&o, base_cfg, PropertyType::Base);
         let module_name = base_cfg.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), module_name, &config);
-        db.add_object_properties(&o, &module_cfg, PropertyType::Module);
+        db.add_object_property(&o, &module_cfg, PropertyType::Module);
 
         Box::new(Collector {
             object: Object {
@@ -120,16 +118,15 @@ impl Renderer<'_> for Collector<'_> {
                     let rte_o_p_base = rte_o.get_base_properties();
                     let rte_module = rte_o_p_base.get(KEY_MODULE).unwrap().as_str().unwrap();
                     let collectible: HashMap<String, String> = HashMap::from([
-                        ("rte".to_string(), rte_module.to_string()),
-                        ("provider".to_string(), rte_provider.to_string()),
-                        ("name".to_string(), test_name.to_string()),
-                        ("module".to_string(), test_module.to_string())
+                        (KEY_RTE.to_string(), rte_module.to_string()),
+                        (KEY_NAME.to_string(), test_name.to_string()),
+                        (KEY_MODULE.to_string(), test_module.to_string()),
+                        (KEY_PROVIDER.to_string(), rte_provider.to_string()),
                     ]);
                     collectibles.push(collectible);
                 }
                 _ => {}
             };
-            //}
         }
 
         for script in props_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {

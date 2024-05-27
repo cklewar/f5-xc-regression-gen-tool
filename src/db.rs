@@ -66,9 +66,9 @@ impl Db {
         info!("Create new object of type <{}>...", object_type.name());
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.db.create_vertex(&o).expect("panic while creating project db entry");
-        self.add_object_properties(&o, &json!({}), PropertyType::Base);
-        self.add_object_properties(&o, &json!({}), PropertyType::Gv);
-        self.add_object_properties(&o, &json!({}), PropertyType::Module);
+        self.add_object_property(&o, &json!({}), PropertyType::Base);
+        self.add_object_property(&o, &json!({}), PropertyType::Gv);
+        self.add_object_property(&o, &json!({}), PropertyType::Module);
         info!("Create new object of type <{}> -> Done", object_type.name());
         o
     }
@@ -78,21 +78,21 @@ impl Db {
         let o = Vertex::new(Identifier::new(object_type.name()).unwrap());
         self.db.create_vertex(&o).expect("panic while creating project db entry");
         let id_path: IdPath = IdPath::new(path, object_type.name(), label, pop);
-        self.add_object_properties(&o, &json!({KEY_ID_PATH: id_path.vec}), PropertyType::Base);
+        self.add_object_property(&o, &json!({KEY_ID_PATH: id_path.vec}), PropertyType::Base);
 
         if label == "" {
-            self.add_object_properties(&o, &json!({
+            self.add_object_property(&o, &json!({
                 KEY_GVID: id_path.str.replace('-', "_"),
                 KEY_GV_LABEL: object_type.name().replace('-', "_"),
             }), PropertyType::Gv);
         } else {
-            self.add_object_properties(&o, &json!({
+            self.add_object_property(&o, &json!({
                 KEY_GVID: id_path.str.replace('-', "_"),
                 KEY_GV_LABEL: label.replace('-', "_"),
             }), PropertyType::Gv);
         }
 
-        self.add_object_properties(&o, &json!({}), PropertyType::Module);
+        self.add_object_property(&o, &json!({}), PropertyType::Module);
         info!("Create new object of type <{}> -> Done", object_type.name());
         (o, id_path)
     }
@@ -113,7 +113,7 @@ impl Db {
         status
     }
 
-    pub fn add_object_properties<T: serde::Serialize>(&self, object: &Vertex, value: &T, property_type: PropertyType) {
+    pub fn add_object_property<T: serde::Serialize>(&self, object: &Vertex, value: &T, property_type: PropertyType) {
         info!("Add new property to object <{}>...", object.t.as_str());
         let v = to_value(value).unwrap();
         let p: BulkInsertItem;
@@ -286,11 +286,25 @@ impl Db {
     pub fn get_object_neighbour_in(&self, id: &Uuid, edge_identifier: EdgeTypes, vertex_identifier: VertexTypes) -> Option<Vertex> {
         let e = Identifier::new(edge_identifier.name().to_string()).unwrap();
         let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
-        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e));
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e)).unwrap();
 
-        for item in indradb::util::extract_edges(o.unwrap()).unwrap() {
+        for item in indradb::util::extract_edges(o).unwrap() {
             if self.get_object(&item.inbound_id).t.as_str() == v.as_str() {
                 return Some(self.get_object(&item.inbound_id));
+            }
+        }
+
+        None
+    }
+
+    pub fn get_object_neighbour_in_out_id(&self, id: &Uuid, edge_identifier: EdgeTypes, vertex_identifier: VertexTypes) -> Option<Vertex> {
+        let e = Identifier::new(edge_identifier.name().to_string()).unwrap();
+        let v = Identifier::new(vertex_identifier.name().to_string()).unwrap();
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap().t(e)).unwrap();
+
+        for item in indradb::util::extract_edges(o).unwrap() {
+            if self.get_object(&item.outbound_id).t.as_str() == v.as_str() {
+                return Some(self.get_object(&item.outbound_id));
             }
         }
 

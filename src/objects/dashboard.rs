@@ -28,7 +28,7 @@ impl<'a> Dashboard<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new dashboard object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Dashboard, &mut path, label, pop);
-        db.add_object_properties(&o, &config.dashboard, PropertyType::Base);
+        db.add_object_property(&o, &config.dashboard, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.dashboard.module, &config);
 
         let dashboard = Box::new(Dashboard {

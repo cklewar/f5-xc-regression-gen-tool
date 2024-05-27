@@ -19,7 +19,7 @@ impl<'a> Site<'a> {
     pub fn init(db: &'a Db, config: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new site object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Site, &mut path, label, pop);
-        db.add_object_properties(&o, &config, PropertyType::Base);
+        db.add_object_property(&o, &config, PropertyType::Base);
 
         Box::new(Site {
             object: Object {

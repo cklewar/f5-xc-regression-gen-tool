@@ -23,17 +23,15 @@ pub trait ObjectExt {
     fn get_module_cfg(&self) -> Map<String, Value>;
     fn get_base_properties(&self) -> Map<String, Value>;
     fn get_module_properties(&self) -> Map<String, Value>;
-    fn add_base_properties(&self, value: Value);
     fn get_object_with_properties(&self) -> VertexProperties;
+    fn add_base_properties(&self, value: Value);
     fn add_module_properties(&self, value: Value);
-    fn insert_base_properties(&self, key: String, value: Value);
-    fn insert_module_properties(&self, key: String, value: Value);
+    fn insert_base_property(&self, key: String, value: Value);
+    fn insert_module_property(&self, key: String, value: Value);
 }
 
 impl ObjectExt for Object<'_> {
-    fn get_id(&self) -> Uuid {
-        self.vertex.id
-    }
+    fn get_id(&self) -> Uuid { self.vertex.id }
 
     fn get_object(&self) -> Vertex {
         self.vertex.to_owned()
@@ -57,27 +55,27 @@ impl ObjectExt for Object<'_> {
         p.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().to_owned()
     }
 
-    fn add_base_properties(&self, value: Value) {
-        self.db.add_object_properties(&self.vertex, &value, PropertyType::Base);
-    }
-
     fn get_object_with_properties(&self) -> VertexProperties {
         self.db.get_object_with_properties(&self.vertex.id)
     }
 
+    fn add_base_properties(&self, value: Value) {
+        self.db.add_object_property(&self.vertex, &value, PropertyType::Base);
+    }
+
     fn add_module_properties(&self, value: Value) {
-        self.db.add_object_properties(&self.vertex, &value, PropertyType::Module);
+        self.db.add_object_property(&self.vertex, &value, PropertyType::Module);
     }
 
-    fn insert_base_properties(&self, key: String, value: Value) {
+    fn insert_base_property(&self, key: String, value: Value) {
         let mut p = self.get_module_properties().clone();
         p.insert(key, value);
-        self.db.add_object_properties(&self.vertex, &p, PropertyType::Module);
+        self.db.add_object_property(&self.vertex, &p, PropertyType::Base);
     }
 
-    fn insert_module_properties(&self, key: String, value: Value) {
+    fn insert_module_property(&self, key: String, value: Value) {
         let mut p = self.get_module_properties().clone();
         p.insert(key, value);
-        self.db.add_object_properties(&self.vertex, &p, PropertyType::Module);
+        self.db.add_object_property(&self.vertex, &p, PropertyType::Module);
     }
 }

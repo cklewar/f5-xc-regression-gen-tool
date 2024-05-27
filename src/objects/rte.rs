@@ -28,9 +28,9 @@ impl<'a> Rte<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new rte object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Rte, &mut path, label, pop);
-        db.add_object_properties(&o, base_cfg, PropertyType::Base);
+        db.add_object_property(&o, base_cfg, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), label, &config);
-        db.add_object_properties(&o, &module_cfg, PropertyType::Module);
+        db.add_object_property(&o, &module_cfg, PropertyType::Module);
 
         Box::new(Rte {
             object: Object {

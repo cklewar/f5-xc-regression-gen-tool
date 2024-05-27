@@ -5,10 +5,9 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ObjectRefsMap, PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
+use crate::{PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
             RteTestRenderContext, ScriptTestRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_SCRIPT, KEY_SCRIPTS,
-                       KEY_SCRIPTS_PATH, KEY_TEST};
+use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REF_ARTIFACTS_PATH, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH, KEY_TEST};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -25,13 +24,14 @@ pub struct Test<'a> {
 }
 
 impl<'a> Test<'a> {
-    pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+    pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, parent: &Vertex, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new test object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Test, &mut path, label, pop);
-        db.add_object_properties(&o, base_cfg, PropertyType::Base);
+        db.add_object_property(&o, base_cfg, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o),
                                             base_cfg.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &config);
-        db.add_object_properties(&o, &module_cfg, PropertyType::Module);
+        db.add_object_property(&o, &module_cfg, PropertyType::Module);
+        db.create_relationship(&parent, &o);
 
         Box::new(Test {
             object: Object {
@@ -105,14 +105,14 @@ impl Renderer<'_> for Test<'_> {
             let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
             let ctx = ScriptTestRenderContext {
                 eut: config.eut.module.to_string(),
+                rte: "".to_string(),
                 name: "".to_string(),
                 data: "".to_string(),
-                rte: "".to_string(),
+                refs: self.get_base_properties().get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
+                module: module.clone(),
                 project: config.project.clone(),
                 provider: "".to_string(),
                 features: vec![],
-                module: module.clone(),
-                refs: ObjectRefsMap { refs: Default::default() },
             };
 
             let mut commands: Vec<String> = Vec::new();

@@ -52,7 +52,9 @@ pub const KEY_DESTINATIONS: &str = "destinations";
 pub const KEY_VERIFICATION: &str = "verification";
 pub const KEY_SCRIPTS_PATH: &str = "scripts_path";
 pub const KEY_VERIFICATIONS: &str = "verifications";
+pub const KEY_ARTIFACTS_PATH: &str = "artifacts_path";
 pub const KEY_REFERS_COLLECTION: &str = "refers_collection";
+pub const KEY_REF_ARTIFACTS_PATH: &str = "ref_artifacts_path";
 
 
 // miscellaneous
@@ -143,9 +145,9 @@ pub const EDGE_TYPE_HAS_DESTROY_STAGES: &str = "has_destroy_stages";
 pub const EDGE_TYPE_FEATURE_REFERS_SITE: &str = "feature_refers_site";
 pub const EDGE_TYPE_PROVIDES_COLLECTOR: &str = "provides_collector";
 pub const EDGE_TYPE_PROVIDES_APPLICATION: &str = "provides_application";
-pub const EDGE_TYPE_TEST_REFERS_COLLECTION: &str = "test_refers_collection";
+pub const EDGE_TYPE_TEST_REFERS_COLLECTION: &str = "test_refers_collector";
 pub const EDGE_TYPE_TEST_REFERS_APPLICATION: &str = "test_refers_application";
-pub const EDGE_TYPE_REPORT_REFERS_COLLECTION: &str = "report_refers_collection";
+pub const EDGE_TYPE_REPORT_REFERS_COLLECTION: &str = "report_refers_collector";
 pub const EDGE_TYPE_APPLICATION_REFERS_FEATURE: &str = "application_refers_feature";
 
 //RTE TYPES

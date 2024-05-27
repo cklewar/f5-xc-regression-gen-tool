@@ -5,8 +5,11 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{ApplicationRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptApplicationRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{ApplicationRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script,
+            RenderContext, Renderer, ScriptApplicationRenderContext};
+use crate::constants::{KEY_APPLICATION, KEY_ARTIFACTS_PATH, KEY_FILE, KEY_ID_PATH, KEY_MODULE,
+                       KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE, KEY_SCRIPT,
+                       KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -20,16 +23,16 @@ pub trait ApplicationExt<'a>: ObjectExt + Renderer<'a> + RenderContext {}
 #[derive(serde::Serialize)]
 pub struct Application<'a> {
     object: Object<'a>,
-    refs: HashMap<String, Vec<String>>,
 }
 
 impl<'a> Application<'a> {
-    pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+    pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, parent: &Vertex, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new application object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Application, &mut path, label, pop);
-        db.add_object_properties(&o, base_cfg, PropertyType::Base);
+        db.add_object_property(&o, base_cfg, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), label, &config);
-        db.add_object_properties(&o, &module_cfg, PropertyType::Module);
+        db.add_object_property(&o, &module_cfg, PropertyType::Module);
+        db.create_relationship(parent, &o);
 
         Box::new(Application {
             object: Object {
@@ -39,7 +42,6 @@ impl<'a> Application<'a> {
                 vertex: o,
                 module_cfg,
             },
-            refs: HashMap::new(),
         })
     }
 
@@ -58,7 +60,6 @@ impl<'a> Application<'a> {
                 vertex: object.vertex.clone(),
                 module_cfg,
             },
-            refs: HashMap::new(),
         })
     }
 }
@@ -113,9 +114,11 @@ impl Renderer<'_> for Application<'_> {
                 eut: config.eut.module.to_string(),
                 rte: rte_p_base.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                 name: module.to_string(),
+                refs: base_props.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                 release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 provider: base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),
                 project: config.project.clone(),
+                artifacts_path: base_props.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
             };
 
             let mut commands: Vec<String> = Vec::new();

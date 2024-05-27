@@ -27,7 +27,7 @@ impl<'a> Connection<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new connection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Connection, &mut path, label, pop);
-        db.add_object_properties(&o, base_cfg, PropertyType::Base);
+        db.add_object_property(&o, base_cfg, PropertyType::Base);
 
         Box::new(Connection {
             object: Object {
@@ -45,7 +45,7 @@ impl<'a> ConnectionSource<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new connection source object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::ConnectionSrc, &mut path, label, pop);
-        db.add_object_properties(&o, base_cfg, PropertyType::Base);
+        db.add_object_property(&o, base_cfg, PropertyType::Base);
 
         Box::new(ConnectionSource {
             object: Object {
@@ -63,7 +63,7 @@ impl<'a> ConnectionDestination<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new connection destination object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::ConnectionDst, &mut path, label, pop);
-        db.add_object_properties(&o, base_cfg, PropertyType::Base);
+        db.add_object_property(&o, base_cfg, PropertyType::Base);
 
         Box::new(ConnectionDestination {
             object: Object {

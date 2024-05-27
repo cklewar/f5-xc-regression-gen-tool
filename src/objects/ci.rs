@@ -25,7 +25,7 @@ impl<'a> Ci<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new ci object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Ci, &mut path, label, pop);
-        db.add_object_properties(&o, &base_cfg, PropertyType::Base);
+        db.add_object_property(&o, &base_cfg, PropertyType::Base);
 
         Box::new(Ci {
             object: Object {
