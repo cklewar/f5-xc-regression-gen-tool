@@ -2,12 +2,11 @@ use std::any::Any;
 use std::collections::HashMap;
 use indradb::{Vertex, VertexProperties};
 use log::error;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use crate::{FeatureRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
-            Renderer, ScriptFeatureRenderContext};
-use crate::constants::{KEY_DATA, KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{EdgeTypes, FeatureRenderContext, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptFeatureRenderContext};
+use crate::constants::{KEY_APPLICATIONS, KEY_ARTIFACTS_PATH, KEY_DATA, KEY_FEATURE, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -24,10 +23,19 @@ pub struct Feature<'a> {
 }
 
 impl<'a> Feature<'a> {
-    pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
+    pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, parent: &Vertex, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new feature object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Feature, &mut path, label, pop);
-        db.add_object_property(&o, base_cfg, PropertyType::Base);
+        db.create_relationship(&parent, &o);
+        let features = db.get_object_neighbour_in_out_id(&o.id, EdgeTypes::HasFeature, VertexTypes::Features).unwrap();
+        let eut = db.get_object_neighbour_in_out_id(&features.id, EdgeTypes::HasFeatures, VertexTypes::Eut).unwrap();
+        let eut_p = db.get_object_properties(&eut).unwrap();
+        let eut_name = eut_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
+        let f_name = base_cfg.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+        let artifacts_path = format!("{}/{}/{}/{}/{}", config.features.artifacts_dir, eut_name, KEY_APPLICATIONS.to_string(), f_name, config.features.artifacts_file);
+        let mut _base_cfg = base_cfg.as_object().unwrap().clone();
+        _base_cfg.insert(KEY_ARTIFACTS_PATH.to_string(), json!(artifacts_path));
+        db.add_object_property(&o, &json!(_base_cfg), PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), label, &config);
         db.add_object_property(&o, &module_cfg, PropertyType::Module);
 

@@ -412,6 +412,13 @@ dashboard-deploy:
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}
     {%- endfor %}
+    {%- for application in applications %}
+    {%- for ref in application.base.refs %}
+    {%- if ref.type == "rte" %}
+    - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endif %}
+    {%- endfor %}
+    {%- endfor %}
   stage: rte-artifacts
   script:
       - |
@@ -537,6 +544,13 @@ dashboard-deploy:
   rules:
     {%- for site in eut.sites %}
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- for application in applications %}
+    {%- for ref in application.base.refs %}
+    {%- if ref.type == "feature" %}
+    - !reference [ .deploy{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endif %}
+    {%- endfor %}
     {%- endfor %}
   script:
       - |

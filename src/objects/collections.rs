@@ -454,7 +454,7 @@ impl<'a> Applications<'a> {
         error!("Loading specific eut application object");
         let applications = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesApplication);
         for app in applications {
-            let a = app.props.get(PropertyType::Module.index()).unwrap().value.as_object()
+            let a = app.props.get(PropertyType::Base.index()).unwrap().value.as_object()
                 .unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
             if name == a {
                 return Some(Application::load(db, &app, config));
@@ -503,6 +503,7 @@ impl<'a> Applications<'a> {
         let applications = Self::load(db, object, config);
 
         for a in applications {
+
             let scripts = a.gen_script_render_ctx(config);
             let application_rc = a.gen_render_ctx(config, scripts.clone());
             applications_rc.push(application_rc);
