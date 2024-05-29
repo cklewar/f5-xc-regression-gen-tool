@@ -2,11 +2,11 @@ use std::any::Any;
 use std::collections::HashMap;
 use indradb::{Vertex, VertexProperties};
 use log::error;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, to_value, Value};
 use uuid::Uuid;
 
 use crate::{EdgeTypes, PropertyType, RegressionConfig, RenderContext, Renderer};
-use crate::constants::{KEY_ID_PATH, KEY_MODULE};
+use crate::constants::{KEY_ARTIFACTS_PATH, KEY_ID_PATH, KEY_MODULE};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 use crate::objects::project::ProjectExt;
@@ -27,7 +27,14 @@ impl<'a> Eut<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new eut object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Eut, &mut path, label, pop);
-        db.add_object_property(&o, &config.eut, PropertyType::Base);
+        let artifacts_path = format!("{}/{}/{}",
+                                     config.eut.artifacts_dir,
+                                     config.eut.module,
+                                     config.eut.artifacts_file);
+        let _base_cfg = to_value(&config.eut).unwrap();
+        let mut base_cfg = _base_cfg.as_object().unwrap().clone();
+        base_cfg.insert(KEY_ARTIFACTS_PATH.to_string(), json!(artifacts_path));
+        db.add_object_property(&o, &json!(base_cfg), PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o), &config.eut.module, &config);
         db.add_object_property(&o, &module_cfg, PropertyType::Module);
 

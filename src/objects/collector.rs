@@ -11,7 +11,7 @@ use crate::constants::{EDGE_TYPE_TEST_REFERS_COLLECTION, KEY_ARTIFACTS_PATH, KEY
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{implement_object_ext, load_object_config, Rte, RteProvider, Test};
+use super::{implement_object_ext, load_object_config, Rte, Test};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 

@@ -10,10 +10,11 @@ use crate::objects::application::ApplicationExt;
 use crate::objects::feature::FeatureExt;
 use crate::objects::rte::RteExt;
 use crate::objects::collector::CollectorExt;
+use crate::objects::connection::{ConnectionExt};
 use crate::objects::component::{ComponentDestinationExt, ComponentSourceExt};
 use crate::objects::report::{Report, ReportExt};
 
-use super::{Rte, Application, Collector, Feature, implement_object_ext, ComponentDestination, ComponentSource};
+use super::{Rte, Application, Collector, Feature, implement_object_ext, ComponentDestination, ComponentSource, Connection};
 use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
@@ -172,7 +173,6 @@ impl<'a> Components<'a> {
         }
     }
 
-
     pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
         error!("Loading component collection object");
         let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasComponents).unwrap();
@@ -205,6 +205,37 @@ impl<'a> Connections<'a> {
                 id: o.id,
                 id_path,
                 vertex: o,
+                module_cfg: json!(null),
+            },
+        })
+    }
+
+    pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn ConnectionExt<'a> + 'a)>> {
+        error!("Loading connection objects");
+        let mut connections: Vec<Box<(dyn ConnectionExt + 'a)>> = Vec::new();
+        let _connections = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::HasConnection);
+
+        for c in _connections {
+            connections.push(Connection::load(db, &c, config));
+        }
+
+        connections
+    }
+
+    pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Loading connection collection object");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasConnections).unwrap();
+        let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object()
+            .unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str()
+            .unwrap().to_string()).collect());
+
+        Box::new(Connections {
+            object: Object {
+                db,
+                id: o.vertex.id,
+                id_path,
+                vertex: o.vertex,
                 module_cfg: json!(null),
             },
         })
@@ -325,9 +356,8 @@ impl<'a> Rtes<'a> {
 
     pub fn load(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn RteExt<'a> + 'a)>> {
         error!("Loading eut rte objects");
-        let o = db.get_object_neighbour_out(&object.id, EdgeTypes::UsesRtes);
         let mut rtes: Vec<Box<(dyn RteExt + 'a)>> = Vec::new();
-        let _rtes = db.get_object_neighbours_with_properties_out(&o.unwrap().id, EdgeTypes::ProvidesRte);
+        let _rtes = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesRte);
 
         for r in _rtes {
             rtes.push(Rte::load(db, &r, config));
@@ -360,8 +390,9 @@ impl<'a> Rtes<'a> {
         let rtes = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesRte);
 
         for rte in rtes {
-            let r = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object()
+            let r = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object()
                 .unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+
             if name == r {
                 return Some(Rte::load(db, &rte, config));
             }

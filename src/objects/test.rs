@@ -2,16 +2,15 @@ use std::any::Any;
 use std::collections::HashMap;
 use indradb::{Vertex, VertexProperties};
 use log::error;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use crate::{PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
-            RteTestRenderContext, ScriptTestRenderContext};
-use crate::constants::{KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REF_ARTIFACTS_PATH, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH, KEY_TEST};
+use crate::{EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, RteTestRenderContext, ScriptTestRenderContext};
+use crate::constants::{KEY_ARTIFACTS_PATH, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH, KEY_TEST};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{implement_object_ext, load_object_config};
+use super::{implement_object_ext, load_object_config, Rte};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -27,11 +26,27 @@ impl<'a> Test<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, parent: &Vertex, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new test object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Test, &mut path, label, pop);
-        db.add_object_property(&o, base_cfg, PropertyType::Base);
+        db.create_relationship(&parent, &o);
+        let c_src = db.get_object_neighbour_in_out_id(&o.id, EdgeTypes::Runs, VertexTypes::ConnectionSrc).unwrap();
+        let connection = db.get_object_neighbour_in_out_id(&c_src.id, EdgeTypes::HasConnectionSrc, VertexTypes::Connection).unwrap();
+        let connections = db.get_object_neighbour_in_out_id(&connection.id, EdgeTypes::HasConnection, VertexTypes::Connections).unwrap();
+        let rte_o = db.get_object_neighbour_in_out_id(&connections.id, EdgeTypes::HasConnections, VertexTypes::Rte).unwrap();
+        let rte_o_p = db.get_object_properties(&rte_o).unwrap();
+        let rte = Rte::load(&db, &rte_o_p, &config);
+        let rte_base_p = rte.get_base_properties();
+        let artifacts_path = format!("{}/{}/{}/{}/{}/{}",
+                                     config.tests.artifacts_dir,
+                                     rte_base_p.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                                     rte_base_p.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),
+                                     base_cfg.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                                     base_cfg.get(KEY_NAME).unwrap().as_str().unwrap().to_string().replace("-", "_"),
+                                     config.tests.artifacts_file);
+        let mut _base_cfg = base_cfg.as_object().unwrap().clone();
+        _base_cfg.insert(KEY_ARTIFACTS_PATH.to_string(), json!(artifacts_path));
+        db.add_object_property(&o, &_base_cfg, PropertyType::Base);
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&o),
                                             base_cfg.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(), &config);
         db.add_object_property(&o, &module_cfg, PropertyType::Module);
-        db.create_relationship(&parent, &o);
 
         Box::new(Test {
             object: Object {
@@ -100,8 +115,11 @@ impl Renderer<'_> for Test<'_> {
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-            let path = format!("{}/{}/{}/{}/{}", config.root_path, config.rte.path, module, scripts_path, script.as_object()
-                .unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+            let path = format!("{}/{}/{}/{}/{}", config.root_path,
+                               config.rte.path, module,
+                               scripts_path,
+                               script.as_object()
+                                   .unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
             let ctx = ScriptTestRenderContext {
                 eut: config.eut.module.to_string(),
@@ -112,7 +130,7 @@ impl Renderer<'_> for Test<'_> {
                 module: module.clone(),
                 project: config.project.clone(),
                 provider: "".to_string(),
-                features: vec![],
+                artifacts_path: "".to_string(),
             };
 
             let mut commands: Vec<String> = Vec::new();

@@ -7,7 +7,9 @@ use uuid::Uuid;
 
 use crate::{ApplicationRenderContext, EdgeTypes, PropertyType, RegressionConfig, render_script,
             RenderContext, Renderer, ScriptApplicationRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_APPLICATIONS, KEY_ARTIFACTS_PATH, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_APPLICATION, KEY_APPLICATIONS, KEY_ARTIFACTS_PATH, KEY_FILE, KEY_ID_PATH,
+                       KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE,
+                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -26,15 +28,27 @@ pub struct Application<'a> {
 impl<'a> Application<'a> {
     pub fn init(db: &'a Db, config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, parent: &Vertex, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new application object");
-        let (o, id_path) = db.create_object_and_init(VertexTypes::Application, &mut path, label, pop);
+        let (o, id_path) = db.create_object_and_init(VertexTypes::Application,
+                                                     &mut path,
+                                                     base_cfg.get(KEY_NAME).unwrap().as_str().unwrap(),
+                                                     pop);
         db.create_relationship(parent, &o);
-        let applications = db.get_object_neighbour_in_out_id(&o.id, EdgeTypes::ProvidesApplication, VertexTypes::Applications).unwrap();
-        let eut = db.get_object_neighbour_in_out_id(&applications.id, EdgeTypes::HasApplications, VertexTypes::Eut).unwrap();
+        let applications = db.get_object_neighbour_in_out_id(&o.id,
+                                                             EdgeTypes::ProvidesApplication,
+                                                             VertexTypes::Applications).unwrap();
+        let eut = db.get_object_neighbour_in_out_id(&applications.id,
+                                                    EdgeTypes::HasApplications,
+                                                    VertexTypes::Eut).unwrap();
         let eut_p = db.get_object_properties(&eut).unwrap();
         let eut_name = eut_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
         let a_module = base_cfg.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
         let a_provider = base_cfg.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
-        let artifacts_path = format!("{}/{}/{}/{}/{}/{}", config.applications.artifacts_dir, eut_name, KEY_APPLICATIONS.to_string(), a_module, a_provider, config.applications.artifacts_file);
+        let artifacts_path = format!("{}/{}/{}/{}/{}/{}",
+                                     config.applications.artifacts_dir,
+                                     eut_name, KEY_APPLICATIONS.to_string(),
+                                     a_module,
+                                     a_provider,
+                                     config.applications.artifacts_file);
         let mut _base_cfg = base_cfg.as_object().unwrap().clone();
         _base_cfg.insert(KEY_ARTIFACTS_PATH.to_string(), json!(artifacts_path));
         db.add_object_property(&o, &_base_cfg, PropertyType::Base);

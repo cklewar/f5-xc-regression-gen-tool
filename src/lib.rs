@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::error::Error;
 use std::fmt::{Debug};
 use std::format;
@@ -407,6 +407,8 @@ struct RegressionConfigEut {
     ci: RegressionConfigGenericCi,
     path: String,
     module: String,
+    artifacts_dir: String,
+    artifacts_file: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -578,23 +580,14 @@ struct EutRenderContext {
     provider: Vec<String>,
 }
 
-#[derive(Serialize, Debug)]
-struct RteProviderShareRenderContext {
-    job: String,
-    rte: String,
-    eut: String,
-    provider: String,
-    scripts: Vec<HashMap<String, Vec<String>>>,
-}
-
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Clone, Debug)]
 struct RteCiRenderContext {
     timeout: Value,
     variables: Value,
     artifacts: Value,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Clone, Debug)]
 struct RteVerificationRenderContext {
     ci: Map<String, Value>,
     test: String,
@@ -606,7 +599,7 @@ struct RteVerificationRenderContext {
     scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Clone, Debug)]
 struct RteTestRenderContext {
     ci: Map<String, Value>,
     rte: String,
@@ -619,7 +612,7 @@ struct RteTestRenderContext {
     verifications: Vec<RteVerificationRenderContext>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Clone, Debug)]
 struct RteComponentRenderContext {
     job: String,
     rte: String,
@@ -629,13 +622,13 @@ struct RteComponentRenderContext {
     provider: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 struct RteRenderContext {
     ci: RteCiRenderContext,
     name: String,
     base: Map<String, Value>,
+    module: Map<String, Value>,
     tests: Vec<RteTestRenderContext>,
-    shares: Vec<RteProviderShareRenderContext>,
     components: Vec<RteComponentRenderContext>,
 }
 
@@ -650,6 +643,7 @@ struct ScriptEutRenderContext {
     release: String,
     project: RegressionConfigProject,
     provider: String,
+    artifacts_path: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -706,7 +700,7 @@ struct ScriptTestRenderContext {
     module: String,
     project: RegressionConfigProject,
     provider: String,
-    features: Vec<String>,
+    artifacts_path: String
 }
 
 #[derive(Serialize, Debug)]
@@ -714,25 +708,13 @@ struct ScriptRteRenderContext {
     eut: String,
     rte: String,
     site: String,
+    base: Map<String, Value>,
+    module: Map<String, Value>,
     release: String,
     project: RegressionConfigProject,
     provider: String,
     destinations: String,
     artifacts_path: String,
-}
-
-#[derive(Serialize, Clone, Debug)]
-struct ScriptRteSiteShareDataRenderContext {
-    rte: String,
-    name: String,
-    index: usize,
-    has_client: bool,
-    has_server: bool,
-}
-
-#[derive(Serialize, Debug)]
-struct ScriptRteSitesShareDataRenderContext {
-    sites: HashMap<String, ScriptRteSiteShareDataRenderContext>,
 }
 
 #[derive(Serialize, Debug)]
@@ -840,11 +822,11 @@ struct RteCtxParameters<'a> {
     rte: &'a VertexProperties,
     eut: &'a VertexProperties,
     config: &'a RegressionConfig,
-    project: RegressionConfigProject,
+    project_config: RegressionConfigProject,
+    project: &'a Vertex,
     rte_name: String,
-    features: Vec<String>,
-    provider: String,
     rte_crcs: &'a mut RteRenderContext,
+    rte_scripts: Vec<HashMap<String, Vec<String>>>
 }
 
 pub struct Regression<'a> {
@@ -1038,9 +1020,9 @@ impl<'a> Regression<'a> {
 
                     for rte in obj.as_array().unwrap().iter() {
                         Rte::init(&self.db, &self.config, rte, &mut o_rtes.get_id_path().get_vec(),
-                                  &o_rtes, &mut object_refs,
-                                  &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
-                                  0);
+                                          &o_rtes, &mut object_refs,
+                                          &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                          0);
                     }
                 }
                 _ => {}
@@ -1174,7 +1156,7 @@ impl<'a> Regression<'a> {
 
                         match rte {
                             Some(a) => {
-                                //build_refs_map(&mut refs, r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(), &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
+                                build_refs_map(&mut refs, r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(), &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
                             }
                             None => error!("rte object not found")
                         }
@@ -1205,7 +1187,7 @@ impl<'a> Regression<'a> {
     pub fn init_stages(&self, id: Uuid) {
         let project = Project::load(&self.db, &id, &self.config);
         let eut = Eut::load(&self.db, &project, &self.config);
-        let ci = Ci::load(&self.db, &project, &self.config);
+        let ci = Ci::load(&self.db, &project.get_object(), &self.config);
         let ci_o_p_base = ci.get_base_properties();
         let _ci_id_path = ci_o_p_base.get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let mut ci_id_path: Vec<String> = _ci_id_path.iter().map(|c| c.as_str().unwrap().to_string()).collect();
@@ -1446,99 +1428,25 @@ impl<'a> Regression<'a> {
         let sites = self.db.get_object_neighbours_with_properties_out(&_sites.unwrap().id, EdgeTypes::HasSite);
 
         //Get EUT rtes
-        let _rtes = self.db.get_object_neighbour_out(&eut.get_id(), EdgeTypes::UsesRtes);
-        let rtes = self.db.get_object_neighbours_with_properties_out(&_rtes.unwrap().id, EdgeTypes::ProvidesRte);
-
-        //Process rte share data script render context
-        let site_count: usize = 0;
-        let mut srsd: HashMap<String, ScriptRteSitesShareDataRenderContext> = HashMap::new();
-
-        /*for rte in rtes.iter() {
-            let rte_type = rte.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
-            let _rte = RteType::new(rte_type, self.db);
-            if let Some(r) = _rte { r.build_ctx(rte, site_count, &mut srsd) }
-        }*/
-
-        //Build rte_to_site_map structure and add ScriptRteSiteShareDataRenderContext context
-        let mut srsd_rc: Vec<ScriptRteSiteShareDataRenderContext> = Vec::new();
-        let mut rte_to_site_map: HashMap<String, HashSet<String>> = HashMap::new();
-        for (rte, data) in srsd.iter() {
-            let mut sites: HashSet<String> = HashSet::new();
-
-            for (site, data) in data.sites.iter() {
-                sites.insert(site.to_string());
-                srsd_rc.push(data.clone());
-            }
-
-            rte_to_site_map.entry(rte.to_string()).or_insert(sites);
-        }
+        let _rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
+        let rtes = Rtes::load(&self.db, &_rtes.get_object(), &self.config);
 
         //Process eut rtes
         let mut rtes_rc: Vec<RteRenderContext> = Vec::new();
         let mut rte_names: Vec<String> = Vec::new();
 
-        for rte in rtes.iter() {
-            let rte_name = rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-            let rte_provider= rte.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
+        for rte in rtes {
+            let rte_base_p = rte.get_base_properties();
+            let rte_name = rte_base_p.get(KEY_NAME).unwrap().as_str().unwrap();
             rte_names.push(rte_name.to_string());
 
-            let rcrc = RteCiRenderContext {
-                timeout: Value::from(""),
-                variables: Value::from(""),
-                artifacts: Value::from(""),
+            let scripts = rte.gen_script_render_ctx(&self.config);
+            let _rte_crcs = rte.gen_render_ctx(&self.config, scripts.clone());
+
+            let rte_crcs: &RteRenderContext = match _rte_crcs.as_any().downcast_ref::<RteRenderContext>() {
+                Some(r) => r,
+                None => panic!("not a RteRenderContext!"),
             };
-
-            let mut rte_crcs = RteRenderContext {
-                ci: rcrc,
-                name: rte_name.to_string(),
-                base: Default::default(),
-                tests: vec![],
-                shares: vec![],
-                components: Default::default(),
-            };
-
-            /*for p in provider.iter() {
-                let p_name = p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-
-                if _active_provider.contains(&to_value(p_name).unwrap()) {
-                    active_provider.push(p);
-                    let ci_p = self.db.get_object_neighbour_with_properties_out(&p.vertex.id, EdgeTypes::HasCi).unwrap();
-                    rte_crcs.ci.insert(p_name.to_string(),
-                                       RteCiRenderContext {
-                                           timeout: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("timeout").unwrap().clone(),
-                                           variables: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("variables").unwrap().clone(),
-                                           artifacts: ci_p.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get("artifacts").unwrap().clone(),
-                                       },
-                    );
-                }
-            }*/
-
-            //Process connections
-            let rte_type = rte.props.get(PropertyType::Module.index())
-                .unwrap().value.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap();
-            //let _rte = RteType::new(rte_type, self.db);
-            let mut feature_names: Vec<String> = Vec::new();
-
-            for _feature in &features_rc {
-                let feature: &FeatureRenderContext = match _feature.as_any().downcast_ref::<FeatureRenderContext>() {
-                    Some(f) => f,
-                    None => panic!("not a FeatureRenderContext!"),
-                };
-                feature_names.push(feature.module.get(KEY_NAME).unwrap().to_string());
-            }
-
-            /*if let Some(r) = _rte {
-                r.build_conn_ctx(RteCtxParameters {
-                    rte,
-                    config: &self.config,
-                    project: self.config.project.clone(),
-                    eut: &eut.get_object_with_properties(),
-                    rte_name: rte_name.to_string(),
-                    features: feature_names,
-                    provider: "".to_string(),
-                    rte_crcs: &mut rte_crcs,
-                })
-            }*/
 
             for component in rte_crcs.components.iter() {
                 actions.rtes.push(component.job.clone());
@@ -1551,7 +1459,7 @@ impl<'a> Regression<'a> {
                 }
             }
 
-            rtes_rc.push(rte_crcs);
+            rtes_rc.push(rte_crcs.clone());
         }
 
         //Process eut sites
@@ -1571,7 +1479,11 @@ impl<'a> Regression<'a> {
             let scripts_path = eut_p_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
             let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
             for script in eut_p_module.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-                let path = format!("{}/{}/{}/{}/{}", self.config.root_path, self.config.eut.path, eut_name, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+                let path = format!("{}/{}/{}/{}/{}",
+                                   self.config.root_path,
+                                   self.config.eut.path,
+                                   eut_name, scripts_path,
+                                   script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                 let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
                 let ctx = ScriptEutRenderContext {
                     project: self.config.project.clone(),
@@ -1583,6 +1495,7 @@ impl<'a> Regression<'a> {
                     counter: sites.len(),
                     release: eut_p_module.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                     provider: provider_name.to_string(),
+                    artifacts_path: eut_p_base.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
                 };
 
                 let mut commands: Vec<String> = Vec::new();
@@ -1642,7 +1555,7 @@ impl<'a> Regression<'a> {
         context.insert(KEY_COLLECTORS, &collectors_rc);
         context.insert(KEY_APPLICATIONS, &applications_rc);
 
-        error!("{:#?}", context.get(KEY_APPLICATIONS));
+        //error!("{:#?}", context.get(KEY_APPLICATIONS));
         info!("Build render context -> Done.");
         context
     }

@@ -386,11 +386,11 @@ dashboard-deploy:
   artifacts:
     paths:
       - $ARTIFACTS_ROOT_DIR/
-      {%- for path in rte.ci[component.provider].artifacts.paths %}
+      {%- for path in rte.ci.artifacts.paths %}
       - {{ path }}
       {%- endfor %}
     expire_in: {{ config.ci.artifacts.expire_in }}
-  timeout: {{ rte.ci[component.provider].timeout }}
+  timeout: {{ rte.ci.timeout }}
   retry:
     max: 0
     when:
@@ -973,7 +973,7 @@ dashboard-deploy:
       ref: $CI_COMMIT_REF_NAME
       artifacts: true
   {%- endif %}
-  timeout: {{ rte.ci[component.provider].timeout }}
+  timeout: {{ rte.ci.timeout }}
   retry:
     max: 1
     when:
