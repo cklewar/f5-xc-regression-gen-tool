@@ -126,7 +126,6 @@ impl Renderer<'_> for Application<'_> {
         let rte_p = self.object.db.get_object_neighbour_with_properties_out(&self.get_id(), EdgeTypes::RefersRte).unwrap();
         let rte = Rte::load(&self.object.db, &rte_p, &config);
         let rte_p_base = &rte.get_base_properties();
-        let provider: String = String::new();
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.applications.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
@@ -138,7 +137,7 @@ impl Renderer<'_> for Application<'_> {
                 name: module.to_string(),
                 refs: base_props.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                 release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
-                provider: provider.to_string(),
+                provider: base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),
                 project: config.project.clone(),
                 artifacts_path: base_props.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
             };

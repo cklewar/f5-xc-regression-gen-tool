@@ -706,7 +706,6 @@ struct ScriptTestRenderContext {
 #[derive(Serialize, Debug)]
 struct ScriptRteRenderContext {
     eut: String,
-    rte: String,
     site: String,
     base: Map<String, Value>,
     module: Map<String, Value>,

@@ -122,8 +122,9 @@ impl<'a> Rte<'a> {
         //Rte artifacts path
         let artifacts_path = format!("{}/{}/{}/{}/{}",
                                      config.rte.artifacts_dir,
-                                     rte_name, rte_provider,
-                                     rte_src_component.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                                     rte_module,
+                                     rte_provider,
+                                     rte_name,
                                      config.rte.artifacts_file);
         // Rte base cfg
         let _base_cfg: Value = json!({
@@ -352,7 +353,6 @@ impl Renderer<'_> for Rte<'_> {
             let contents = std::fs::read_to_string(path).expect("panic while opening rte script file");
             let ctx = ScriptRteRenderContext {
                 eut: config.eut.module.to_string(),
-                rte: rte_name.clone(),
                 site: "".to_string(),
                 base: self.get_base_properties(),
                 module: self.get_module_properties(),
