@@ -338,7 +338,6 @@ impl Renderer<'_> for Rte<'_> {
         let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
         let module = self.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
         let rte_base_p: Map<String, Value> = self.get_base_properties();
-        let rte_name = rte_base_p.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
         let rte_provider = rte_base_p.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
         let rte_artifacts_path = rte_base_p.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string();
         let components = Components::load_collection(&self.object.db, &self.get_object(), &config);
