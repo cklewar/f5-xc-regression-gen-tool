@@ -470,12 +470,22 @@ dashboard-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut - {{ site.job }} - artifacts
+# eut - {{ site.job }} - artifacts --- {{ site.provider }}
 {{ site.job }}-artifacts:
   <<: *base
   stage: eut-artifacts
   rules:
     - !reference [ .destroy_rules, rules ]
+    {%- for application in applications %}
+    {%- if application.base.provider == site.provider %}
+    {%- for ref in application.base.refs %}
+    {%- if ref.type == "site" %}
+    - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
+    {%- endfor %}
   script:
       - |
         {%- for script in site.scripts %}
