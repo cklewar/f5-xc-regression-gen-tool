@@ -1224,8 +1224,6 @@ impl<'a> Regression<'a> {
                     error!("Adding artifact refs to application object...");
                     let a = Application::load(&self.db, &o_p, &self.config);
                     a.insert_base_property(KEY_REF_ARTIFACTS_PATH.to_string(), json!(refs));
-                    error!("REFS: {:?}", refs);
-                    error!("ARTIFACTS: {:?}", a.get_base_properties().get(KEY_REF_ARTIFACTS_PATH));
                 }
                 KEY_TEST => {
                     error!("Adding artifact refs to test object...");
