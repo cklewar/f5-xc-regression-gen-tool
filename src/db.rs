@@ -311,7 +311,12 @@ impl Db {
         None
     }
 
-    pub fn get_object_edges(&self, id: &Uuid) -> Vec<Edge> {
+    pub fn get_object_edges_out(&self, id: &Uuid) -> Vec<Edge> {
+        let o = self.db.get(indradb::SpecificVertexQuery::single(*id).outbound().unwrap());
+        indradb::util::extract_edges(o.unwrap()).unwrap()
+    }
+
+    pub fn get_object_edges_in(&self, id: &Uuid) -> Vec<Edge> {
         let o = self.db.get(indradb::SpecificVertexQuery::single(*id).inbound().unwrap());
         indradb::util::extract_edges(o.unwrap()).unwrap()
     }

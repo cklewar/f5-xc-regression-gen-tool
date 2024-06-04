@@ -101,7 +101,7 @@ impl Renderer<'_> for Collector<'_> {
         let scripts_path = props_module.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
         let mut collectibles: Vec<HashMap<String, String>> = vec![];
 
-        for e in self.object.db.get_object_edges(&self.get_id()) {
+        for e in self.object.db.get_object_edges_in(&self.get_id()) {
             match e.t.as_str() {
                 EDGE_TYPE_TEST_REFERS_COLLECTION => {
                     let t_o = Test::load(&self.object.db, &self.object.db.get_object(&e.outbound_id).id, &config);

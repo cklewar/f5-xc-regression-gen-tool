@@ -82,6 +82,7 @@ pub enum EdgeTypes {
     UsesRtes,
     NextStage,
     RefersRte,
+    RefersEut,
     RefersSite,
     NeedsShare,
     HasReports,
@@ -247,6 +248,7 @@ impl EdgeTypes {
             EdgeTypes::HasSites => EDGE_TYPE_HAS_SITES,
             EdgeTypes::UsesRtes => EDGE_TYPE_USES_RTES,
             EdgeTypes::RefersRte => EDGE_TYPE_REFERS_RTE,
+            EdgeTypes::RefersEut => EDGE_TYPE_REFERS_EUT,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
             EdgeTypes::RefersSite => EDGE_TYPE_REFERS_SITE,
             EdgeTypes::HasReports => EDGE_TYPE_HAS_REPORTS,
@@ -341,6 +343,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Applications.name().to_string(), VertexTypes::Application.name().to_string()), EdgeTypes::ProvidesApplication.name());
         map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::RefersFeature.name());
         map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Rte.name().to_string()), EdgeTypes::RefersRte.name());
+        map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::RefersSite.name());
         map.insert(VertexTuple(VertexTypes::Application.name().to_string(), VertexTypes::Providers.name().to_string()), EdgeTypes::NeedsProvider.name());
         map.insert(VertexTuple(VertexTypes::Features.name().to_string(), VertexTypes::Feature.name().to_string()), EdgeTypes::HasFeature.name());
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
@@ -669,7 +672,6 @@ struct ScriptFeatureRenderContext {
 #[derive(Serialize, Debug)]
 struct ScriptApplicationRenderContext {
     eut: String,
-    rte: String,
     name: String,
     refs: Map<String, Value>,
     release: String,
@@ -700,7 +702,7 @@ struct ScriptTestRenderContext {
     module: String,
     project: RegressionConfigProject,
     provider: String,
-    artifacts_path: String
+    artifacts_path: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -825,7 +827,7 @@ struct RteCtxParameters<'a> {
     project: &'a Vertex,
     rte_name: String,
     rte_crcs: &'a mut RteRenderContext,
-    rte_scripts: Vec<HashMap<String, Vec<String>>>
+    rte_scripts: Vec<HashMap<String, Vec<String>>>,
 }
 
 pub struct Regression<'a> {
@@ -900,9 +902,15 @@ impl<'a> Regression<'a> {
 
                     for (site_name, site_attr) in obj.as_object().unwrap().iter() {
                         let site_count = site_attr.as_object().unwrap().get(KEY_COUNT).unwrap().as_i64().unwrap();
+
                         match site_count.cmp(&1i64) {
                             Ordering::Equal => {
-                                let s_o = Site::init(&self.db, site_attr, &mut o.get_id_path().get_vec(), site_name, 0);
+                                let s_o = Site::init(&self.db,
+                                                     &self.config,
+                                                     site_attr,
+                                                     &mut o.get_id_path().get_vec(),
+                                                     site_name,
+                                                     0);
                                 self.db.create_relationship(&o.get_object(), &s_o.get_object());
                                 let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
                                 let p_o = self.db.get_object(id_name_map.get(provider).unwrap());
@@ -911,8 +919,12 @@ impl<'a> Regression<'a> {
                             }
                             Ordering::Greater => {
                                 for c in 1..=site_count {
-                                    let s_o = Site::init(&self.db, site_attr, &mut o.get_id_path().get_vec(),
-                                                         &*format!("{}_{}", site_name, c), 0);
+                                    let s_o = Site::init(&self.db,
+                                                         &self.config,
+                                                         site_attr,
+                                                         &mut o.get_id_path().get_vec(),
+                                                         &*format!("{}_{}", site_name, c),
+                                                         0);
                                     self.db.create_relationship(&o.get_object(), &s_o.get_object());
                                     let provider = &site_attr.as_object().unwrap().get(KEY_PROVIDER).unwrap().as_str().unwrap();
                                     let p_o = self.db.get_object(id_name_map.get(provider).unwrap());
@@ -1019,9 +1031,9 @@ impl<'a> Regression<'a> {
 
                     for rte in obj.as_array().unwrap().iter() {
                         Rte::init(&self.db, &self.config, rte, &mut o_rtes.get_id_path().get_vec(),
-                                          &o_rtes, &mut object_refs,
-                                          &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
-                                          0);
+                                  &o_rtes, &mut object_refs,
+                                  &rte.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                  0);
                     }
                 }
                 _ => {}
@@ -1066,6 +1078,19 @@ impl<'a> Regression<'a> {
                                 self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
                             }
                             None => error!("collector object not found")
+                        }
+                    }
+                    //Build rel obj --> Eut site
+                    VertexTypes::Site => {
+                        error!("Building rel between obj and eut site");
+                        let sites = Sites::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let site = Sites::load_site(&self.db, &sites.get_object(), ref_module, &self.config);
+
+                        match site {
+                            Some(a) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            }
+                            None => error!("site object not found")
                         }
                     }
                     //Build rel obj --> Feature
@@ -1119,7 +1144,12 @@ impl<'a> Regression<'a> {
 
                         match application {
                             Some(a) => {
-                                build_refs_map(&mut refs, r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(), &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
+                                build_refs_map(&mut refs,
+                                               r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(),
+                                               &a.get_base_properties().
+                                                   get(KEY_ARTIFACTS_PATH).
+                                                   unwrap().as_str().
+                                                   unwrap().to_string());
                             }
                             None => error!("application object not found")
                         }
@@ -1131,7 +1161,9 @@ impl<'a> Regression<'a> {
 
                         match collector {
                             Some(a) => {
-                                build_refs_map(&mut refs, r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(), &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
+                                build_refs_map(&mut refs,
+                                               r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(),
+                                               &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
                             }
                             None => error!("collector object not found")
                         }
@@ -1143,7 +1175,9 @@ impl<'a> Regression<'a> {
 
                         match feature {
                             Some(a) => {
-                                build_refs_map(&mut refs, r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(), &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
+                                build_refs_map(&mut refs,
+                                               r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(),
+                                               &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
                             }
                             None => error!("feature object not found")
                         }
@@ -1155,12 +1189,30 @@ impl<'a> Regression<'a> {
 
                         match rte {
                             Some(a) => {
-                                build_refs_map(&mut refs, r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(), &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
+                                build_refs_map(&mut refs,
+                                               r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(),
+                                               &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
                             }
                             None => error!("rte object not found")
                         }
                     }
-                    _ => {}
+                    VertexTypes::Site => {
+                        error!("Init additional properties for eut site object");
+                        let sites = Sites::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let site = Sites::load_site(&self.db, &sites.get_object(), ref_module, &self.config);
+
+                        match site {
+                            Some(a) => {
+                                build_refs_map(&mut refs,
+                                               r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap(),
+                                               &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
+                            }
+                            None => error!("site object not found")
+                        }
+                    }
+                    _ => {
+                        error!("Failed to init additional properties for unknown <{:?}> object", v_type);
+                    }
                 }
             }
 
@@ -1172,6 +1224,8 @@ impl<'a> Regression<'a> {
                     error!("Adding artifact refs to application object...");
                     let a = Application::load(&self.db, &o_p, &self.config);
                     a.insert_base_property(KEY_REF_ARTIFACTS_PATH.to_string(), json!(refs));
+                    error!("REFS: {:?}", refs);
+                    error!("ARTIFACTS: {:?}", a.get_base_properties().get(KEY_REF_ARTIFACTS_PATH));
                 }
                 KEY_TEST => {
                     error!("Adding artifact refs to test object...");
@@ -1253,7 +1307,7 @@ impl<'a> Regression<'a> {
         let mut _test_collector_stages: Vec<String> = Vec::new();
         let collectors = Collectors::load(&self.db, &eut.get_object(), &self.config);
         for c in collectors {
-            let edges = self.db.get_object_edges(&c.get_id());
+            let edges = self.db.get_object_edges_in(&c.get_id());
 
             for e in edges {
                 match e.t.as_str() {

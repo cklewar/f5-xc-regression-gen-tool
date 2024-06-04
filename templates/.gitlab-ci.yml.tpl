@@ -9,13 +9,6 @@ stages:
 variables:
   {% for variable in config.ci.variables -%}
   {{ variable.name | upper }}: "{{ variable.value }}"
-  {% endfor -%}
-  {% for application in applications -%}
-  {% if application.base.provider -%}
-  APPLICATION_{{ application.module.name | upper }}_DATA_TF_VAR_FILE: "$APPLICATION_DATA_ROOT_DIR/{{ application.module.name }}/{{ application.base.provider }}/$APPLICATION_TF_VAR_FILE"
-  {% else %}
-  APPLICATION_{{ application.module.name | upper }}_DATA_TF_VAR_FILE: "$APPLICATION_DATA_ROOT_DIR/{{ application.module.name }}/$APPLICATION_TF_VAR_FILE"
-  {% endif -%}
   {% endfor %}
 .deploy_rules:
   rules:
@@ -416,6 +409,7 @@ dashboard-deploy:
     {%- for ref in application.base.refs %}
     {%- if ref.type == "rte" %}
     - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endif %}
     {%- endfor %}
     {%- endfor %}

@@ -121,6 +121,7 @@ pub const EDGE_TYPE_HAS_SITES: &str = "has_sites";
 pub const EDGE_TYPE_NEEDS_SHARE: &str = "needs_share";
 pub const EDGE_TYPE_USES_RTES: &str = "uses_rtes";
 pub const EDGE_TYPE_REFERS_RTE: &str = "refers_rte";
+pub const EDGE_TYPE_REFERS_EUT: &str = "refers_eut";
 pub const EDGE_TYPE_HAS_REPORTS: &str = "has_reports";
 pub const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
 pub const EDGE_TYPE_REFERS_SITE: &str = "refers_site";

@@ -13,8 +13,9 @@ use crate::objects::collector::CollectorExt;
 use crate::objects::connection::{ConnectionExt};
 use crate::objects::component::{ComponentDestinationExt, ComponentSourceExt};
 use crate::objects::report::{Report, ReportExt};
+use crate::objects::site::SiteExt;
 
-use super::{Rte, Application, Collector, Feature, implement_object_ext, ComponentDestination, ComponentSource, Connection};
+use super::{Rte, Application, Collector, Feature, implement_object_ext, ComponentDestination, ComponentSource, Connection, Site};
 use super::object::{Object, ObjectExt};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
@@ -429,6 +430,41 @@ impl<'a> Sites<'a> {
                 module_cfg: json!(null),
             },
         })
+    }
+
+    pub fn load_collection(db: &'a Db, object: &Vertex, _config: &RegressionConfig) -> Box<(dyn ObjectExt + 'a)> {
+        error!("Loading eut site collection object");
+        let o = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasSites).unwrap();
+        let arr = o.props.get(PropertyType::Base.index()).unwrap().value.as_object()
+            .unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str()
+            .unwrap().to_string()).collect());
+
+        Box::new(Rtes {
+            object: Object {
+                db,
+                id: o.vertex.id,
+                id_path,
+                vertex: o.vertex,
+                module_cfg: json!(null),
+            },
+        })
+    }
+
+    pub fn load_site(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn SiteExt<'a> + 'a)>> {
+        error!("Loading specific eut site object");
+        let sites = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::HasSite);
+
+        for site in sites {
+            let r = site.props.get(PropertyType::Base.index()).unwrap().value.as_object()
+                .unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+
+            if name == r {
+                return Some(Site::load(db, &site, config));
+            }
+        }
+
+        None
     }
 }
 
