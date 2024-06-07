@@ -730,7 +730,7 @@ dashboard-deploy:
   rules:
     - !reference [ .regression_sequential_test_rules, rules ]
     - !reference [ .regression_test_seq_and_verification_rules, rules ]
-  stage: test-{{ rte.name | replace(from="_", to="-") }}-{{ test.provider }}-{{ test.module }}-{{ test.name }}-deploy
+  stage: test-{{ rte.name | replace(from="_", to="-") }}-{{ test.provider }}-{{ test.module | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-deploy
   script:
       - |
         export TF_VAR_data_branch=$data_branch
