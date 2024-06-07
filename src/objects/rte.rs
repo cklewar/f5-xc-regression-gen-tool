@@ -605,6 +605,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         project: params.config.project.clone(),
                         provider: src_name.to_string(),
                         artifacts_path: "".to_string(),
+                        rte_artifacts_path: "".to_string(),
                     };
 
                     let mut commands: Vec<String> = Vec::new();
@@ -787,6 +788,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                         project: params.config.project.clone(),
                         provider: rte_provider.to_string(),
                         artifacts_path: test_base_p.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
+                        rte_artifacts_path: rte_base_p.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
                     };
 
                     let mut commands: Vec<String> = Vec::new();

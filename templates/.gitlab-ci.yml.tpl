@@ -620,7 +620,9 @@ dashboard-deploy:
     - !reference [ .regression_test_seq_and_verification_rules, rules ]
     {%- for rte in rtes %}
     {%- for test in rte.tests %}
+    {%- if application.base.provider == rte.base.provider %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endif %}
     {%- for verification in test.verifications %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endfor %}

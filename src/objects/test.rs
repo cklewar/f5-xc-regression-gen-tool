@@ -131,6 +131,7 @@ impl Renderer<'_> for Test<'_> {
                 project: config.project.clone(),
                 provider: "".to_string(),
                 artifacts_path: "".to_string(),
+                rte_artifacts_path: "".to_string(),
             };
 
             let mut commands: Vec<String> = Vec::new();

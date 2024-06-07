@@ -703,6 +703,7 @@ struct ScriptTestRenderContext {
     project: RegressionConfigProject,
     provider: String,
     artifacts_path: String,
+    rte_artifacts_path: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -1305,7 +1306,10 @@ impl<'a> Regression<'a> {
         let mut _test_collector_stages: Vec<String> = Vec::new();
         let collectors = Collectors::load(&self.db, &eut.get_object(), &self.config);
         for c in collectors {
-            let edges = self.db.get_object_edges_in(&c.get_id());
+            for item in c.get_module_properties().get(KEY_STAGES).unwrap().as_object().unwrap().get(KEY_DEPLOY).unwrap().as_array().unwrap() {
+                _test_collector_stages.push(item.as_str().unwrap().to_string());
+            }
+            /*let edges = self.db.get_object_edges_in(&c.get_id());
 
             for e in edges {
                 match e.t.as_str() {
@@ -1316,17 +1320,24 @@ impl<'a> Regression<'a> {
                     }
                     _ => {}
                 }
-            }
+            }*/
         }
 
-        let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
+        if _test_collector_stages.len() > 0 {
+           let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
 
-        //Verification Stages Deploy
-        let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_collector_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
-        let verification_stages_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
-
-        //Reports Stages Deploy
-        self.add_ci_stages(&mut ci_id_path, &verification_stages_seq.unwrap(), &self.config.reports.ci.stages.deploy, &VertexTypes::StageDeploy);
+            //Verification Stages Deploy
+            let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_collector_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+            let verification_stages_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+            //Reports Stages Deploy
+            self.add_ci_stages(&mut ci_id_path, &verification_stages_seq.unwrap(), &self.config.reports.ci.stages.deploy, &VertexTypes::StageDeploy);
+        } else {
+            //Verification Stages Deploy
+            let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);
+            let verification_stages_seq = self.add_ci_stages(&mut ci_id_path, &verification_stage_deploy.unwrap(), &_verification_stages_seq, &VertexTypes::StageDeploy);
+            //Reports Stages Deploy
+            self.add_ci_stages(&mut ci_id_path, &verification_stages_seq.unwrap(), &self.config.reports.ci.stages.deploy, &VertexTypes::StageDeploy);
+        }
 
         //Feature Stages Destroy
         let mut stage_destroy: Option<Vertex> = None;
