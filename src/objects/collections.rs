@@ -153,6 +153,8 @@ impl<'a> Components<'a> {
         error!("Loading specific source component object");
         let src_component = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasComponentSrc);
 
+        error!("SRC_COMPONENT: {:?}", &src_component);
+
         match src_component {
             None => None,
             Some(c) => {

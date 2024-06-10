@@ -102,6 +102,7 @@ impl<'a> Rte<'a> {
                                                             &config, v.get(KEY_SRC).unwrap(),
                                                             &mut rte_components.get_id_path().get_vec(),
                                                             "", 0);
+                        error!("C_SRC_O: {:#?}", &c_src_o.get_object());
                         db.create_relationship(&rte_components.get_object(), &c_src_o.get_object());
                     }
                 }
