@@ -1,4 +1,4 @@
-use log::{info};
+use log::{error, info};
 use serde_json::Value;
 use serde_json::Value::Null;
 
@@ -46,9 +46,19 @@ mod report;
 fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> Value {
     info!("Loading module <{module}> configuration data...");
     let file: String;
+
     match _type {
         KEY_EUT => {
-            file = format!("{}/{}/{}/{}", config.root_path, config.eut.path, module, CONFIG_FILE_NAME);
+            match &config.eut.config {
+                None => {
+                    file = format!("{}/{}/{}/{}", config.root_path, config.eut.path, module, CONFIG_FILE_NAME);
+                }
+                Some(f) => {
+                    error!("F: {:?}", f);
+                    file = format!("{}/{}/{}/{}", config.root_path, config.eut.path, module, f);
+                    error!("FILE: {:?}", file);
+                }
+            }
         }
         KEY_RTE => {
             file = format!("{}/{}/{}/{}", config.root_path, config.rte.path, module, CONFIG_FILE_NAME);

@@ -410,6 +410,7 @@ struct RegressionConfigEut {
     ci: RegressionConfigGenericCi,
     path: String,
     module: String,
+    config: Option<String>,
     artifacts_dir: String,
     artifacts_file: String,
 }
@@ -834,17 +835,17 @@ struct RteCtxParameters<'a> {
 pub struct Regression<'a> {
     db: &'a Db,
     pub config: RegressionConfig,
-    pub root_path: String,
     pub template: String,
+    pub root_path: String
 }
 
 impl<'a> Regression<'a> {
-    pub fn new(db: &'a Db, path: &str, file: &str, template: &str) -> Self {
+    pub fn new(db: &'a Db, path: &str, file: &str, template: &str, eut_file: &Option<String>) -> Self {
         Regression {
             db,
-            config: Regression::load_regression_config(path, file),
-            root_path: path.to_string(),
+            config: Regression::load_regression_config(path, file, eut_file.clone()),
             template: String::from(template),
+            root_path: path.to_string(),
         }
     }
 
@@ -1029,7 +1030,7 @@ impl<'a> Regression<'a> {
                     let o_rtes = Rtes::init(&self.db, &self.config,
                                             &mut eut.get_id_path().get_vec(), "", 1);
                     self.db.create_relationship(&eut.get_object(), &o_rtes.get_object());
-
+                    error!("CONFIG WHILE RTE INIT: {:?}", &self.config.eut.config);
                     for rte in obj.as_array().unwrap().iter() {
                         Rte::init(&self.db, &self.config, rte, &mut o_rtes.get_id_path().get_vec(),
                                   &o_rtes, &mut object_refs,
@@ -1377,17 +1378,19 @@ impl<'a> Regression<'a> {
         self.add_ci_stages(&mut ci_id_path, &stage_destroy.unwrap(), &self.config.project.ci.stages.destroy, &VertexTypes::StageDestroy);
     }
 
-    fn load_regression_config(path: &str, file: &str) -> RegressionConfig {
+    fn load_regression_config(path: &str, file: &str, eut_config: Option<String>) -> RegressionConfig {
         info!("Loading regression configuration data...");
+        error!("EUT_CONFIG: {:?}", eut_config);
         let data: String = format!("{path}/{CONFIG_FILE_PATH}/{file}");
         error!("Sense8 config file: {}", &data);
         let raw = std::fs::read_to_string(data).unwrap();
         let _tmp: Value = serde_json::from_str(&raw).unwrap();
         let mut _cfg = _tmp.as_object().unwrap().clone();
         _cfg.insert("root_path".to_string(), Value::from(path.to_string()));
-        let cfg = serde_json::from_value::<RegressionConfig>(to_value(&_cfg).unwrap()).unwrap();
-        info!("Loading regression configuration data -> Done.");
+        let mut cfg = serde_json::from_value::<RegressionConfig>(to_value(&_cfg).unwrap()).unwrap();
+        let _ = cfg.eut.config.insert(eut_config.clone().unwrap_or_default());
 
+        info!("Loading regression configuration data -> Done.");
         info!("Render regression configuration file...");
         let mut _tera = Tera::new(&*format!("{path}/{CONFIG_FILE_PATH}/*")).unwrap();
         let mut context = Context::new();
@@ -1401,7 +1404,6 @@ impl<'a> Regression<'a> {
         context.insert(KEY_COLLECTORS, &cfg.collectors);
         context.insert(KEY_APPLICATIONS, &cfg.applications);
         context.insert(KEY_VERIFICATIONS, &cfg.verifications);
-
         let eutc = _tera.render(file, &context).unwrap();
         info!("Render regression configuration file -> Done.");
 
@@ -1409,7 +1411,8 @@ impl<'a> Regression<'a> {
         let _tmp: Value = serde_json::from_str(&eutc).unwrap();
         let mut _cfg = _tmp.as_object().unwrap().clone();
         _cfg.insert("root_path".to_string(), Value::from(path.to_string()));
-        let cfg = serde_json::from_value::<RegressionConfig>(to_value(&_cfg).unwrap()).unwrap();
+        let mut cfg = serde_json::from_value::<RegressionConfig>(to_value(&_cfg).unwrap()).unwrap();
+        let _ = cfg.eut.config.insert(eut_config.unwrap_or_default());
         info!("Loading regression configuration data -> Done.");
 
         cfg

@@ -21,6 +21,9 @@ struct Cli {
     root_path: String,
     #[arg(long)]
     config_file: String,
+    /// Regression EUT configuration file
+    #[arg(long)]
+    eut_config_file: Option<String>,
     /// Regression CI template file
     #[arg(long)]
     template: String,
@@ -50,7 +53,10 @@ fn main() {
     env_logger::init();
     let cli = Cli::parse();
     let db = sense8_ci_generator::db::Db::new();
-    let r = sense8_ci_generator::Regression::new(&db, &cli.root_path, &cli.config_file, &cli.template);
+    let r = sense8_ci_generator::Regression::new(&db,
+                                                 &cli.root_path,
+                                                 &cli.config_file,
+                                                 &cli.template, &cli.eut_config_file);
     let (p, refs) = r.init();
     r.init_refs(p, &refs);
     r.init_artifacts(p, &refs);

@@ -52,9 +52,11 @@ impl<'a> Feature<'a> {
 
     pub fn load(db: &'a Db, object: &VertexProperties, config: &RegressionConfig) -> Box<(dyn FeatureExt<'a> + 'a)> {
         error!("Loading feature object");
-        let arr = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
+        let arr = object.props.get(PropertyType::Base.index()).
+            unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
-        let module = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+        let module = object.props.get(PropertyType::Base.index()).
+            unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
 
         Box::new(Feature {

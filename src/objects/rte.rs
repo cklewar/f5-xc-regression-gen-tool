@@ -71,6 +71,7 @@ impl<'a> Rte<'a> {
                                                           EdgeTypes::HasEut,
                                                           VertexTypes::Project).unwrap();
         let project = Project::load(&db, &project_o.id, &config);
+        error!("EUT_CONFIG: {:?}", config.eut.config.clone());
         let eut = Eut::load(&db, &project, &config);
 
         //RTE -> Features
@@ -263,7 +264,8 @@ impl<'a> Rte<'a> {
         error!("Loading rte object");
         let arr = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_ID_PATH).unwrap().as_array().unwrap();
         let id_path = IdPath::load_from_array(arr.iter().map(|c| c.as_str().unwrap().to_string()).collect());
-        let module = object.props.get(PropertyType::Base.index()).unwrap().value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+        let module = object.props.get(PropertyType::Base.index()).unwrap().
+            value.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
         let module_cfg = load_object_config(VertexTypes::get_name_by_object(&object.vertex), module, &config);
 
         Box::new(Rte {
@@ -782,7 +784,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     let ctx = ScriptTestRenderContext {
                         rte: params.rte_name.to_string(),
                         eut: eut_module.to_string(),
-                        name: test_name.to_string(),
+                        name: test_name.to_string().replace('-', "_"),
                         data: test_base_p.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                         refs: test_base_p.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                         module: test_module.to_string(),

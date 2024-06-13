@@ -105,7 +105,11 @@ impl Renderer<'_> for Site<'_> {
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-            let path = format!("{}/{}/{}/{}/{}", config.root_path, config.applications.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+            let path = format!("{}/{}/{}/{}/{}",
+                               config.root_path,
+                               config.applications.path, module,
+                               scripts_path,
+                               script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
 
             let ctx = ScriptApplicationRenderContext {
