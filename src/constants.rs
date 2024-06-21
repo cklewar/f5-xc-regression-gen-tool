@@ -124,6 +124,7 @@ pub const EDGE_TYPE_REFERS_RTE: &str = "refers_rte";
 pub const EDGE_TYPE_REFERS_EUT: &str = "refers_eut";
 pub const EDGE_TYPE_HAS_REPORTS: &str = "has_reports";
 pub const EDGE_TYPE_NEXT_STAGE: &str = "next_stage";
+pub const EDGE_TYPE_REFERS_TEST: &str = "refers_test";
 pub const EDGE_TYPE_REFERS_SITE: &str = "refers_site";
 pub const EDGE_TYPE_HAS_FEATURE: &str = "has_feature";
 pub const EDGE_TYPE_HAS_FEATURES: &str = "has_features";

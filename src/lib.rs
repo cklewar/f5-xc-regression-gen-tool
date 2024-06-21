@@ -22,8 +22,7 @@ use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, Rtes,
 
 use crate::constants::*;
 use crate::db::Db;
-use crate::objects::ConnectionSource;
-use crate::VertexTypes::ConnectionSrc;
+use crate::objects::{ConnectionSource, Test};
 
 pub mod constants;
 pub mod db;
@@ -87,6 +86,7 @@ pub enum EdgeTypes {
     RefersRte,
     RefersEut,
     RefersSite,
+    RefersTest,
     NeedsShare,
     HasReports,
     HasFeature,
@@ -115,7 +115,7 @@ pub enum EdgeTypes {
     ProvidesApplication,
     TestRefersCollector,
     TestRefersApplication,
-    ReportRefersCollection,
+    ReportRefersCollector,
 }
 
 impl VertexTypes {
@@ -253,6 +253,7 @@ impl EdgeTypes {
             EdgeTypes::RefersRte => EDGE_TYPE_REFERS_RTE,
             EdgeTypes::RefersEut => EDGE_TYPE_REFERS_EUT,
             EdgeTypes::NextStage => EDGE_TYPE_NEXT_STAGE,
+            EdgeTypes::RefersTest => EDGE_TYPE_REFERS_TEST,
             EdgeTypes::RefersSite => EDGE_TYPE_REFERS_SITE,
             EdgeTypes::HasReports => EDGE_TYPE_HAS_REPORTS,
             EdgeTypes::HasFeature => EDGE_TYPE_HAS_FEATURE,
@@ -282,7 +283,7 @@ impl EdgeTypes {
             EdgeTypes::ProvidesApplication => EDGE_TYPE_PROVIDES_APPLICATION,
             EdgeTypes::TestRefersCollector => EDGE_TYPE_TEST_REFERS_COLLECTION,
             EdgeTypes::TestRefersApplication => EDGE_TYPE_TEST_REFERS_APPLICATION,
-            EdgeTypes::ReportRefersCollection => EDGE_TYPE_REPORT_REFERS_COLLECTION,
+            EdgeTypes::ReportRefersCollector => EDGE_TYPE_REPORT_REFERS_COLLECTION,
         }
     }
 }
@@ -352,9 +353,9 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Feature.name().to_string(), VertexTypes::Site.name().to_string()), EdgeTypes::FeatureRefersSite.name());
         map.insert(VertexTuple(VertexTypes::Scripts.name().to_string(), VertexTypes::Script.name().to_string()), EdgeTypes::Has.name());
         map.insert(VertexTuple(VertexTypes::Reports.name().to_string(), VertexTypes::Report.name().to_string()), EdgeTypes::ProvidesReport.name());
-        map.insert(VertexTuple(VertexTypes::Report.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ReportRefersCollection.name());
+        map.insert(VertexTuple(VertexTypes::Report.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ReportRefersCollector.name());
         map.insert(VertexTuple(VertexTypes::Collectors.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ProvidesCollector.name());
-        map.insert(VertexTuple(VertexTypes::Collector.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::ProvidesCollector.name());
+        map.insert(VertexTuple(VertexTypes::Collector.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::RefersTest.name());
         map
     };
     static ref EDGES_COUNT: usize = EDGE_TYPES.len();
@@ -659,9 +660,10 @@ struct ScriptCollectorRenderContext {
     eut: String,
     name: String,
     data: String,
+    refs: Map<String, Value>,
     module: String,
     project: RegressionConfigProject,
-    collectibles: Vec<HashMap<String, String>>,
+    artifacts_path: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -743,8 +745,8 @@ struct ScriptReportRenderContext {
     eut: String,
     name: String,
     data: String,
+    refs: Map<String, Value>,
     module: String,
-    collector: String,
     project: RegressionConfigProject,
 }
 
@@ -983,7 +985,7 @@ impl<'a> Regression<'a> {
                         let props = c_o.get_base_properties();
 
                         object_refs.push(ObjRefs {
-                            refs: props.get("refs").unwrap().as_array().unwrap().clone(),
+                            refs: props.get(KEY_REFS).unwrap().as_array().unwrap().clone(),
                             id: c_o.get_id(),
                         })
                     }
@@ -993,29 +995,17 @@ impl<'a> Regression<'a> {
                                           &mut eut.get_id_path().get_vec(), "", 2);
                     self.db.create_relationship(&eut.get_object(), &o.get_object());
 
-                    for c in obj.as_array().unwrap().iter() {
-                        let label = c.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                        let c_o = Report::init(&self.db, &self.config, c,
-                                               &mut o.get_id_path().get_vec(), label, 0);
-                        self.db.create_relationship(&o.get_object(), &c_o.get_object());
+                    for r in obj.as_array().unwrap().iter() {
+                        let label = r.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                        let report = Report::init(&self.db, &self.config, r,
+                                                  &mut o.get_id_path().get_vec(), label, 0);
+                        self.db.create_relationship(&o.get_object(), &report.get_object());
+                        let props = report.get_base_properties();
 
-                        for r in c_o.get_base_properties().get(KEY_REFS).unwrap().as_array().unwrap() {
-                            let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
-                            let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-
-                            match v_type {
-                                VertexTypes::Collector => {
-                                    let collectors = Collectors::load(&self.db, &eut.get_object(), &self.config);
-
-                                    for c in collectors {
-                                        if c.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap() == ref_module {
-                                            self.db.create_relationship(&c_o.get_object(), &c.get_object());
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+                        object_refs.push(ObjRefs {
+                            refs: props.get(KEY_REFS).unwrap().as_array().unwrap().clone(),
+                            id: report.get_id(),
+                        })
                     }
                 }
                 k if k == KEY_APPLICATIONS => {
@@ -1031,7 +1021,7 @@ impl<'a> Regression<'a> {
                         let props = a_o.get_base_properties();
 
                         object_refs.push(ObjRefs {
-                            refs: props.get("refs").unwrap().as_array().unwrap().clone(),
+                            refs: props.get(KEY_REFS).unwrap().as_array().unwrap().clone(),
                             id: a_o.get_id(),
                         })
                     }
@@ -1062,23 +1052,14 @@ impl<'a> Regression<'a> {
         for obj in obj_refs {
             for r in &obj.refs {
                 let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
-                let ref_module;
-
-                match r.as_object().unwrap().get(KEY_MODULE) {
-                    None => {
-                        ref_module = Default::default();
-                    }
-                    Some(m) => {
-                        ref_module = m.as_str().unwrap();
-                    }
-                }
+                let ref_name = r.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                 match v_type {
                     //Build rel obj --> Application
                     VertexTypes::Application => {
                         error!("Building rel between obj and application");
                         let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let application = Applications::load_application(&self.db, &applications.get_object(), ref_module, &self.config);
+                        let application = Applications::load_application(&self.db, &applications.get_object(), ref_name, &self.config);
 
                         match application {
                             Some(a) => {
@@ -1091,11 +1072,11 @@ impl<'a> Regression<'a> {
                     VertexTypes::Collector => {
                         error!("Building rel between obj and collector");
                         let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), ref_module, &self.config);
+                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), ref_name, &self.config);
 
                         match collector {
-                            Some(a) => {
-                                self.db.create_relationship(&self.db.get_object(&obj.id), &a.get_object());
+                            Some(c) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &c.get_object());
                             }
                             None => error!("collector object not found")
                         }
@@ -1104,7 +1085,7 @@ impl<'a> Regression<'a> {
                     VertexTypes::Site => {
                         error!("Building rel between obj and eut site");
                         let sites = Sites::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let site = Sites::load_site(&self.db, &sites.get_object(), ref_module, &self.config);
+                        let site = Sites::load_site(&self.db, &sites.get_object(), ref_name, &self.config);
 
                         match site {
                             Some(a) => {
@@ -1117,7 +1098,7 @@ impl<'a> Regression<'a> {
                     VertexTypes::Feature => {
                         error!("Building rel between obj and feature");
                         let features = Features::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let feature = Features::load_feature(&self.db, &features.get_object(), ref_module, &self.config);
+                        let feature = Features::load_feature(&self.db, &features.get_object(), ref_name, &self.config);
 
                         match feature {
                             Some(a) => {
@@ -1130,7 +1111,7 @@ impl<'a> Regression<'a> {
                     VertexTypes::Rte => {
                         error!("Building rel between obj and rte");
                         let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_module, &self.config);
+                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_name, &self.config);
 
                         match rte {
                             Some(r) => {
@@ -1141,22 +1122,29 @@ impl<'a> Regression<'a> {
                     }
                     //Build rel obj --> Test
                     VertexTypes::Test => {
-                        error!("Building rel between obj and test");
-                        let test_name = r.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
-                        let rte_name = r.as_object().unwrap().get(KEY_RTE).unwrap().as_str().unwrap();
-                        let connection = r.as_object().unwrap().get(KEY_CONNECTION).unwrap().as_str().unwrap();
-                        let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), rte_name, &self.config);
-                        let connections = Connections::load_collection(&self.db, &rte.unwrap().get_object(), &self.config);
-                        let connection = Connections::load_connection(&self.db, &connections.get_object(), connection, &self.config);
-                        let c_src = ConnectionSource::load(&self.db, &connection.unwrap().get_object(), &self.config);
-                        let test = ConnectionSource::load_test(&self.db, &c_src.get_object(), &test_name, &self.config);
+                        match VertexTypes::get_name_by_object(&self.db.get_object(&obj.id)) {
+                            VERTEX_TYPE_COLLECTOR => {
+                                error!("Building rel between collector and test");
+                                let test_name = r.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                                let rte_name = r.as_object().unwrap().get(KEY_RTE).unwrap().as_str().unwrap();
+                                let connection = r.as_object().unwrap().get(KEY_CONNECTION).unwrap().as_str().unwrap();
+                                let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
+                                let rte = Rtes::load_rte(&self.db, &rtes.get_object(), rte_name, &self.config);
+                                let connections = Connections::load_collection(&self.db, &rte.unwrap().get_object(), &self.config);
+                                let connection = Connections::load_connection(&self.db, &connections.get_object(), connection, &self.config);
+                                let c_src = ConnectionSource::load(&self.db, &connection.unwrap().get_object(), &self.config);
+                                let test = ConnectionSource::load_test(&self.db, &c_src.get_object(), &test_name, &self.config);
 
-                        match test {
-                            Some(t) => {
-                                self.db.create_relationship(&self.db.get_object(&obj.id), &t.get_object());
+                                match test {
+                                    Some(t) => {
+                                        self.db.create_relationship(&self.db.get_object(&obj.id), &t.get_object());
+                                    }
+                                    None => error!("test object not found")
+                                }
                             }
-                            None => error!("test object not found")
+                            _ => {
+                                error!("No identifier found for: {:?}", VertexTypes::get_name_by_object(&self.db.get_object(&obj.id)));
+                            }
                         }
                     }
                     _ => {}
@@ -1174,22 +1162,13 @@ impl<'a> Regression<'a> {
 
             for r in &obj.refs {
                 let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
-                let ref_module;
-
-                match r.as_object().unwrap().get(KEY_MODULE) {
-                    None => {
-                        ref_module = Default::default();
-                    }
-                    Some(m) => {
-                        ref_module = m.as_str().unwrap();
-                    }
-                }
+                let ref_name = r.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
 
                 match v_type {
                     VertexTypes::Application => {
                         error!("Init additional properties for application object");
                         let applications = Applications::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let application = Applications::load_application(&self.db, &applications.get_object(), ref_module, &self.config);
+                        let application = Applications::load_application(&self.db, &applications.get_object(), ref_name, &self.config);
 
                         match application {
                             Some(a) => {
@@ -1206,7 +1185,7 @@ impl<'a> Regression<'a> {
                     VertexTypes::Collector => {
                         error!("Init additional properties for collector object");
                         let collectors = Collectors::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), ref_module, &self.config);
+                        let collector = Collectors::load_collector(&self.db, &collectors.get_object(), ref_name, &self.config);
 
                         match collector {
                             Some(a) => {
@@ -1220,7 +1199,7 @@ impl<'a> Regression<'a> {
                     VertexTypes::Feature => {
                         error!("Init additional properties for feature object");
                         let features = Features::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let feature = Features::load_feature(&self.db, &features.get_object(), ref_module, &self.config);
+                        let feature = Features::load_feature(&self.db, &features.get_object(), ref_name, &self.config);
 
                         match feature {
                             Some(a) => {
@@ -1234,7 +1213,7 @@ impl<'a> Regression<'a> {
                     VertexTypes::Rte => {
                         error!("Init additional properties for rte object");
                         let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_module, &self.config);
+                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), ref_name, &self.config);
 
                         match rte {
                             Some(a) => {
@@ -1248,7 +1227,7 @@ impl<'a> Regression<'a> {
                     VertexTypes::Site => {
                         error!("Init additional properties for eut site object");
                         let sites = Sites::load_collection(&self.db, &eut.get_object(), &self.config);
-                        let site = Sites::load_site(&self.db, &sites.get_object(), ref_module, &self.config);
+                        let site = Sites::load_site(&self.db, &sites.get_object(), ref_name, &self.config);
 
                         match site {
                             Some(a) => {
@@ -1257,6 +1236,35 @@ impl<'a> Regression<'a> {
                                                &a.get_base_properties().get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string());
                             }
                             None => error!("site object not found")
+                        }
+                    }
+                    VertexTypes::Test => {
+                        error!("Init additional properties for test object");
+                        let rte_name = r.as_object().unwrap().get(KEY_RTE).unwrap().as_str().unwrap();
+                        let connection = r.as_object().unwrap().get(KEY_CONNECTION).unwrap().as_str().unwrap();
+                        let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), rte_name, &self.config);
+                        let connections = Connections::load_collection(&self.db, &rte.unwrap().get_object(), &self.config);
+                        let connection = Connections::load_connection(&self.db, &connections.get_object(), connection, &self.config);
+                        let c_src = ConnectionSource::load(&self.db, &connection.unwrap().get_object(), &self.config);
+                        let test = ConnectionSource::load_test(&self.db, &c_src.get_object(), &ref_name, &self.config);
+
+                        match test {
+                            Some(t) => {
+                                build_refs_map(&mut refs,
+                                               r.as_object().
+                                                   unwrap().
+                                                   get(KEY_TYPE).
+                                                   unwrap().
+                                                   as_str().
+                                                   unwrap(),
+                                               &t.get_base_properties().
+                                                   get(KEY_ARTIFACTS_PATH).
+                                                   unwrap().as_str().
+                                                   unwrap().
+                                                   to_string());
+                            }
+                            None => error!("test object not found")
                         }
                     }
                     _ => {
@@ -1274,10 +1282,20 @@ impl<'a> Regression<'a> {
                     let a = Application::load(&self.db, &o_p, &self.config);
                     a.insert_base_property(KEY_REF_ARTIFACTS_PATH.to_string(), json!(refs));
                 }
+                KEY_COLLECTOR => {
+                    error!("Adding artifact refs to collector object...");
+                    let c = Collector::load(&self.db, &o_p, &self.config);
+                    c.insert_base_property(KEY_REF_ARTIFACTS_PATH.to_string(), json!(refs));
+                }
+                KEY_REPORT => {
+                    error!("Adding artifact refs to report object...");
+                    let r = Report::load(&self.db, &o_p, &self.config);
+                    r.insert_base_property(KEY_REF_ARTIFACTS_PATH.to_string(), json!(refs));
+                }
                 KEY_TEST => {
                     error!("Adding artifact refs to test object...");
-                    let a = Application::load(&self.db, &o_p, &self.config);
-                    a.insert_base_property(KEY_REF_ARTIFACTS_PATH.to_string(), json!(refs));
+                    let t = Test::load(&self.db, &o_p.vertex.id, &self.config);
+                    t.insert_base_property(KEY_REF_ARTIFACTS_PATH.to_string(), json!(refs));
                 }
                 &_ => {}
             }

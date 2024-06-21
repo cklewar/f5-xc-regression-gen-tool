@@ -5,14 +5,14 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
+use crate::{PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
             ReportRenderContext, ScriptReportRenderContext};
-use crate::constants::{KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REPORT,
-                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REF_ARTIFACTS_PATH,
+                       KEY_REPORT, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{Collector, implement_object_ext, load_object_config};
+use super::{implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -95,20 +95,20 @@ impl Renderer<'_> for Report<'_> {
         let data = self.get_base_properties().get(KEY_DATA).unwrap().as_str().unwrap().to_string();
         let m_props: Map<String, Value> = self.get_module_properties();
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
-        let _collector = self.object.db.get_object_neighbour_with_properties_out(&self.get_id(), EdgeTypes::ReportRefersCollection).unwrap();
-        let collector = Collector::load(&self.object.db, &_collector, &config);
-        let collector_module = collector.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-            let path = format!("{}/{}/{}/{}/{}", config.root_path, config.reports.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
+            let path = format!("{}/{}/{}/{}/{}", config.root_path,
+                               config.reports.path,
+                               module, scripts_path,
+                               script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening report script file");
             let ctx = ScriptReportRenderContext {
                 eut: config.eut.module.to_string(),
                 name: name.to_string(),
                 data: data.to_string(),
+                refs: self.get_base_properties().get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                 module: module.to_string(),
                 project: config.project.clone(),
-                collector: collector_module.to_string(),
             };
 
             let mut commands: Vec<String> = Vec::new();

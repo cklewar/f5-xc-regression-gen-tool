@@ -755,6 +755,7 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
             for t in tests {
                 let test = Test::load(&self.db, &t.vertex.id, &params.config);
                 let test_base_p = test.get_base_properties();
+                let test_module_p = test.get_module_properties();
                 let test_name = test_base_p.get(KEY_NAME).unwrap().as_str().unwrap();
                 let test_module = test_base_p.get(KEY_MODULE).unwrap().as_str().unwrap();
                 let t_collector = self.db.get_object_neighbour_out(&t.vertex.id, EdgeTypes::TestRefersCollector);
@@ -764,15 +765,14 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                     }
                     None => "".to_string()
                 };
-
                 let t_job_name = format!("{}_{}_{}",
                                          params.project_config.module,
                                          KEY_TEST,
                                          test_name).replace('_', "-");
-                let scripts_path = test_base_p.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+                let scripts_path = test_module_p.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
                 let mut scripts: Vec<HashMap<String, Vec<String>>> = Vec::new();
 
-                for script in test_base_p.get(KEY_SCRIPTS).unwrap().as_array().unwrap() {
+                for script in test_module_p.get(KEY_SCRIPTS).unwrap().as_array().unwrap() {
                     let path = format!("{}/{}/{}/{}/{}",
                                        params.config.root_path,
                                        params.config.tests.path,

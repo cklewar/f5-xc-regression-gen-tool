@@ -108,10 +108,11 @@ impl<'a> Collectors<'a> {
     pub fn load_collector(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn CollectorExt<'a> + 'a)>> {
         error!("Loading specific collector object");
         let collectors = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::ProvidesCollector);
+
         for collector in collectors {
-            let a = collector.props.get(PropertyType::Module.index()).unwrap().value.as_object()
+            let c = collector.props.get(PropertyType::Base.index()).unwrap().value.as_object()
                 .unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
-            if name == a {
+            if name == c {
                 return Some(Collector::load(db, &collector, config));
             }
         }

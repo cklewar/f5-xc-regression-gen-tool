@@ -207,6 +207,14 @@ impl Db {
         e
     }
 
+    pub fn get_relationship_type_by_v_type(&self, a: &Vertex, b: &VertexTypes) -> &str {
+        info!("Get relationship type for <{}> and <{}>...", a.t.as_str(), b.name());
+        // error!("RELA -----> {:?}, {:?}", a.t, b.t);
+        let e = EDGE_TYPES.get(&VertexTuple(a.t.to_string(), b.name().to_string())).unwrap();
+        info!("Get relationship type for <{}> and <{}> -> Done.", a.t.as_str(), b.name());
+        e
+    }
+
     pub(crate) fn get_all_objects(&self) -> Option<Vec<Vertex>> {
         let q = AllVertexQuery;
         let result = self.db.get(q);
