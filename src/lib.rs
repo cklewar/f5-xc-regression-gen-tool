@@ -17,10 +17,13 @@ use tera::{Context, Tera};
 use uuid::Uuid;
 
 use objects::{Ci, Eut, Features, Feature, Project, Providers, EutProvider, Rtes, Rte, Sites, Site,
-              Dashboard, Application, Applications, Collectors, Collector, Reports, Report};
+              Dashboard, Application, Applications, Collectors, Collector, Reports, Report,
+              Connections};
 
 use crate::constants::*;
 use crate::db::Db;
+use crate::objects::ConnectionSource;
+use crate::VertexTypes::ConnectionSrc;
 
 pub mod constants;
 pub mod db;
@@ -351,6 +354,7 @@ lazy_static! {
         map.insert(VertexTuple(VertexTypes::Reports.name().to_string(), VertexTypes::Report.name().to_string()), EdgeTypes::ProvidesReport.name());
         map.insert(VertexTuple(VertexTypes::Report.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ReportRefersCollection.name());
         map.insert(VertexTuple(VertexTypes::Collectors.name().to_string(), VertexTypes::Collector.name().to_string()), EdgeTypes::ProvidesCollector.name());
+        map.insert(VertexTuple(VertexTypes::Collector.name().to_string(), VertexTypes::Test.name().to_string()), EdgeTypes::ProvidesCollector.name());
         map
     };
     static ref EDGES_COUNT: usize = EDGE_TYPES.len();
@@ -836,7 +840,7 @@ pub struct Regression<'a> {
     db: &'a Db,
     pub config: RegressionConfig,
     pub template: String,
-    pub root_path: String
+    pub root_path: String,
 }
 
 impl<'a> Regression<'a> {
@@ -976,6 +980,12 @@ impl<'a> Regression<'a> {
                         let c_o = Collector::init(&self.db, &self.config, c,
                                                   &mut o.get_id_path().get_vec(), "", 0);
                         self.db.create_relationship(&o.get_object(), &c_o.get_object());
+                        let props = c_o.get_base_properties();
+
+                        object_refs.push(ObjRefs {
+                            refs: props.get("refs").unwrap().as_array().unwrap().clone(),
+                            id: c_o.get_id(),
+                        })
                     }
                 }
                 k if k == KEY_REPORTS => {
@@ -1030,7 +1040,6 @@ impl<'a> Regression<'a> {
                     let o_rtes = Rtes::init(&self.db, &self.config,
                                             &mut eut.get_id_path().get_vec(), "", 1);
                     self.db.create_relationship(&eut.get_object(), &o_rtes.get_object());
-                    error!("CONFIG WHILE RTE INIT: {:?}", &self.config.eut.config);
                     for rte in obj.as_array().unwrap().iter() {
                         Rte::init(&self.db, &self.config, rte, &mut o_rtes.get_id_path().get_vec(),
                                   &o_rtes, &mut object_refs,
@@ -1053,7 +1062,16 @@ impl<'a> Regression<'a> {
         for obj in obj_refs {
             for r in &obj.refs {
                 let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
-                let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                let ref_module;
+
+                match r.as_object().unwrap().get(KEY_MODULE) {
+                    None => {
+                        ref_module = Default::default();
+                    }
+                    Some(m) => {
+                        ref_module = m.as_str().unwrap();
+                    }
+                }
 
                 match v_type {
                     //Build rel obj --> Application
@@ -1121,6 +1139,26 @@ impl<'a> Regression<'a> {
                             None => error!("rte object not found")
                         }
                     }
+                    //Build rel obj --> Test
+                    VertexTypes::Test => {
+                        error!("Building rel between obj and test");
+                        let test_name = r.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap();
+                        let rte_name = r.as_object().unwrap().get(KEY_RTE).unwrap().as_str().unwrap();
+                        let connection = r.as_object().unwrap().get(KEY_CONNECTION).unwrap().as_str().unwrap();
+                        let rtes = Rtes::load_collection(&self.db, &eut.get_object(), &self.config);
+                        let rte = Rtes::load_rte(&self.db, &rtes.get_object(), rte_name, &self.config);
+                        let connections = Connections::load_collection(&self.db, &rte.unwrap().get_object(), &self.config);
+                        let connection = Connections::load_connection(&self.db, &connections.get_object(), connection, &self.config);
+                        let c_src = ConnectionSource::load(&self.db, &connection.unwrap().get_object(), &self.config);
+                        let test = ConnectionSource::load_test(&self.db, &c_src.get_object(), &test_name, &self.config);
+
+                        match test {
+                            Some(t) => {
+                                self.db.create_relationship(&self.db.get_object(&obj.id), &t.get_object());
+                            }
+                            None => error!("test object not found")
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -1136,7 +1174,16 @@ impl<'a> Regression<'a> {
 
             for r in &obj.refs {
                 let v_type = VertexTypes::get_type_by_key(r.as_object().unwrap().get(KEY_TYPE).unwrap().as_str().unwrap());
-                let ref_module = r.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
+                let ref_module;
+
+                match r.as_object().unwrap().get(KEY_MODULE) {
+                    None => {
+                        ref_module = Default::default();
+                    }
+                    Some(m) => {
+                        ref_module = m.as_str().unwrap();
+                    }
+                }
 
                 match v_type {
                     VertexTypes::Application => {
@@ -1325,7 +1372,7 @@ impl<'a> Regression<'a> {
         }
 
         if _test_collector_stages.len() > 0 {
-           let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
+            let test_collector_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_stage_deploy_seq.unwrap(), _test_collector_stages.as_slice(), &VertexTypes::StageDeploy);
 
             //Verification Stages Deploy
             let verification_stage_deploy = self.add_ci_stages(&mut ci_id_path, &test_collector_stage_deploy.unwrap(), &self.config.verifications.ci.stages.deploy, &VertexTypes::StageDeploy);

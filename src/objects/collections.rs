@@ -153,8 +153,6 @@ impl<'a> Components<'a> {
         error!("Loading specific source component object");
         let src_component = db.get_object_neighbour_with_properties_out(&object.id, EdgeTypes::HasComponentSrc);
 
-        error!("SRC_COMPONENT: {:?}", &src_component);
-
         match src_component {
             None => None,
             Some(c) => {
@@ -242,6 +240,21 @@ impl<'a> Connections<'a> {
                 module_cfg: json!(null),
             },
         })
+    }
+
+    pub fn load_connection(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn ConnectionExt<'a> + 'a)>> {
+        error!("Loading specific rte connection object");
+        let connections = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::HasConnection);
+
+        for connection in connections {
+            let r = connection.props.get(PropertyType::Base.index()).unwrap().value.as_object()
+                .unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string();
+            if name == r {
+                return Some(Connection::load(db, &connection, config));
+            }
+        }
+
+        None
     }
 }
 

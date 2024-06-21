@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::{info};
 use serde_json::Value;
 use serde_json::Value::Null;
 
@@ -54,9 +54,7 @@ fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> V
                     file = format!("{}/{}/{}/{}", config.root_path, config.eut.path, module, CONFIG_FILE_NAME);
                 }
                 Some(f) => {
-                    error!("F: {:?}", f);
                     file = format!("{}/{}/{}/{}", config.root_path, config.eut.path, module, f);
-                    error!("FILE: {:?}", file);
                 }
             }
         }

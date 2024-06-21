@@ -71,7 +71,6 @@ impl<'a> Rte<'a> {
                                                           EdgeTypes::HasEut,
                                                           VertexTypes::Project).unwrap();
         let project = Project::load(&db, &project_o.id, &config);
-        error!("EUT_CONFIG: {:?}", config.eut.config.clone());
         let eut = Eut::load(&db, &project, &config);
 
         //RTE -> Features
@@ -103,7 +102,6 @@ impl<'a> Rte<'a> {
                                                             &config, v.get(KEY_SRC).unwrap(),
                                                             &mut rte_components.get_id_path().get_vec(),
                                                             "", 0);
-                        error!("C_SRC_O: {:#?}", &c_src_o.get_object());
                         db.create_relationship(&rte_components.get_object(), &c_src_o.get_object());
                     }
                 }
@@ -159,7 +157,7 @@ impl<'a> Rte<'a> {
                         let source = item.as_object().unwrap().get(KEY_SOURCE).unwrap().as_str().unwrap();
                         let src_o = ConnectionSource::init(&db, &config,
                                                            &json!({KEY_NAME: &source,
-                                                               KEY_RTE: &base_cfg.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap()}),
+                                                               KEY_RTE: &base_cfg.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap()}),
                                                            &mut c_o.get_id_path().get_vec(),
                                                            "", 0);
                         db.create_relationship(&c_o.get_object(), &src_o.get_object());

@@ -4,11 +4,12 @@ use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
 use crate::{EdgeTypes, PropertyType, RegressionConfig};
-use crate::constants::{KEY_ID_PATH};
+use crate::constants::{KEY_ID_PATH, KEY_NAME};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
+use crate::objects::test::TestExt;
 
-use super::{implement_object_ext};
+use super::{implement_object_ext, Test};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -40,6 +41,7 @@ impl<'a> Connection<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new connection object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::Connection, &mut path, label, pop);
+        error!("Connection BaseProps: {:#?}", base_cfg);
         db.add_object_property(&o, base_cfg, PropertyType::Base);
 
         Box::new(Connection {
@@ -74,6 +76,7 @@ impl<'a> ConnectionSource<'a> {
     pub fn init(db: &'a Db, _config: &RegressionConfig, base_cfg: &Value, mut path: &mut Vec<String>, label: &str, pop: usize) -> Box<(dyn ObjectExt + 'a)> {
         error!("Initialize new connection source object");
         let (o, id_path) = db.create_object_and_init(VertexTypes::ConnectionSrc, &mut path, label, pop);
+        error!("ConnectionSource BaseProps: {:#?}", base_cfg);
         db.add_object_property(&o, base_cfg, PropertyType::Base);
 
         Box::new(ConnectionSource {
@@ -103,6 +106,32 @@ impl<'a> ConnectionSource<'a> {
                 module_cfg: json!(null),
             },
         })
+    }
+
+    pub fn load_tests(db: &'a Db, object: &Vertex, config: &RegressionConfig) -> Vec<Box<(dyn TestExt<'a> + 'a)>> {
+        error!("Loading connection source test objects");
+        let test_objs = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::Runs);
+        let mut tests: Vec<Box<dyn TestExt>> = Default::default();
+
+        for t in test_objs {
+            tests.push(Test::load(&db, &t.vertex.id, config));
+        }
+
+        tests
+    }
+
+    pub fn load_test(db: &'a Db, object: &Vertex, name: &str, config: &RegressionConfig) -> Option<Box<(dyn TestExt<'a> + 'a)>> {
+        error!("Loading connection source test object");
+        let test_objs = db.get_object_neighbours_with_properties_out(&object.id, EdgeTypes::Runs);
+
+        for t in test_objs {
+            let test = Test::load(&db, &t.vertex.id, config);
+            if name == test.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap() {
+                return Some(test)
+            }
+        }
+
+        None
     }
 }
 
