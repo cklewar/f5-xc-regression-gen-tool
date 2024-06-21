@@ -535,7 +535,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ feature.module.ci.timeout }}
   retry:
-    max: 1
+    max: 2
     when:
       - script_failure
       - stuck_or_timeout_failure
