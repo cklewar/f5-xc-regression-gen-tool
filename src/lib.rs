@@ -566,6 +566,7 @@ struct FeatureRenderContext {
     job: String,
     eut: String,
     base: Map<String, Value>,
+    refs: Map<String, Value>,
     module: Map<String, Value>,
     project: RegressionConfigProject,
     scripts: Vec<HashMap<String, Vec<String>>>,
@@ -680,7 +681,10 @@ struct ScriptFeatureRenderContext {
 struct ScriptApplicationRenderContext {
     eut: String,
     name: String,
+    data: String,
+    data_dir: String,
     refs: Map<String, Value>,
+    module: String,
     release: String,
     provider: String,
     project: RegressionConfigProject,
@@ -953,15 +957,15 @@ impl<'a> Regression<'a> {
 
                     for f in obj.as_array().unwrap().iter() {
                         let f_module = f.as_object().unwrap().get(KEY_MODULE).unwrap().as_str().unwrap();
-                        let f_sites = f.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap();
-                        let _sites = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasSites);
-                        let sites = self.db.get_object_neighbours_with_properties_out(&_sites.unwrap().id, EdgeTypes::HasSite);
+                        //let f_sites = f.as_object().unwrap().get(KEY_SITES).unwrap().as_array().unwrap();
+                        //let _sites = self.db.get_object_neighbour_out(&&eut.get_id(), EdgeTypes::HasSites);
+                        //let sites = self.db.get_object_neighbours_with_properties_out(&_sites.unwrap().id, EdgeTypes::HasSite);
                         let f_o = Feature::init(self.db, &self.config, f,
                                                 &mut o.get_id_path().get_vec(), &o.get_object(),
                                                 f_module, 0);
 
                         //Feature -> Site
-                        for f_site in f_sites {
+                        /*for f_site in f_sites {
                             let re = Regex::new(f_site.as_str().unwrap()).unwrap();
                             for site in sites.iter() {
                                 let site_name = site.props.get(PropertyType::Base.index()).unwrap().value.as_object().
@@ -971,7 +975,7 @@ impl<'a> Regression<'a> {
                                     self.db.create_relationship(&f_o.get_object(), &site.vertex);
                                 }
                             }
-                        }
+                        }*/
                     }
                 }
                 k if k == KEY_COLLECTORS => {

@@ -92,6 +92,7 @@ impl Renderer<'_> for Feature<'_> {
                          self.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-"),
             eut: config.eut.module.to_string(),
             base: self.get_base_properties(),
+            refs: Default::default(),
             module: self.get_module_properties(),
             project: config.project.clone(),
             scripts: scripts.clone(),

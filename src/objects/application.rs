@@ -7,9 +7,7 @@ use uuid::Uuid;
 
 use crate::{ApplicationRenderContext, EdgeTypes, PropertyType, RegressionConfig,
             render_script, RenderContext, Renderer, ScriptApplicationRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_APPLICATIONS, KEY_ARTIFACTS_PATH, KEY_FILE, KEY_ID_PATH,
-                       KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE,
-                       KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::constants::{KEY_APPLICATION, KEY_APPLICATIONS, KEY_ARTIFACTS_PATH, KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -45,13 +43,15 @@ impl<'a> Application<'a> {
             unwrap().get(KEY_MODULE).
             unwrap().as_str().
             unwrap().to_string();
+        let a_name = base_cfg.get(KEY_NAME).unwrap().as_str().unwrap().to_string();
         let a_module = base_cfg.get(KEY_MODULE).unwrap().as_str().unwrap().to_string();
         let a_provider = base_cfg.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
-        let artifacts_path = format!("{}/{}/{}/{}/{}/{}",
+        let artifacts_path = format!("{}/{}/{}/{}/{}/{}/{}",
                                      config.applications.artifacts_dir,
                                      eut_name, KEY_APPLICATIONS.to_string(),
                                      a_module,
                                      a_provider,
+                                     a_name,
                                      config.applications.artifacts_file);
         let mut _base_cfg = base_cfg.as_object().unwrap().clone();
         _base_cfg.insert(KEY_ARTIFACTS_PATH.to_string(), json!(artifacts_path));
@@ -107,7 +107,7 @@ impl Renderer<'_> for Application<'_> {
         let provider: String = self.get_base_properties().get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string();
 
         if provider.len() > 0 {
-            job = format!("{}_{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap(), provider).replace('_', "-")
+            job = format!("{}_{}_{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap(), provider, self.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-")
         } else {
             job = format!("{}_{}_{}", config.project.module, KEY_APPLICATION, self.get_module_properties().get(KEY_NAME).unwrap().as_str().unwrap()).replace('_', "-")
         }
@@ -129,21 +129,29 @@ impl Renderer<'_> for Application<'_> {
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
-            let path = format!("{}/{}/{}/{}/{}",
+            let path = format!("{}/{}/{}/{}/{}/{}",
                                config.root_path,
                                config.applications.path,
                                module,
                                scripts_path,
+                               base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap(),
                                script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening application script file");
-
+            let data_dir = format!("{}/{}/{}",
+                                   base_props.get(KEY_MODULE).unwrap().as_str().unwrap(),
+                                   base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap(),
+                                   base_props.get(KEY_DATA).unwrap().as_str().unwrap(),
+            );
             let ctx = ScriptApplicationRenderContext {
                 eut: config.eut.module.to_string(),
-                name: module.to_string(),
+                name: base_props.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                data: base_props.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                 refs: base_props.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
+                module: module.to_string(),
+                project: config.project.clone(),
                 release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 provider: base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),
-                project: config.project.clone(),
+                data_dir,
                 artifacts_path: base_props.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
             };
 

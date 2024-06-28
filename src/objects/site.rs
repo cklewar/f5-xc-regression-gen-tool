@@ -5,11 +5,8 @@ use log::error;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use crate::{EutSiteRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
-            Renderer, ScriptApplicationRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_ARTIFACTS_PATH, KEY_FILE, KEY_ID_PATH, KEY_MODULE,
-                       KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE, KEY_SCRIPT,
-                       KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{EutSiteRenderContext, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptApplicationRenderContext, ScriptEutRenderContext};
+use crate::constants::{KEY_APPLICATION, KEY_ARTIFACTS_PATH, KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
@@ -112,10 +109,16 @@ impl Renderer<'_> for Site<'_> {
                                script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening eut site script file");
 
-            let ctx = ScriptApplicationRenderContext {
-                eut: config.eut.module.to_string(),
+            let ctx = ScriptEutRenderContext {
+                //eut: config.eut.module.to_string(),
+                rte: "".to_string(),
                 name: module.to_string(),
-                refs: base_props.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
+                //data: base_props.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
+                //refs: base_props.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
+                site: "".to_string(),
+                rtes: vec![],
+                index: 0,
+                counter: 0,
                 release: m_props.get(KEY_RELEASE).unwrap().as_str().unwrap().to_string(),
                 provider: base_props.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),
                 project: config.project.clone(),

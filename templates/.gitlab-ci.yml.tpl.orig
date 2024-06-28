@@ -40,6 +40,46 @@ variables:
     - if: $ACTION == "destroy-dashboard" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy-dashboard" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
+.deploy_eut_rules:
+  rules:
+    - if: $ACTION == "deploy-eut" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-eut" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_eut_rules:
+  rules:
+    - if: $ACTION == "destroy-eut" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-eut" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_feature_rules:
+  rules:
+    - if: $ACTION == "deploy-feature" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-feature" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_feature_rules:
+  rules:
+    - if: $ACTION == "destroy-feature" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-feature" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_application_rules:
+  rules:
+    - if: $ACTION == "deploy-application" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-application" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_application_rules:
+  rules:
+    - if: $ACTION == "destroy-application" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-application" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_rte_rules:
+  rules:
+    - if: $ACTION == "deploy-rte" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-rte" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.destroy_rte_rules:
+  rules:
+    - if: $ACTION == "destroy-rte" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "destroy-rte" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
 .regression_test_rules:
   rules:
     - if: $ACTION == "test" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
@@ -112,6 +152,15 @@ variables:
     - if: $ACTION == "deploy-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
+
+{% for test in rte.tests -%}
+{% for verification in test.verifications %}
+.regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules:
+  rules:
+    - if: $ACTION == "deploy-{{ test.job }}-and-verify-{{ verification.name }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-{{ test.job }}-and-verify-{{ verification.name }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+{% endfor -%}
+{% endfor -%}
 {% endfor -%}
 {% for application in applications %}
 .deploy_{{ application.job | replace(from="-", to="_") }}_rules:
@@ -163,8 +212,6 @@ variables:
       {% endfor -%}
       {% endif -%}
       {% endfor -%}
-      mkdir -p /cache/.terraform.d/plugin-cache
-      export TF_PLUGIN_CACHE_DIR="/cache/.terraform.d/plugin-cache"
       export TF_VAR_f5xc_environment="$ENVIRONMENT"
       export TF_VAR_f5xc_api_url="$F5XC_API_URL"
       export TF_VAR_f5xc_api_p12_file="${KEYS_DIR}/$P12_FILE"
@@ -222,11 +269,39 @@ project-artifacts:
   <<: *base
   stage: project-artifacts
   rules:
-      - if: $ACTION == "deploy-project"
-        when: never
-      - if: $ACTION == "destroy-project"
-        when: never
-      - when: always
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_eut_rules, rules ]
+    - !reference [ .destroy_eut_rules, rules ]
+    - !reference [ .regression_sequential_test_rules, rules ]
+    - !reference [ .regression_test_seq_and_verification_rules, rules ]
+    {%- for site in eut.sites %}
+    - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- for feature in features %}
+    - !reference [ .deploy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- for application in applications %}
+    - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor -%}
+    {% for rte in rtes -%}
+    {% for component in rte.components %}
+    - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .destroy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- for test in rte.tests %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
+    {%- endfor %}
+    {%- endfor -%}
+    {%- for report in reports %}
+    - !reference [ .regression_{{ report.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
   script:
       - |
         {%- for script in project.scripts %}
@@ -286,6 +361,7 @@ dashboard-deploy:
   stage: rte-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_rte_rules, rules ]
     - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
@@ -325,6 +401,9 @@ dashboard-deploy:
     - !reference [ .regression_test_seq_and_verification_rules, rules ]
     {%- for test in rte.tests %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
     {%- for application in applications %}
     {%- for ref in application.base.refs %}
@@ -366,6 +445,7 @@ dashboard-deploy:
   stage: eut-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_eut_rules, rules ]
     - !reference [ .deploy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
@@ -436,6 +516,7 @@ dashboard-deploy:
   stage: feature-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_feature_rules, rules ]
     - !reference [ .deploy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
@@ -503,6 +584,7 @@ dashboard-deploy:
   stage: application-deploy
   rules:
     - !reference [ .deploy_rules, rules ]
+    - !reference [ .deploy_application_rules, rules ]
     - !reference [ .deploy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
@@ -539,6 +621,9 @@ dashboard-deploy:
     {%- if application.base.provider == rte.base.provider %}
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
     {%- endif %}
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
     {%- endfor %}
     {%- endfor %}
   script:
@@ -572,6 +657,9 @@ dashboard-deploy:
   rules:
     - !reference [ .regression_test_rules, rules ]
     - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- for verification in test.verifications %}
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    {%- endfor %}
   stage: regression-test
   script:
       - |
@@ -675,6 +763,7 @@ dashboard-deploy:
   rules:
     - !reference [ .regression_verification_rules, rules ]
     - !reference [ .regression_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
+    - !reference [ .regression_{{ test.job | replace(from="-", to="_") }}_{{ verification.job | replace(from="-", to="_") }}_rules, rules ]
     - !reference [ .regression_test_seq_and_verification_rules, rules ]
   stage: regression-test-verify
   script:
@@ -773,6 +862,7 @@ dashboard-deploy:
   stage: feature-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_feature_rules, rules ]
     - !reference [ .destroy_{{ feature.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
@@ -800,6 +890,7 @@ dashboard-deploy:
   stage: eut-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_eut_rules, rules ]
     - !reference [ .destroy_{{ site.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
@@ -831,6 +922,7 @@ dashboard-deploy:
   stage: application-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_application_rules, rules ]
     - !reference [ .destroy_{{ application.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
@@ -863,6 +955,7 @@ dashboard-deploy:
   stage: rte-destroy
   rules:
     - !reference [ .destroy_rules, rules ]
+    - !reference [ .destroy_rte_rules, rules ]
     - !reference [ .destroy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
   script:
     - |

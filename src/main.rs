@@ -76,7 +76,7 @@ fn main() {
     if cli.write_gv {
         r.to_file(&r.to_gv(), "./out", &"graph.gv");
     }
-    /*if cli.gen_actions_json {
+    if cli.gen_actions_json {
         let a = r.render_actions_json_file(&ctx);
         match a {
             Ok(data) => {
@@ -99,5 +99,5 @@ fn main() {
                 error!("ERR: {}", err)
             }
         }
-    }*/
+    }
 }
