@@ -5,8 +5,11 @@ use log::error;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use crate::{EutSiteRenderContext, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ScriptApplicationRenderContext, ScriptEutRenderContext};
-use crate::constants::{KEY_APPLICATION, KEY_ARTIFACTS_PATH, KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_REF_ARTIFACTS_PATH, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
+use crate::{EutSiteRenderContext, PropertyType, RegressionConfig, render_script, RenderContext,
+            Renderer, ScriptEutRenderContext};
+use crate::constants::{KEY_APPLICATION, KEY_ARTIFACTS_PATH, KEY_FILE, KEY_ID_PATH,
+                       KEY_MODULE, KEY_NAME, KEY_PROVIDER, KEY_RELEASE, KEY_SCRIPT, KEY_SCRIPTS,
+                       KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 

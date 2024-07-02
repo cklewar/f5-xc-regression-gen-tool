@@ -114,7 +114,7 @@ impl Renderer<'_> for Collector<'_> {
             let contents = std::fs::read_to_string(path).expect("panic while opening collector script file");
             let ctx = ScriptCollectorRenderContext {
                 eut: config.eut.module.to_string(),
-                name: module.to_string(),
+                name: self.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                 data: props_base.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                 refs: props_base.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                 module: module.to_string(),

@@ -3,6 +3,7 @@
 #################################################################################
 
 stages:
+  - monitor-deploy
   {% for stage in stages -%}
   - {{ stage }}
   {% endfor %}
@@ -19,6 +20,11 @@ variables:
   rules:
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
+
+.deploy_monitor_rules:
+  rules:
+    - if: $ACTION == "deploy-monitor" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
+    - if: $ACTION == "deploy-monitor" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_project_rules:
   rules:
@@ -188,6 +194,24 @@ variables:
     - echo $CI_PROJECT_DIR
     - terraform version
 
+# monitor - ce_performance - deploy
+monitor-deploy:
+  <<: *base
+  stage: monitor-deploy
+  rules:
+    - !reference [ .deploy_monitor_rules, rules ]
+  script:
+      - |
+        #!/usr/bin/env bash
+        $CI_PROJECT_DIR/tools/ci_job_monitor/monitor.sh -a"${ACTION_LIST[@]}" -p$PROJECT -f$FLAVOUR -P$PROVIDER -t$test_tag -s$schema_override -T$TOKEN -u$F5XC_URL -n$TRIGGER_TOKEN -c$CI_COMMIT_REF_NAME -d$data_branch -e$PROJECT_TRIGGER_URL
+  timeout: 18h
+  retry:
+    max: 0
+    when:
+      - script_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
 # project - {{ project.module.name }} - deploy
 project-deploy:
   <<: *base
@@ -225,6 +249,8 @@ project-artifacts:
       - if: $ACTION == "deploy-project"
         when: never
       - if: $ACTION == "destroy-project"
+        when: never
+      - if: $ACTION == "deploy-monitor"
         when: never
       - when: always
   script:

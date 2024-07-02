@@ -9,7 +9,6 @@ use std::io::{Write};
 use indradb::{Vertex, VertexProperties};
 use lazy_static::lazy_static;
 use log::{error, info};
-use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::{json, Map, to_value, Value};
 use serde_json::Value::Null;
@@ -752,6 +751,8 @@ struct ScriptReportRenderContext {
     refs: Map<String, Value>,
     module: String,
     project: RegressionConfigProject,
+    collector_name: String,
+    collector_module: String,
 }
 
 /*fn get_type_of<T>(_: T) {

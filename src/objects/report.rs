@@ -5,14 +5,13 @@ use log::error;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
-use crate::{PropertyType, RegressionConfig, render_script, RenderContext, Renderer,
-            ReportRenderContext, ScriptReportRenderContext};
+use crate::{EdgeTypes, PropertyType, RegressionConfig, render_script, RenderContext, Renderer, ReportRenderContext, ScriptReportRenderContext};
 use crate::constants::{KEY_DATA, KEY_FILE, KEY_ID_PATH, KEY_MODULE, KEY_NAME, KEY_REF_ARTIFACTS_PATH,
                        KEY_REPORT, KEY_SCRIPT, KEY_SCRIPTS, KEY_SCRIPTS_PATH};
 use crate::db::Db;
 use crate::objects::object::{Object, ObjectExt};
 
-use super::{implement_object_ext, load_object_config};
+use super::{Collector, implement_object_ext, load_object_config};
 use super::super::db::IdPath;
 use super::super::VertexTypes;
 
@@ -95,6 +94,9 @@ impl Renderer<'_> for Report<'_> {
         let data = self.get_base_properties().get(KEY_DATA).unwrap().as_str().unwrap().to_string();
         let m_props: Map<String, Value> = self.get_module_properties();
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
+        let c_obj = self.object.db.get_object_neighbour_with_properties_out(&self.get_id(), EdgeTypes::ReportRefersCollector);
+        let collector = Collector::load(&self.object.db, &c_obj.unwrap(), &config);
+        error!("COLLECTOR: {:#?}", collector.get_base_properties());
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path,
@@ -109,6 +111,8 @@ impl Renderer<'_> for Report<'_> {
                 refs: self.get_base_properties().get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                 module: module.to_string(),
                 project: config.project.clone(),
+                collector_name: collector.get_base_properties().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                collector_module: collector.get_base_properties().get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
             };
 
             let mut commands: Vec<String> = Vec::new();
