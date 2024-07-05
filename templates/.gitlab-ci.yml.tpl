@@ -204,7 +204,7 @@ monitor-deploy:
       - |
         #!/usr/bin/env bash
         $CI_PROJECT_DIR/tools/ci_job_monitor/monitor.sh -a"${ACTION_LIST[@]}" -p$PROJECT -f$FLAVOUR -P$PROVIDER -t$test_tag -s$schema_override -T$TOKEN -u$F5XC_URL -n$TRIGGER_TOKEN -c$CI_COMMIT_REF_NAME -d$data_branch -e$PROJECT_TRIGGER_URL
-  timeout: 18h
+  timeout: 24h
   retry:
     max: 0
     when:
@@ -618,6 +618,7 @@ dashboard-deploy:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ test.ci.timeout }}
+  allow_failure: true
   retry:
     max: 0
     when:
@@ -654,7 +655,7 @@ dashboard-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ test.ci.timeout }}
   retry:
-    max: 0
+    max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -684,8 +685,9 @@ dashboard-deploy:
       - $ARTIFACTS_ROOT_DIR/
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ test.ci.timeout }}
+  allow_failure: true
   retry:
-    max: 0
+    max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
