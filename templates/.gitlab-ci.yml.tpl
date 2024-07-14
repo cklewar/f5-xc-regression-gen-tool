@@ -14,108 +14,88 @@ variables:
 .deploy_rules:
   rules:
     - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_rules:
   rules:
     - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_monitor_rules:
   rules:
     - if: $ACTION == "deploy-monitor" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-monitor" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_project_rules:
   rules:
     - if: $ACTION == "deploy-project" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-project" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_project_rules:
   rules:
     - if: $ACTION == "destroy-project" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-project" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .deploy_dashboard_rules:
   rules:
     - if: $ACTION == "deploy-dashboard" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-dashboard" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_dashboard_rules:
   rules:
     - if: $ACTION == "destroy-dashboard" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-dashboard" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_rules:
   rules:
     - if: $ACTION == "test" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_verification_rules:
   rules:
     - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_and_verification_rules:
   rules:
     - if: $ACTION == "test-and-verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-and-verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_sequential_test_rules:
   rules:
     - if: $ACTION == "test-sequential" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-sequential" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .regression_test_seq_and_verification_rules:
   rules:
     - if: $ACTION == "test-seq-and-verify" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "test-seq-and-verify" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% for feature in features %}
 .deploy_{{ feature.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "deploy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_{{ feature.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "destroy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-{{ feature.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for site in eut.sites %}
 .deploy_{{ site.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "deploy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_{{ site.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "destroy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-{{ site.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for rte in rtes -%}
 {% for component in rte.components %}
 .deploy_{{ component.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "deploy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_{{ component.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "destroy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-{{ component.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests %}
 .regression_{{ test.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "deploy-{{ test.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ test.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for test in rte.tests -%}
 {% for verification in test.verifications %}
 .regression_{{ verification.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "deploy-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ verification.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -123,18 +103,15 @@ variables:
 .deploy_{{ application.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "deploy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 
 .destroy_{{ application.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "destroy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "destroy-{{ application.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor -%}
 {% for report in reports %}
 .regression_{{ report.job | replace(from="-", to="_") }}_rules:
   rules:
     - if: $ACTION == "deploy-{{ report.job }}" && $CI_PIPELINE_SOURCE == "trigger" && $CI_PIPELINE_TRIGGERED == "true"
-    - if: $ACTION == "deploy-{{ report.job }}" && $CI_PIPELINE_SOURCE == "web" && $CI_PIPELINE_TRIGGERED == "true"
 {% endfor %}
 .base: &base
   tags:
@@ -153,6 +130,7 @@ variables:
   before_script:
     - |
       #!/usr/bin/env bash
+      export TF_PLUGIN_CACHE_DIR="/cache/.terraform.d/plugin-cache"
       cd $CI_PROJECT_DIR/tools/init/step1
       terraform init
       terraform apply -var="f5xc_url=$URL" -auto-approve
@@ -235,7 +213,7 @@ project-deploy:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ project.module.ci.timeout }}
   retry:
-    max: 0
+    max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -270,7 +248,7 @@ project-artifacts:
     expire_in: {{ config.ci.artifacts.expire_in }}
   timeout: {{ project.module.ci.timeout }}
   retry:
-    max: 0
+    max: 1
     when:
       - script_failure
       - stuck_or_timeout_failure
@@ -416,7 +394,7 @@ dashboard-deploy:
       - stuck_or_timeout_failure
       - runner_system_failure
 
-# eut - {{ site.job }} - artifacts --- {{ site.provider }}
+# eut - {{ site.job }} - artifacts - {{ site.provider }}
 {{ site.job }}-artifacts:
   <<: *base
   stage: eut-artifacts
