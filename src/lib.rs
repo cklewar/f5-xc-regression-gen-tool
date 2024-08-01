@@ -1705,6 +1705,7 @@ impl<'a> Regression<'a> {
     pub fn render(&self, context: &Context) -> String {
         info!("Render regression pipeline file first step...");
         info!("Render first step template file {}", self.template);
+        error!("Render first step template file {}", self.template);
         let mut _tera = Tera::new(&self.template).unwrap();
         let rendered = _tera.render(PIPELINE_TEMPLATE_FILE_NAME, context).unwrap();
         info!("Render regression pipeline file first step -> Done.");
