@@ -293,8 +293,6 @@ dashboard-deploy:
     - !reference [ .deploy_{{ component.job | replace(from="-", to="_") }}_rules, rules ]
   script:
       - |
-        export TF_VAR_f5xc_api_url_rte=$f5xc_api_url_rte
-        export TF_VAR_f5xc_api_token_rte=$f5xc_api_token_rte
         {%- for script in component.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
