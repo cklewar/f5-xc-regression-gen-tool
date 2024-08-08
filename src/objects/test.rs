@@ -34,8 +34,9 @@ impl<'a> Test<'a> {
         let rte_o_p = db.get_object_properties(&rte_o).unwrap();
         let rte = Rte::load(&db, &rte_o_p, &config);
         let rte_base_p = rte.get_base_properties();
-        let artifacts_path = format!("{}/{}/{}/{}/{}/{}",
+        let artifacts_path = format!("{}/{}/{}/{}/{}/{}/{}",
                                      config.tests.artifacts_dir,
+                                     rte_base_p.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                                      rte_base_p.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
                                      rte_base_p.get(KEY_PROVIDER).unwrap().as_str().unwrap().to_string(),
                                      base_cfg.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),

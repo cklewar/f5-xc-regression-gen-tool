@@ -642,7 +642,9 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let ctx = ScriptVerificationRenderContext {
-                            rte: params.rte_name.to_string(),
+                            rte_name: params.rte_name.to_string(),
+                            rte_module: params.rte_name.to_string(),
+                            rte_artifacts_path: "".to_string(),
                             name: v_name.to_string(),
                             data: v_data.to_string(),
                             module: v_module.to_string(),
@@ -650,6 +652,7 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                             collector: collector.clone(),
                             test_name: t_name.to_string(),
                             test_module: t_module.to_string(),
+                            test_artifacts_path: "".to_string(),
                         };
 
                         let mut commands: Vec<String> = Vec::new();
@@ -829,7 +832,6 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                                            script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let ctx = ScriptVerificationRenderContext {
-                            rte: params.rte_name.to_string(),
                             name: v_name.to_string(),
                             data: v_data.to_string(),
                             module: v_module.to_string(),
@@ -837,6 +839,10 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                             collector: collector.clone(),
                             test_name: test_name.to_string(),
                             test_module: test_module.to_string(),
+                            test_artifacts_path: test_base_p.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
+                            rte_name: rte_base_p.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                            rte_module: rte_base_p.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                            rte_artifacts_path: rte_base_p.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
                         };
 
                         let mut commands: Vec<String> = Vec::new();

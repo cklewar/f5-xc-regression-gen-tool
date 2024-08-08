@@ -96,7 +96,6 @@ impl Renderer<'_> for Report<'_> {
         let scripts_path = m_props.get(KEY_SCRIPTS_PATH).unwrap().as_str().unwrap();
         let c_obj = self.object.db.get_object_neighbour_with_properties_out(&self.get_id(), EdgeTypes::ReportRefersCollector);
         let collector = Collector::load(&self.object.db, &c_obj.unwrap(), &config);
-        error!("COLLECTOR: {:#?}", collector.get_base_properties());
 
         for script in m_props.get(KEY_SCRIPTS).unwrap().as_array().unwrap().iter() {
             let path = format!("{}/{}/{}/{}/{}", config.root_path,

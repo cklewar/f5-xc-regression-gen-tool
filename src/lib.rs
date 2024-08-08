@@ -692,7 +692,6 @@ struct ScriptApplicationRenderContext {
 
 #[derive(Serialize, Debug)]
 struct ScriptVerificationRenderContext {
-    rte: String,
     name: String,
     data: String,
     module: String,
@@ -700,6 +699,10 @@ struct ScriptVerificationRenderContext {
     collector: String,
     test_name: String,
     test_module: String,
+    test_artifacts_path: String,
+    rte_name: String,
+    rte_module: String,
+    rte_artifacts_path: String,
 }
 
 #[derive(Serialize, Debug)]
