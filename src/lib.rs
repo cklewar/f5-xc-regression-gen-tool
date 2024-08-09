@@ -707,15 +707,16 @@ struct ScriptVerificationRenderContext {
 
 #[derive(Serialize, Debug)]
 struct ScriptTestRenderContext {
-    rte: String,
     eut: String,
     name: String,
     data: String,
     refs: Map<String, Value>,
     module: String,
     project: RegressionConfigProject,
-    provider: String,
+    rte_provider: String,
     artifacts_path: String,
+    rte_name: String,
+    rte_module: String,
     rte_artifacts_path: String,
 }
 

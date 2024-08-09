@@ -124,14 +124,15 @@ impl Renderer<'_> for Test<'_> {
             let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
             let ctx = ScriptTestRenderContext {
                 eut: config.eut.module.to_string(),
-                rte: "".to_string(),
                 name: "".to_string(),
                 data: "".to_string(),
                 refs: self.get_base_properties().get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                 module: module.clone(),
                 project: config.project.clone(),
-                provider: "".to_string(),
+                rte_provider: "".to_string(),
                 artifacts_path: "".to_string(),
+                rte_name: "".to_string(),
+                rte_module: "".to_string(),
                 rte_artifacts_path: "".to_string(),
             };
 

@@ -597,15 +597,16 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                     let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.tests.path, t_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
-                        rte: params.rte_name.to_string(),
                         eut: params.eut.props.get(PropertyType::Module.index()).unwrap().value.as_object().unwrap().get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
                         name: t_name.to_string(),
                         data: t_p_base.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                         refs: t_p_base.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                         module: t_module.to_string(),
                         project: params.config.project.clone(),
-                        provider: src_name.to_string(),
+                        rte_provider: src_name.to_string(),
                         artifacts_path: "".to_string(),
+                        rte_name: "".to_string(),
+                        rte_module: "".to_string(),
                         rte_artifacts_path: "".to_string(),
                     };
 
@@ -642,9 +643,6 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                         let path = format!("{}/{}/{}/{}/{}", params.config.root_path, params.config.verifications.path, v_module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                         let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                         let ctx = ScriptVerificationRenderContext {
-                            rte_name: params.rte_name.to_string(),
-                            rte_module: params.rte_name.to_string(),
-                            rte_artifacts_path: "".to_string(),
                             name: v_name.to_string(),
                             data: v_data.to_string(),
                             module: v_module.to_string(),
@@ -653,6 +651,9 @@ impl<'a> RteCharacteristics for RteTypeA<'a> {
                             test_name: t_name.to_string(),
                             test_module: t_module.to_string(),
                             test_artifacts_path: "".to_string(),
+                            rte_name: params.rte_name.to_string(),
+                            rte_module: params.rte_name.to_string(),
+                            rte_artifacts_path: "".to_string(),
                         };
 
                         let mut commands: Vec<String> = Vec::new();
@@ -783,15 +784,16 @@ impl<'a> RteCharacteristics for RteTypeB<'a> {
                                        script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
                     let contents = std::fs::read_to_string(path).expect("panic while opening test script file");
                     let ctx = ScriptTestRenderContext {
-                        rte: params.rte_name.to_string(),
                         eut: eut_module.to_string(),
                         name: test_name.to_string().replace('-', "_"),
                         data: test_base_p.get(KEY_DATA).unwrap().as_str().unwrap().to_string(),
                         refs: test_base_p.get(KEY_REF_ARTIFACTS_PATH).unwrap().as_object().unwrap().clone(),
                         module: test_module.to_string(),
                         project: params.config.project.clone(),
-                        provider: rte_provider.to_string(),
                         artifacts_path: test_base_p.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
+                        rte_name: rte_base_p.get(KEY_NAME).unwrap().as_str().unwrap().to_string(),
+                        rte_module: rte_base_p.get(KEY_MODULE).unwrap().as_str().unwrap().to_string(),
+                        rte_provider: rte_provider.to_string(),
                         rte_artifacts_path: rte_base_p.get(KEY_ARTIFACTS_PATH).unwrap().as_str().unwrap().to_string(),
                     };
 

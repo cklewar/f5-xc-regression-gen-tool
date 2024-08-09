@@ -577,9 +577,6 @@ dashboard-deploy:
   stage: regression-test
   script:
       - |
-        export TF_VAR_data_branch=$data_branch
-        [ -z "$test_tag" ] && export test_tag=""
-        export TF_VAR_tag=$test_tag
         {%- for script in test.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
@@ -646,7 +643,6 @@ dashboard-deploy:
   stage: test-{{ rte.name | replace(from="_", to="-") }}-{{ test.provider }}-{{ test.module | replace(from="_", to="-") }}-{{ test.name | replace(from="_", to="-") }}-deploy
   script:
       - |
-        export TF_VAR_data_branch=$data_branch
         {%- for script in test.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
@@ -683,7 +679,6 @@ dashboard-deploy:
   stage: regression-test-verify
   script:
       - |
-        export TF_VAR_data_branch=$data_branch
         {%- for script in verification.scripts %}
         {%- for k, v in script %}
         {%- if k == "apply" %}
