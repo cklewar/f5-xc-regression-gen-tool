@@ -1727,7 +1727,7 @@ impl<'a> Regression<'a> {
             .truncate(true)
             .create(true)
             .open(format!("{path}/{file}"))
-            .expect("Couldn't open file");
+            .expect("Couldn't open output file");
 
         f.write_all(data.as_bytes()).expect("panic while writing to file");
     }
