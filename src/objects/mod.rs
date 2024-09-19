@@ -1,4 +1,4 @@
-use log::{info};
+use log::{error, info};
 use serde_json::Value;
 use serde_json::Value::Null;
 
@@ -89,7 +89,6 @@ fn load_object_config(_type: &str, module: &str, config: &RegressionConfig) -> V
             return Null;
         }
     }
-
     let raw = std::fs::read_to_string(String::from(&file)).unwrap();
     let cfg: Value = serde_json::from_str(&raw).unwrap();
     info!("Loading module <{module}> configuration data -> Done.");
