@@ -85,6 +85,8 @@ impl Renderer<'_> for Project<'_> {
             let path = format!("{}/{}/{}/{}/{}", config.root_path, config.project.path, module, scripts_path, script.as_object().unwrap().get(KEY_FILE).unwrap().as_str().unwrap());
             let contents = std::fs::read_to_string(path).expect("panic while opening project script file");
             let ctx = ScriptProjectRenderContext {
+                base: self.get_base_properties(),
+                module: self.get_module_properties(),
                 project: config.project.clone(),
                 release: m_props.get(KEY_RELEASE).unwrap().to_string(),
             };

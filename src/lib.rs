@@ -484,7 +484,6 @@ struct RegressionConfigDashboard {
 #[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
     ci: RegressionConfigGenericCi,
-    name: String,
     data: String,
     path: String,
     module: String,
@@ -744,6 +743,8 @@ struct ScriptDashboardRenderContext {
 
 #[derive(Serialize, Debug)]
 struct ScriptProjectRenderContext {
+    base: Map<String, Value>,
+    module: Map<String, Value>,
     project: RegressionConfigProject,
     release: String,
 }
