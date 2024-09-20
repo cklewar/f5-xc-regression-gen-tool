@@ -484,6 +484,8 @@ struct RegressionConfigDashboard {
 #[derive(Default, Deserialize, Serialize, Clone, Debug)]
 struct RegressionConfigProject {
     ci: RegressionConfigGenericCi,
+    name: String,
+    data: String,
     path: String,
     module: String,
 }
